@@ -9,8 +9,10 @@ dest="$2"
 mkdir -p "$dest"
 
 case "$url" in
+  *drive.google.com/drive/folders/*)
+    gdown --folder "$url" -O "$dest/" ;;
   *drive.google.com*|*docs.google.com*)
-    gdown --fuzzy "$url" -O "$dest/" ;;
+    gdown "$url" -O "$dest/" ;;
   *dropbox.com*)
     # dl=1 fuerza la descarga directa en lugar de la página de vista previa.
     direct="$(echo "$url" | sed -E 's/([?&])dl=0/\1dl=1/')"

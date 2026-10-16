@@ -15,6 +15,7 @@ Los vídeos NO viven en el repo (GitHub no admite archivos grandes). El usuario 
 1. Lee el pedido en `pedidos/*.md` (los que tengan `Estado: pendiente`). Si falta información importante, pregunta antes de empezar.
 2. Descarga: `scripts/descargar.sh "<enlace>" trabajo/<nombre-del-pedido>/original`.
    - Drive necesita compartir como "Cualquier persona con el enlace". Si gdown falla por permisos, díselo al usuario.
+   - Acepta carpetas de Drive. Antes de bajar una carpeta entera, lista los archivos y su tamaño (gdown `download_folder(..., skip_download=True)` y `get_file_metadata` del conector de Google Drive) y baja solo lo necesario: el disco es de ~30 GB.
 3. Edita en `trabajo/<nombre-del-pedido>/` según lo marcado:
    - Subtítulos → skill `embedded-captions`.
    - Recortar y limpiar → transcribe con Parakeet (`hyperframes transcribe`) y corta con ffmpeg o `media-use`.
