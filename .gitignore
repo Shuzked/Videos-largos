@@ -1,0 +1,10 @@
+# Vídeos descargados, proyectos de render y salidas: nunca al repo (GitHub no admite archivos grandes).
+trabajo/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.m4a
+*.wav
+*.mp3
