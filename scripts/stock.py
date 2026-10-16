@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
-"""Busca y descarga vídeo de stock gratuito sin clave de API.
+"""Busca y descarga vídeo, música y efectos de sonido gratuitos.
 
 Uso:
-  scripts/stock.py buscar "<términos en inglés>" [--fuente pixabay|coverr|mixkit|archive|wikimedia|todas] [-n 5]
+  scripts/stock.py buscar "<términos en inglés>" [--tipo video|musica|efectos] [--fuente <nombre>|todas] [-n 5]
   scripts/stock.py bajar <url> <carpeta>
+
+Fuentes:
+  video:   pixabay (necesita PIXABAY_API_KEY), coverr, mixkit, nasa, archive, wikimedia (solo a mano)
+  musica:  mixkit-musica, incompetech (atribución obligatoria)
+  efectos: mixkit-efectos
 
 `buscar` imprime una línea JSON por resultado: fuente, url, pagina, licencia.
 Guarda siempre la fuente y la licencia de lo que uses para los créditos del vídeo.
@@ -25,6 +30,12 @@ def get(url, params=None):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read().decode("utf-8", "replace")
+
+
+def url_segura(u):
+    """Codifica espacios y otros caracteres del path (NASA los incluye sin codificar)."""
+    p = urllib.parse.urlsplit(u)
+    return urllib.parse.urlunsplit(p._replace(path=urllib.parse.quote(urllib.parse.unquote(p.path))))
 
 
 def unicos(urls):
@@ -97,16 +108,74 @@ def pixabay(q, n):
                "licencia": f"Pixabay Content License (sin atribución) — {h['user']}"}
 
 
-FUENTES = {"pixabay": pixabay, "mixkit": mixkit, "coverr": coverr, "wikimedia": wikimedia, "archive": archive}
+def nasa(q, n):
+    data = json.loads(get("https://images-api.nasa.gov/search", {"q": q, "media_type": "video", "page_size": n}))
+    for item in data["collection"]["items"][:n]:
+        meta = item["data"][0]
+        archivos = [url_segura(u.replace("http://", "https://", 1)) for u in json.loads(get(url_segura(item["href"])))]
+        mp4 = [u for u in archivos if u.endswith(".mp4")]
+        mejor = next((u for t in ("~orig", "~large", "~medium") for u in mp4 if t in u), mp4[0] if mp4 else None)
+        if mejor:
+            yield {"fuente": "nasa", "url": mejor,
+                   "pagina": f"https://images.nasa.gov/details/{meta['nasa_id']}",
+                   "licencia": "Dominio público (NASA; no implica respaldo de la NASA)"}
+
+
+def mixkit_musica(q, n):
+    slug = re.sub(r"[^a-z0-9]+", "-", q.lower()).strip("-")
+    html = get(f"https://mixkit.co/free-stock-music/tag/{slug}/")
+    for mid in unicos(re.findall(r"https://assets\.mixkit\.co/music/(\d+)/\1\.mp3", html))[:n]:
+        yield {"fuente": "mixkit-musica", "url": f"https://assets.mixkit.co/music/{mid}/{mid}.mp3",
+               "pagina": f"https://mixkit.co/free-stock-music/tag/{slug}/",
+               "licencia": "Mixkit Free License (sin atribución)"}
+
+
+def mixkit_efectos(q, n):
+    slug = re.sub(r"[^a-z0-9]+", "-", q.lower()).strip("-")
+    html = get(f"https://mixkit.co/free-sound-effects/{slug}/")
+    for sid in unicos(re.findall(r"https://assets\.mixkit\.co/active_storage/sfx/(\d+)/\1-preview\.mp3", html))[:n]:
+        yield {"fuente": "mixkit-efectos", "url": f"https://assets.mixkit.co/active_storage/sfx/{sid}/{sid}-preview.mp3",
+               "pagina": f"https://mixkit.co/free-sound-effects/{slug}/",
+               "licencia": "Mixkit Free License (sin atribución)"}
+
+
+def incompetech(q, n):
+    piezas = json.loads(get("https://incompetech.com/music/royalty-free/pieces.json"))
+    palabras = q.lower().split()
+    def texto(p):
+        return " ".join(str(p.get(k) or "") for k in ("title", "feel", "description", "instruments")).lower()
+    # Primero las que contienen todas las palabras, luego las que contienen alguna.
+    todas = [p for p in piezas if all(w in texto(p) for w in palabras)]
+    alguna = [p for p in piezas if p not in todas and any(w in texto(p) for w in palabras)]
+    for p in (todas + alguna)[:n]:
+        yield {"fuente": "incompetech",
+               "url": "https://incompetech.com/music/royalty-free/mp3-royaltyfree/" + urllib.parse.quote(p["filename"]),
+               "pagina": "https://incompetech.com/music/royalty-free/music.html",
+               "duracion": p.get("length"), "estilo": p.get("feel"),
+               "licencia": f'CC BY 4.0 — ATRIBUCIÓN OBLIGATORIA: "{p["title"]}" Kevin MacLeod (incompetech.com), '
+                           "Licensed under Creative Commons: By Attribution 4.0 License"}
+
+
+FUENTES = {
+    "video": {"pixabay": pixabay, "coverr": coverr, "mixkit": mixkit, "nasa": nasa,
+              "archive": archive, "wikimedia": wikimedia},
+    "musica": {"mixkit-musica": mixkit_musica, "incompetech": incompetech},
+    "efectos": {"mixkit-efectos": mixkit_efectos},
+}
 # Wikimedia limita las descargas desde servidores en la nube (HTTP 429): solo bajo petición.
-POR_DEFECTO = ["pixabay", "coverr", "mixkit", "archive"]
+POR_DEFECTO = {
+    "video": ["pixabay", "coverr", "mixkit", "nasa", "archive"],
+    "musica": ["mixkit-musica", "incompetech"],
+    "efectos": ["mixkit-efectos"],
+}
+TODAS = {nombre: f for grupo in FUENTES.values() for nombre, f in grupo.items()}
 
 
 def buscar(args):
-    nombres = POR_DEFECTO if args.fuente == "todas" else [args.fuente]
+    nombres = POR_DEFECTO[args.tipo] if args.fuente == "todas" else [args.fuente]
     for nombre in nombres:
         try:
-            for r in FUENTES[nombre](args.q, args.n):
+            for r in TODAS[nombre](args.q, args.n):
                 print(json.dumps(r, ensure_ascii=False))
         except Exception as e:  # una fuente caída no debe tumbar las demás
             print(f"[{nombre}] error: {e}", file=sys.stderr)
@@ -130,7 +199,8 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("buscar")
     b.add_argument("q")
-    b.add_argument("--fuente", default="todas", choices=["todas", *FUENTES])
+    b.add_argument("--tipo", default="video", choices=list(FUENTES))
+    b.add_argument("--fuente", default="todas", choices=["todas", *TODAS])
     b.add_argument("-n", type=int, default=5)
     b.set_defaults(func=buscar)
     d = sub.add_parser("bajar")

@@ -30,15 +30,18 @@ El usuario también puede subir su material como assets de una release (tag = no
 `scripts/release.sh bajar <tag> trabajo/<tag>/original`
 Analiza el material (duración, contenido, transcripción con Parakeet si hay voz) junto con el guion antes de proponer el montaje.
 
-## Vídeo de stock gratuito
+## Stock gratuito: vídeo, música y efectos
 
-Usa `scripts/stock.py` (sin clave de API):
-- `scripts/stock.py buscar "<términos en inglés>" -n 5` busca en Pixabay (si hay clave), Coverr (1080p), Mixkit (720p) y Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
-- `--fuente wikimedia` solo si hace falta: Wikimedia suele bloquear las descargas desde la nube (HTTP 429).
+Usa `scripts/stock.py` (búsquedas en inglés):
+- `scripts/stock.py buscar "<términos>" -n 5` → vídeo: Pixabay, Coverr (1080p), Mixkit (720p), NASA (dominio público) e Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
+- `--tipo musica` → Mixkit e Incompetech. `--tipo efectos` → Mixkit.
+- `--fuente <nombre>` para una sola fuente. `wikimedia` solo a mano: suele bloquear las descargas desde la nube (HTTP 429).
 - `scripts/stock.py bajar <url> trabajo/<proyecto>/stock`.
-Apunta fuente, página y licencia de cada clip en `trabajo/<proyecto>/creditos.md`, y añade créditos al vídeo cuando la licencia pida atribución.
+- NASA y Archive pueden devolver vídeos muy largos y pesados (ruedas de prensa de una hora, cientos de MB): mira la duración antes de bajar y corta solo lo que necesites.
 
-Pixabay (la fuente con más variedad, hasta 4K) entra por defecto si existe la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
+Pixabay (la fuente con más variedad, hasta 4K) necesita la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
+
+Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/creditos.md`. **Incompetech exige atribución**: pon el texto de su campo `licencia` en los créditos del vídeo y en la descripción donde se publique.
 
 ## Reglas
 
