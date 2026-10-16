@@ -38,7 +38,7 @@ Usa `scripts/stock.py` (sin clave de API):
 - `scripts/stock.py bajar <url> trabajo/<proyecto>/stock`.
 Apunta fuente, página y licencia de cada clip en `trabajo/<proyecto>/creditos.md`, y añade créditos al vídeo cuando la licencia pida atribución.
 
-Pixabay (la mejor fuente: 1080p+, también música) entra por defecto si existe la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
+Pixabay (la fuente con más variedad, hasta 4K) entra por defecto si existe la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
 
 ## Reglas
 
