@@ -21,8 +21,24 @@ Los vídeos NO viven en el repo (GitHub no admite archivos grandes). El usuario 
    - Clips cortos verticales → elige los mejores momentos por la transcripción, reencuadre 9:16.
    - Gráficos y títulos → skill `talking-head-recut`.
    Antes de un render largo, enseña al usuario un fragmento corto o un fotograma para validar el estilo.
-4. Publica el resultado como asset de una **GitHub Release** del repo (hasta 2 GB por archivo) con `gh api` / `uploads.github.com`. Nombre de la release: el del pedido.
+4. Publica el resultado como asset de una **GitHub Release** del repo (hasta 2 GB por archivo): `scripts/release.sh subir <nombre-del-pedido> <archivo>`. `gh release` no funciona aquí (usa GraphQL); usa siempre este script.
 5. Actualiza el `Estado` del pedido a `listo` con el enlace de descarga, y haz commit y push de ese cambio.
+
+## Vídeos que el usuario sube a Releases
+
+El usuario también puede subir su material como assets de una release (tag = nombre del proyecto), junto con un guion o indicaciones (archivo en la release o en el chat). Descárgalo con:
+`scripts/release.sh bajar <tag> trabajo/<tag>/original`
+Analiza el material (duración, contenido, transcripción con Parakeet si hay voz) junto con el guion antes de proponer el montaje.
+
+## Vídeo de stock gratuito
+
+Usa `scripts/stock.py` (sin clave de API):
+- `scripts/stock.py buscar "<términos en inglés>" -n 5` busca en Coverr (1080p), Mixkit (720p) y Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
+- `--fuente wikimedia` solo si hace falta: Wikimedia suele bloquear las descargas desde la nube (HTTP 429).
+- `scripts/stock.py bajar <url> trabajo/<proyecto>/stock`.
+Apunta fuente, página y licencia de cada clip en `trabajo/<proyecto>/creditos.md`, y añade créditos al vídeo cuando la licencia pida atribución.
+
+Pixabay está conectado como servicio del entorno, pero su API respondía "Invalid or missing API key" y `cdn.pixabay.com` estaba bloqueado. Pruébalo antes de contar con él.
 
 ## Reglas
 
