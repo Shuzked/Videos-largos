@@ -2,7 +2,7 @@
 """Busca y descarga vídeo de stock gratuito sin clave de API.
 
 Uso:
-  scripts/stock.py buscar "<términos en inglés>" [--fuente coverr|mixkit|archive|wikimedia|todas] [-n 5]
+  scripts/stock.py buscar "<términos en inglés>" [--fuente pixabay|coverr|mixkit|archive|wikimedia|todas] [-n 5]
   scripts/stock.py bajar <url> <carpeta>
 
 `buscar` imprime una línea JSON por resultado: fuente, url, pagina, licencia.
@@ -85,9 +85,21 @@ def archive(q, n):
                "pagina": f"https://archive.org/details/{ident}", "licencia": "Dominio público"}
 
 
-FUENTES = {"mixkit": mixkit, "coverr": coverr, "wikimedia": wikimedia, "archive": archive}
+def pixabay(q, n):
+    clave = os.environ.get("PIXABAY_API_KEY")
+    if not clave:
+        raise RuntimeError("falta la variable de entorno PIXABAY_API_KEY")
+    data = json.loads(get("https://pixabay.com/api/videos/", {"key": clave, "q": q, "per_page": max(n, 3)}))
+    for h in data["hits"][:n]:
+        v = h["videos"]
+        mejor = next(v[t] for t in ("large", "medium", "small", "tiny") if v.get(t, {}).get("url"))
+        yield {"fuente": "pixabay", "url": mejor["url"], "pagina": h["pageURL"],
+               "licencia": f"Pixabay Content License (sin atribución) — {h['user']}"}
+
+
+FUENTES = {"pixabay": pixabay, "mixkit": mixkit, "coverr": coverr, "wikimedia": wikimedia, "archive": archive}
 # Wikimedia limita las descargas desde servidores en la nube (HTTP 429): solo bajo petición.
-POR_DEFECTO = ["coverr", "mixkit", "archive"]
+POR_DEFECTO = ["pixabay", "coverr", "mixkit", "archive"]
 
 
 def buscar(args):

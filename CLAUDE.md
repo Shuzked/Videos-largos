@@ -33,12 +33,12 @@ Analiza el material (duración, contenido, transcripción con Parakeet si hay vo
 ## Vídeo de stock gratuito
 
 Usa `scripts/stock.py` (sin clave de API):
-- `scripts/stock.py buscar "<términos en inglés>" -n 5` busca en Coverr (1080p), Mixkit (720p) y Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
+- `scripts/stock.py buscar "<términos en inglés>" -n 5` busca en Pixabay (si hay clave), Coverr (1080p), Mixkit (720p) y Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
 - `--fuente wikimedia` solo si hace falta: Wikimedia suele bloquear las descargas desde la nube (HTTP 429).
 - `scripts/stock.py bajar <url> trabajo/<proyecto>/stock`.
 Apunta fuente, página y licencia de cada clip en `trabajo/<proyecto>/creditos.md`, y añade créditos al vídeo cuando la licencia pida atribución.
 
-Pixabay está conectado como servicio del entorno, pero su API respondía "Invalid or missing API key" y `cdn.pixabay.com` estaba bloqueado. Pruébalo antes de contar con él.
+Pixabay (la mejor fuente: 1080p+, también música) entra por defecto si existe la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
 
 ## Reglas
 
