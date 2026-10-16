@@ -8,3 +8,4 @@ trabajo/
 *.m4a
 *.wav
 *.mp3
+__pycache__/

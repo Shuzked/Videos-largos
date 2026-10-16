@@ -32,12 +32,6 @@ def get(url, params=None):
         return r.read().decode("utf-8", "replace")
 
 
-def url_segura(u):
-    """Codifica espacios y otros caracteres del path (NASA los incluye sin codificar)."""
-    p = urllib.parse.urlsplit(u)
-    return urllib.parse.urlunsplit(p._replace(path=urllib.parse.quote(urllib.parse.unquote(p.path))))
-
-
 def unicos(urls):
     vistos = []
     for u in urls:
