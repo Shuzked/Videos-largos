@@ -33,11 +33,11 @@ Analiza el material (duración, contenido, transcripción con Parakeet si hay vo
 ## Stock gratuito: vídeo, música y efectos
 
 Usa `scripts/stock.py` (búsquedas en inglés):
-- `scripts/stock.py buscar "<términos>" -n 5` → vídeo: Pixabay, Coverr (1080p), Mixkit (720p), NASA (dominio público) e Internet Archive (dominio público, material antiguo y a menudo de baja resolución).
+- `scripts/stock.py buscar "<términos>" -n 5` → vídeo: Pixabay, Coverr (1080p) y Mixkit (720p).
 - `--tipo musica` → Mixkit e Incompetech. `--tipo efectos` → Mixkit.
-- `--fuente <nombre>` para una sola fuente. `wikimedia` solo a mano: suele bloquear las descargas desde la nube (HTTP 429).
+- `--fuente <nombre>` para una sola fuente.
 - `scripts/stock.py bajar <url> trabajo/<proyecto>/stock`.
-- NASA y Archive pueden devolver vídeos muy largos y pesados (ruedas de prensa de una hora, cientos de MB): mira la duración antes de bajar y corta solo lo que necesites.
+- **Solo material gratuito y sin marca de agua** (lo pidió el usuario). Por eso no se usan Vecteezy, los clips premium de Coverr (el script ya los filtra), NASA (títulos y marca de la NASA incrustados) ni Internet Archive (licencias mal etiquetadas). Antes de usar un clip, mira un fotograma y descártalo si lleva logo o marca.
 
 Pixabay (la fuente con más variedad, hasta 4K) necesita la variable de entorno `PIXABAY_API_KEY`; si no existe, se salta y sigue con las demás. La clave nunca va al repo.
 

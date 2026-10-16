@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Busca y descarga vídeo, música y efectos de sonido gratuitos.
+"""Busca y descarga vídeo, música y efectos de sonido gratuitos y sin marca de agua.
 
 Uso:
   scripts/stock.py buscar "<términos en inglés>" [--tipo video|musica|efectos] [--fuente <nombre>|todas] [-n 5]
   scripts/stock.py bajar <url> <carpeta>
 
 Fuentes:
-  video:   pixabay (necesita PIXABAY_API_KEY), coverr, mixkit, nasa, archive, wikimedia (solo a mano)
+  video:   pixabay (necesita PIXABAY_API_KEY), coverr, mixkit
   musica:  mixkit-musica, incompetech (atribución obligatoria)
   efectos: mixkit-efectos
 
@@ -60,40 +60,16 @@ def mixkit(q, n):
 def coverr(q, n):
     html = get("https://coverr.co/s", {"q": q})
     clips = unicos(re.findall(r"https://cdn\.coverr\.co/videos/([^/\"]+)/\d+p\.mp4", html))
+    # Los clips premium y los "temp/watermarked" llevan marca de agua: fuera.
+    clips = [c for c in clips if not re.search(r"premium|watermark|-temp-", c)]
     for c in clips[:n]:
         yield {"fuente": "coverr", "url": f"https://cdn.coverr.co/videos/{c}/1080p.mp4",
                "pagina": f"https://coverr.co/stock-video-footage/{c.removeprefix('coverr-')}",
                "licencia": "Coverr License (gratis, sin atribución)"}
 
 
-def wikimedia(q, n):
-    data = json.loads(get("https://commons.wikimedia.org/w/api.php", {
-        "action": "query", "format": "json", "generator": "search", "gsrnamespace": 6,
-        "gsrsearch": f"{q} filetype:video", "gsrlimit": n,
-        "prop": "imageinfo", "iiprop": "url|extmetadata"}))
-    for p in data.get("query", {}).get("pages", {}).values():
-        info = p["imageinfo"][0]
-        meta = info.get("extmetadata", {})
-        lic = meta.get("LicenseShortName", {}).get("value", "ver página")
-        autor = re.sub(r"<[^>]+>", "", meta.get("Artist", {}).get("value", "")).strip()
-        yield {"fuente": "wikimedia", "url": info["url"], "pagina": info["descriptionurl"],
-               "licencia": f"{lic} — {autor}" if autor else lic}
 
 
-def archive(q, n):
-    data = json.loads(get("https://archive.org/advancedsearch.php", {
-        "q": f"({q}) AND mediatype:movies AND licenseurl:*publicdomain*",
-        "fl[]": "identifier", "rows": n, "output": "json"}))
-    for d in data["response"]["docs"]:
-        ident = d["identifier"]
-        files = json.loads(get(f"https://archive.org/metadata/{ident}"))["files"]
-        mp4 = [f for f in files if f["name"].lower().endswith(".mp4")]
-        if not mp4:
-            continue
-        mejor = max(mp4, key=lambda f: int(f.get("size", 0)))
-        yield {"fuente": "archive",
-               "url": f"https://archive.org/download/{ident}/{urllib.parse.quote(mejor['name'])}",
-               "pagina": f"https://archive.org/details/{ident}", "licencia": "Dominio público"}
 
 
 def pixabay(q, n):
@@ -108,17 +84,6 @@ def pixabay(q, n):
                "licencia": f"Pixabay Content License (sin atribución) — {h['user']}"}
 
 
-def nasa(q, n):
-    data = json.loads(get("https://images-api.nasa.gov/search", {"q": q, "media_type": "video", "page_size": n}))
-    for item in data["collection"]["items"][:n]:
-        meta = item["data"][0]
-        archivos = [url_segura(u.replace("http://", "https://", 1)) for u in json.loads(get(url_segura(item["href"])))]
-        mp4 = [u for u in archivos if u.endswith(".mp4")]
-        mejor = next((u for t in ("~orig", "~large", "~medium") for u in mp4 if t in u), mp4[0] if mp4 else None)
-        if mejor:
-            yield {"fuente": "nasa", "url": mejor,
-                   "pagina": f"https://images.nasa.gov/details/{meta['nasa_id']}",
-                   "licencia": "Dominio público (NASA; no implica respaldo de la NASA)"}
 
 
 def mixkit_musica(q, n):
@@ -157,14 +122,12 @@ def incompetech(q, n):
 
 
 FUENTES = {
-    "video": {"pixabay": pixabay, "coverr": coverr, "mixkit": mixkit, "nasa": nasa,
-              "archive": archive, "wikimedia": wikimedia},
+    "video": {"pixabay": pixabay, "coverr": coverr, "mixkit": mixkit},
     "musica": {"mixkit-musica": mixkit_musica, "incompetech": incompetech},
     "efectos": {"mixkit-efectos": mixkit_efectos},
 }
-# Wikimedia limita las descargas desde servidores en la nube (HTTP 429): solo bajo petición.
 POR_DEFECTO = {
-    "video": ["pixabay", "coverr", "mixkit", "nasa", "archive"],
+    "video": ["pixabay", "coverr", "mixkit"],
     "musica": ["mixkit-musica", "incompetech"],
     "efectos": ["mixkit-efectos"],
 }

@@ -18,7 +18,7 @@ Claude descarga el vídeo, lo edita y te deja el resultado en **[Releases](https
 3. Arrastra tus vídeos (hasta 2 GB cada uno) y, si quieres, el guion en un archivo de texto.
 4. Pulsa **Publish release** y dile a Claude el nombre del tag y qué quieres.
 
-Claude analiza tu material con el guion y completa el montaje con material gratuito cuando haga falta: vídeo de Pixabay, Coverr, Mixkit, NASA e Internet Archive; música de Mixkit e Incompetech; y efectos de sonido de Mixkit.
+Claude analiza tu material con el guion y completa el montaje con material gratuito cuando haga falta: vídeo de Pixabay, Coverr y Mixkit (todo gratuito y sin marca de agua); música de Mixkit e Incompetech; y efectos de sonido de Mixkit.
 
 ## Qué hay en el repo
 
