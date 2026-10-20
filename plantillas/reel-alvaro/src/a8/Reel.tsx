@@ -10,6 +10,7 @@ import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
 import {Entra, golpeV, flechaV, Estilo} from '../variantes';
+import {ICONOS, Destello, IconoTrazado, Particulas, Pulso, aparece, flota, muelle, puntaFlecha} from '../lottie';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 // (sin ráfagas ni trazos sobre los títulos: el cliente pidió quitar las líneas)
 const ESTILO: Estilo = {texto: 'bisagra', golpe: 'marcador', impacto: 'garabato', sub: 'bisagra', flecha: 'resorte'};
@@ -156,50 +157,39 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   );
 };
 
-// ---------------- Elementos Lottie ----------------
-// Círculos que se dibujan y se marcan con ✕ o ✓ trazados
-const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: string; tipo: 'x' | 'v'; top: number; desde: number; hasta: number}> = ({
-  t, n, a, paso, color, tipo, top, desde, hasta,
-}) => {
-  const d = n > 5 ? 82 : 130;
+// ---------------- Elementos Lottie (src/lottie.tsx: muelles con sobrepaso, aplastar/estirar, trazos que se dibujan, partículas, reposo vivo) ----------------
+const enIA = (_x: number) => false;
+const estiloIA: React.CSSProperties = {};
+const lim = (x: number) => Math.min(1, Math.max(0, x));
+const SOMBRA_ICONOS = 'drop-shadow(0 3px 10px rgba(0,0,0,0.75))';
+
+// ✓ de "hasta aquí, perfecto": el aro se dibuja, el visto se traza con un latigazo y salta una ráfaga
+const Visto: React.FC<{t: number; en: number; a: number; b: number; top: number}> = ({t, en, a, b, top}) => {
+  const d = 150, per = Math.PI * (d - 10);
+  const aro = lim((t - a) / (9 * F));
+  const ap = aparece(t, en, 10);
+  const tr = lim((t - en - 2 * F) / (6 * F));
+  const fl = flota(t, 1, 4);
   return (
-    <Ventana suave t={t} a={desde} b={hasta}>
-      <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
-        {Array.from({length: n}, (_, i) => {
-          const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const en = a + i * paso;
-          const m = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const tr = iv(t, [en + 2 * F, en + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const per = Math.PI * (d - 8);
-          return (
-            <svg key={i} width={d} height={d} viewBox={`0 0 ${d} ${d}`} style={{overflow: 'visible', scale: t >= en ? 0.7 + 0.3 * m : 1}}>
-              <circle
-                cx={d / 2} cy={d / 2} r={d / 2 - 4} fill={t >= en ? color : 'rgba(0,0,0,0.25)'} fillOpacity={t >= en ? 0.9 : 1}
-                stroke={t >= en ? color : 'rgba(255,255,255,0.7)'} strokeWidth={4} strokeDasharray={per} strokeDashoffset={per * (1 - dib)}
-                style={{filter: t >= en ? `drop-shadow(0 0 14px ${color})` : 'none'}}
-              />
-              {t >= en &&
-                (tipo === 'x' ? (
-                  <path d={`M ${d * 0.32} ${d * 0.32} L ${d * 0.68} ${d * 0.68} M ${d * 0.68} ${d * 0.32} L ${d * 0.32} ${d * 0.68}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ) : (
-                  <path d={`M ${d * 0.28} ${d * 0.52} L ${d * 0.44} ${d * 0.68} L ${d * 0.72} ${d * 0.34}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ))}
-            </svg>
-          );
-        })}
-      </div>
+    <Ventana suave t={t} a={a} b={b}>
+      <svg style={{position: 'absolute', left: 540 - 150, top, overflow: 'visible', filter: SOMBRA_ICONOS}} width={300} height={300}>
+        <g transform={`translate(150 ${150 + fl.y}) scale(${t >= en ? ap.sx : 0.92} ${t >= en ? ap.sy : 0.92}) rotate(${ap.rot})`}>
+          <circle r={d / 2 - 5} fill={t >= en ? VERDE : 'rgba(0,0,0,0.3)'} stroke={t >= en ? VERDE : 'rgba(255,255,255,0.8)'} strokeWidth={6}
+            strokeDasharray={per} strokeDashoffset={per * (1 - aro)} transform="rotate(-90)" style={{filter: t >= en ? `drop-shadow(0 0 16px ${VERDE})` : 'none'}} />
+          {t >= en && <path d="M -32 2 L -10 24 L 34 -22" stroke="#fff" strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" fill="none" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - tr} />}
+        </g>
+        <Pulso t={t} en={en} x={150} y={150} r={80} color={VERDE} />
+        <Particulas t={t} en={en} x={150} y={150} n={12} radio={140} colores={[VERDE, '#ffffff', C.amarillo]} />
+      </svg>
     </Ventana>
   );
 };
-
-const enIA = (_x: number) => false;
-const estiloIA: React.CSSProperties = {};
 
 // ---------------- Ilustraciones propias de este reel: pizarra de tiza INSTALACIÓN / MANTENIMIENTO ----------------
 const ICONO = {
   instalar: 'M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z',
   ciclo: 'M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z',
-  lupa: 'M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z',
+  lupa: ICONOS.lupa,
   engranaje: 'M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z',
   factura: 'M6 2h12v20l-3-2-3 2-3-2-3 2V2zm3 5v2h6V7H9zm0 4v2h6v-2H9z',
   llave: 'M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z',
@@ -209,7 +199,7 @@ const ICONO = {
   chispa: 'M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4L12 2zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z',
 };
 const TIZA = '#f2efe6';
-const MUELLE_E = Easing.bezier(0.34, 1.56, 0.64, 1);
+const VERDE = '#2ee59d';
 // Filtro "tiza": bordes ligeramente irregulares, como escritos con tiza
 const FiltroTiza: React.FC = () => (
   <svg width={0} height={0} style={{position: 'absolute'}}>
@@ -226,47 +216,71 @@ const MENSUAL = 29.8; // "el mantenimiento mensual"
 const PARTE1 = 35.4; // "una primera parte"
 const OTRA = 38.36; // "y otra parte"
 const SEGUIR = 39.92; // "seguir prestando un servicio"
-const FichaIcono: React.FC<{t: number; f: Ficha; activa: boolean; anima: boolean}> = ({t, f, activa, anima}) => {
-  const p = anima ? iv(t, [f.en, f.en + 10 * F], [0, 1], MUELLE_E) : 1;
-  const dib = anima ? iv(t, [f.en, f.en + 8 * F], [0, 1], SUAVE) : 1;
+// Ficha de la pizarra: el marco se dibuja con tiza, la ficha sale con muelle (aplastar/estirar), el icono se traza y se rellena,
+// salta una ráfaga de polvo de tiza y después flota y respira
+const FichaIcono: React.FC<{t: number; f: Ficha; i: number; activa: boolean; anima: boolean}> = ({t, f, i, activa, anima}) => {
   if (anima && t < f.en) return <div style={{width: 170, height: 170}} />;
+  const ap = anima ? aparece(t, f.en, 9) : {sx: 1, sy: 1, rot: 0, op: 1};
+  const marco = anima ? lim((t - f.en) / (9 * F)) : 1;
+  const fl = flota(t, i * 1.3, activa ? 5 : 2.5);
   const col = activa ? C.amarillo : TIZA;
   return (
-    <svg width={170} height={170} viewBox="0 0 150 150" style={{overflow: 'visible', scale: `${0.6 + 0.4 * p}`, opacity: activa ? 1 : 0.55}}>
+    <svg width={170} height={170} viewBox="0 0 150 150" style={{overflow: 'visible', opacity: (activa ? 1 : 0.55) * ap.op,
+      transform: `translateY(${fl.y}px) scale(${ap.sx * fl.s}, ${ap.sy * fl.s}) rotate(${ap.rot}deg)`}}>
       <rect x={8} y={8} width={134} height={134} rx={30} fill={activa ? `rgba(${GLOW_AMARILLO},0.12)` : 'rgba(255,255,255,0.04)'} stroke={col} strokeWidth={5}
-        pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - dib} style={{filter: activa ? `url(#tiza8) drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.6))` : 'url(#tiza8)'}} />
-      <g transform="translate(39 39) scale(3)" opacity={Math.min(1, dib * 1.5)}><path d={f.d} fill={col} /></g>
+        pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - marco} style={{filter: activa ? `url(#tiza8) drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.6))` : 'url(#tiza8)'}} />
+      {anima ? <IconoTrazado d={f.d} t={t} en={f.en + 2 * F} color={col} size={74} x={38} y={38} /> : <g transform="translate(38 38) scale(3.08)"><path d={f.d} fill={col} /></g>}
+      {anima && <Pulso t={t} en={f.en} x={75} y={75} r={68} color={col} />}
+      {anima && <Particulas t={t} en={f.en} x={75} y={75} n={9} radio={115} colores={[C.amarillo, TIZA]} />}
     </svg>
   );
 };
-const Columna: React.FC<{t: number; left: number; titulo: string; icono: string; fichas: Ficha[]; activa: boolean; anima: boolean; brillo: number; gira?: number; extra?: React.ReactNode}> = ({
-  t, left, titulo, icono, fichas, activa, anima, brillo, gira = 0, extra,
-}) => (
-  <div style={{position: 'absolute', left, top: 250, width: 430, height: 700, borderRadius: 36, padding: '32px 20px',
-    background: `rgba(255,255,255,${0.03 + 0.05 * brillo})`, border: `3px solid rgba(${activa ? GLOW_AMARILLO : '242,239,230'},${activa ? 0.55 + 0.45 * brillo : 0.22})`,
-    boxShadow: brillo > 0 ? `0 0 ${40 * brillo}px rgba(${GLOW_AMARILLO},${0.35 * brillo})` : 'none', scale: `${1 + 0.03 * brillo}`, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-    <div style={{display: 'flex', alignItems: 'center', gap: 10, height: 70, whiteSpace: 'nowrap'}}>
-      <svg width={44} height={44} viewBox="0 0 24 24" style={{rotate: `${gira}deg`, flexShrink: 0}}><path d={icono} fill={activa ? C.amarillo : TIZA} /></svg>
-      <span style={{...H, fontSize: 35, letterSpacing: '0.02em', color: activa ? C.amarillo : TIZA, textShadow: activa ? glow(GLOW_AMARILLO, 0.8) : 'none', filter: 'url(#tiza8)'}}>{titulo}</span>
+const Columna: React.FC<{t: number; t0: number; lado: number; left: number; titulo: string; icono: string; fichas: Ficha[]; activa: boolean; anima: boolean; brillo: number; gira?: number; extra?: React.ReactNode}> = ({
+  t, t0, lado, left, titulo, icono, fichas, activa, anima, brillo, gira = 0, extra,
+}) => {
+  // entra deslizando desde su lado con muelle; el título se escribe de izquierda a derecha
+  const m = muelle(t, t0 + (lado > 0 ? 0.08 : 0), 2.2, 7);
+  const escribe = lim((t - t0 - 0.25) / 0.45);
+  const respira = 0.85 + 0.15 * Math.sin(t * 4);
+  return (
+    <div style={{position: 'absolute', left, top: 250, width: 430, height: 700, borderRadius: 36, padding: '32px 20px',
+      background: `rgba(255,255,255,${0.03 + 0.05 * brillo})`, border: `3px solid rgba(${activa ? GLOW_AMARILLO : '242,239,230'},${activa ? 0.55 + 0.45 * brillo : 0.22})`,
+      boxShadow: brillo > 0 ? `0 0 ${40 * brillo * respira}px rgba(${GLOW_AMARILLO},${0.35 * brillo})` : 'none',
+      translate: `${(1 - m) * lado * 160}px 0px`, opacity: lim(m * 1.6), scale: `${1 + 0.03 * brillo}`, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+      <div style={{display: 'flex', alignItems: 'center', gap: 10, height: 70, whiteSpace: 'nowrap', clipPath: `inset(-10% ${(1 - escribe) * 100}% -10% -5%)`}}>
+        <svg width={44} height={44} viewBox="0 0 24 24" style={{rotate: `${gira}deg`, flexShrink: 0}}><path d={icono} fill={activa ? C.amarillo : TIZA} /></svg>
+        <span style={{...H, fontSize: 35, letterSpacing: '0.02em', color: activa ? C.amarillo : TIZA, textShadow: activa ? glow(GLOW_AMARILLO, 0.8) : 'none', filter: 'url(#tiza8)'}}>{titulo}</span>
+      </div>
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 170px)', gap: 28, marginTop: 40}}>
+        {fichas.map((f, i) => <FichaIcono key={i} t={t} f={f} i={i + (lado > 0 ? 4 : 0)} activa={activa} anima={anima} />)}
+      </div>
+      {extra}
     </div>
-    <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 170px)', gap: 28, marginTop: 40}}>
-      {fichas.map((f, i) => <FichaIcono key={i} t={t} f={f} activa={activa} anima={anima} />)}
-    </div>
-    {extra}
-  </div>
-);
+  );
+};
+// Flecha de "una parte" → "otra parte": se dibuja con un cometa en la punta y la punta sale con muelle al llegar
+const FLECHA_P3: [number, number, number, number, number, number, number, number] = [330, 975, 420, 1050, 660, 1050, 750, 975];
+const enBezier = (k: number) => {
+  const [x0, y0, x1, y1, x2, y2, x3, y3] = FLECHA_P3;
+  const u = 1 - k;
+  return [u * u * u * x0 + 3 * u * u * k * x1 + 3 * u * k * k * x2 + k * k * k * x3, u * u * u * y0 + 3 * u * u * k * y1 + 3 * u * k * k * y2 + k * k * k * y3];
+};
 const Pizarra: React.FC<{t: number}> = ({t}) => {
   const fase = PIZARRA.findIndex((p) => t >= p.a && t < p.b);
   if (fase < 0) return null;
   const {a} = PIZARRA[fase];
-  const entra = iv(t, [a, a + 12 * F], [0, 1], MUELLE_E);
-  const raya = iv(t, [a + 0.1, a + 0.6], [0, 1], SUAVE);
+  const raya = lim((t - a - 0.15) / 0.5);
   // fase 0: se rellena INSTALACIÓN; fase 1: se rellena MANTENIMIENTO; fase 2: una parte → otra parte
   const brilloIzq = fase === 2 ? iv(t, [PARTE1 - 0.1, PARTE1 + 0.3, OTRA - 0.2, OTRA + 0.2], [0, 1, 1, 0.25]) : 0;
   const brilloDer = fase === 2 ? iv(t, [OTRA, OTRA + 0.4], [0, 1]) : fase === 1 ? iv(t, [MENSUAL - 1.2, MENSUAL - 0.8], [0, 0.8]) : 0;
   const giro = fase === 2 && t > SEGUIR ? (t - SEGUIR) * 160 : fase === 1 && t > MENSUAL - 1.16 ? (t - MENSUAL + 1.16) * 90 : 0;
-  const flecha = fase === 2 ? iv(t, [OTRA - 0.15, OTRA + 0.35], [0, 1], SUAVE) : 0;
-  const cal = fase === 1 ? iv(t, [MENSUAL, MENSUAL + 10 * F], [0, 1], MUELLE_E) : 0;
+  const flecha = fase === 2 ? lim((t - OTRA + 0.15) / 0.5) : 0;
+  const fe = 1 - Math.pow(1 - flecha, 3);
+  const [cx, cy] = enBezier(fe);
+  const ang = Math.atan2(FLECHA_P3[7] - FLECHA_P3[5], FLECHA_P3[6] - FLECHA_P3[4]);
+  const punta = aparece(t, OTRA + 0.35, 0);
+  const cal = fase === 1 ? aparece(t, MENSUAL, 0) : null;
+  const kcal = t - MENSUAL;
   return (
     <AbsoluteFill>
       <FiltroTiza />
@@ -274,99 +288,153 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
       <AbsoluteFill style={{background: 'radial-gradient(ellipse 95% 70% at 50% 38%, #2a3631 0%, #18201c 62%, #0f1412 100%)'}} />
       <AbsoluteFill style={{background: 'radial-gradient(ellipse 30% 9% at 30% 16%, rgba(255,255,255,0.05), transparent), radial-gradient(ellipse 26% 8% at 72% 84%, rgba(255,255,255,0.045), transparent), radial-gradient(ellipse 40% 10% at 60% 52%, rgba(255,255,255,0.03), transparent)'}} />
       <div style={{position: 'absolute', inset: 34, borderRadius: 30, border: '3px solid rgba(255,255,255,0.07)'}} />
-      <div style={{position: 'absolute', inset: 0, opacity: Math.min(1, entra * 1.5), scale: `${0.94 + 0.06 * entra}`}}>
-        <Columna t={t} left={100} titulo="INSTALACIÓN" icono={ICONO.instalar} fichas={IZQ} activa={fase === 0 || brilloIzq > 0.3} anima={fase === 0} brillo={brilloIzq} />
-        <Columna t={t} left={550} titulo="MANTENIMIENTO" icono={ICONO.ciclo} fichas={fase === 0 ? [] : DER} activa={fase >= 1 && (fase === 1 || brilloDer > 0.3)} anima={fase === 1} brillo={brilloDer} gira={giro}
-          extra={fase === 0 ? (
-            <div style={{marginTop: 90, ...H, fontSize: 170, color: TIZA, opacity: 0.35 + 0.15 * Math.sin(t * 5), filter: 'url(#tiza8)'}}>?</div>
-          ) : cal > 0 ? (
-            <svg width={120} height={120} viewBox="0 0 24 24" style={{position: 'absolute', right: -34, top: -70, scale: `${cal}`, rotate: `${(1 - cal) * -30}deg`, filter: `drop-shadow(0 0 14px rgba(${GLOW_AMARILLO},0.9))`}}>
-              <circle cx={12} cy={12} r={11.5} fill={C.amarillo} />
-              <g transform="translate(5 5) scale(0.58)"><path d={ICONO.calendario} fill="#1b1b20" /></g>
-            </svg>
-          ) : null} />
-        {/* raya de tiza entre columnas */}
-        <svg width={1080} height={1100} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-          <path d="M 540 270 L 541 930" stroke={TIZA} strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - raya} opacity={0.35} style={{filter: 'url(#tiza8)'}} />
-          {flecha > 0 && (
-            <path d="M 330 975 C 420 1050, 660 1050, 750 975 M 722 965 L 752 975 L 738 1003" fill="none" stroke={C.amarillo} strokeWidth={8} strokeLinecap="round" strokeLinejoin="round"
-              pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - flecha} style={{filter: `url(#tiza8) drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.9))`}} />
-          )}
-        </svg>
-      </div>
+      <Columna t={t} t0={a} lado={-1} left={100} titulo="INSTALACIÓN" icono={ICONO.instalar} fichas={IZQ} activa={fase === 0 || brilloIzq > 0.3} anima={fase === 0} brillo={brilloIzq} />
+      <Columna t={t} t0={a} lado={1} left={550} titulo="MANTENIMIENTO" icono={ICONO.ciclo} fichas={fase === 0 ? [] : DER} activa={fase >= 1 && (fase === 1 || brilloDer > 0.3)} anima={fase === 1} brillo={brilloDer} gira={giro}
+        extra={fase === 0 ? (
+          // la incógnita: bota, se balancea y parpadea esperando a "¿qué ocurre después?"
+          <div style={{marginTop: 90, ...H, fontSize: 170, color: TIZA, opacity: 0.32 + 0.18 * Math.sin(t * 5), filter: 'url(#tiza8)',
+            translate: `0px ${-Math.abs(Math.sin(t * 3.2)) * 18}px`, rotate: `${Math.sin(t * 2.4) * 8}deg`}}>?</div>
+        ) : cal && kcal > 0 ? (
+          // calendario "mensual": sale con muelle y se balancea como un colgante
+          <svg width={120} height={120} viewBox="0 0 24 24" style={{position: 'absolute', right: -20, top: -150, overflow: 'visible', transformOrigin: '50% 0%',
+            transform: `scale(${cal.sx}, ${cal.sy}) rotate(${22 * Math.exp(-3 * kcal) * Math.sin(kcal * 11)}deg)`, filter: `drop-shadow(0 0 14px rgba(${GLOW_AMARILLO},0.9))`}}>
+            <circle cx={12} cy={12} r={11.5} fill={C.amarillo} />
+            <g transform="translate(5 5) scale(0.58)"><path d={ICONO.calendario} fill="#1b1b20" /></g>
+          </svg>
+        ) : null} />
+      {/* raya de tiza entre columnas (con polvo al terminar) y flecha "una parte" → "otra parte" */}
+      <svg width={1080} height={1100} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
+        <path d="M 540 270 L 541 930" stroke={TIZA} strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - raya} opacity={0.35} style={{filter: 'url(#tiza8)'}} />
+        <Particulas t={t} en={a + 0.65} x={541} y={930} n={6} radio={50} colores={[TIZA, '#cfd8d3']} />
+        {flecha > 0 && (
+          <g style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.9))`}}>
+            <path d={`M ${FLECHA_P3[0]} ${FLECHA_P3[1]} C ${FLECHA_P3[2]} ${FLECHA_P3[3]}, ${FLECHA_P3[4]} ${FLECHA_P3[5]}, ${FLECHA_P3[6]} ${FLECHA_P3[7]}`} fill="none" stroke={C.amarillo} strokeWidth={9} strokeLinecap="round"
+              pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - fe} />
+            {flecha < 1 && <circle cx={cx} cy={cy} r={11} fill="#fff" />}
+            {t >= OTRA + 0.35 && (
+              <g transform={`translate(${FLECHA_P3[6]} ${FLECHA_P3[7]}) scale(${punta.sx} ${punta.sy}) translate(${-FLECHA_P3[6]} ${-FLECHA_P3[7]})`}>
+                <path d={puntaFlecha(FLECHA_P3[6] + Math.cos(ang) * 8, FLECHA_P3[7] + Math.sin(ang) * 8, ang, 30, 20)} fill="none" stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" />
+              </g>
+            )}
+            <Particulas t={t} en={OTRA + 0.35} x={FLECHA_P3[6]} y={FLECHA_P3[7]} n={8} radio={70} />
+          </g>
+        )}
+      </svg>
     </AbsoluteFill>
   );
 };
 
-// "aportar valor de forma continua": un ciclo que se dibuja alrededor del valor y no para de girar
+// "aportar valor de forma continua": un ciclo que se dibuja en el sentido en que gira (la punta siempre va por delante),
+// con un cometa en la punta mientras se dibuja, puntos que orbitan y el valor (destello) que salta en el centro
 const CICLO = {a: 50.2, b: 53.3, valor: 50.8, continua: 51.56};
+const R_CICLO = 108;
 const Ciclo: React.FC<{t: number}> = ({t}) => {
   const {a, b, valor, continua} = CICLO;
-  const dib = iv(t, [a, a + 14 * F], [0, 1], SUAVE);
-  const v = iv(t, [valor, valor + 10 * F], [0, 1], MUELLE_E);
-  const giro = (t - a) * 70 + Math.max(0, t - continua) * 160;
+  const dib = 1 - Math.pow(1 - lim((t - a) / 0.7), 3);
+  const fin = (-90 + 300 * dib) * (Math.PI / 180); // ángulo del final del arco (sentido horario en pantalla)
+  const ex = 130 + Math.cos(fin) * R_CICLO, ey = 130 + Math.sin(fin) * R_CICLO;
+  const tang = fin + Math.PI / 2; // dirección de avance en sentido horario
+  const giro = (t - a) * 55 + Math.max(0, t - continua) * 150;
+  const v = aparece(t, valor, 25);
+  const punta = aparece(t, a + 0.7, 0);
+  const fl = flota(t, 2, 5);
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <svg style={{position: 'absolute', left: 540 - 130, top: 130, overflow: 'visible', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))'}} width={260} height={260}>
-        <g transform={`rotate(${giro} 130 130)`}>
-          <path d="M 130 22 A 108 108 0 1 1 33 82" fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - dib}
-            style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))`}} />
-          {dib > 0.95 && <path d="M 18 64 L 33 86 L 58 76" fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" />}
+      <svg style={{position: 'absolute', left: 540 - 130, top: 130 + fl.y, overflow: 'visible', filter: SOMBRA_ICONOS}} width={260} height={260}>
+        <g transform={`rotate(${giro} 130 130)`} style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))`}}>
+          <path d={`M 130 ${130 - R_CICLO} A ${R_CICLO} ${R_CICLO} 0 ${dib > 0.5 ? 1 : 0} 1 ${ex} ${ey}`} fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" />
+          {dib < 1 && <circle cx={ex} cy={ey} r={12} fill="#fff" />}
+          {t >= a + 0.7 && (
+            <g transform={`translate(${ex} ${ey}) scale(${punta.sx} ${punta.sy}) translate(${-ex} ${-ey})`}>
+              <path d={puntaFlecha(ex + Math.cos(tang) * 12, ey + Math.sin(tang) * 12, tang, 30, 24)} fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+          )}
+          {t >= a + 0.7 && [0, 1, 2].map((k) => {
+            const g = ((t - a) * 2.4 + k * 2.1) % (Math.PI * 2);
+            return <circle key={k} cx={130 + Math.cos(g) * (R_CICLO + 26)} cy={130 + Math.sin(g) * (R_CICLO + 26)} r={6} fill="#fff" opacity={0.85} />;
+          })}
         </g>
-        <g transform={`translate(130 130) scale(${v}) translate(-48 -48) scale(4)`}><path d={ICONO.chispa} fill="#fff" /></g>
+        {t >= valor && (
+          <g transform={`translate(130 130) scale(${v.sx} ${v.sy}) rotate(${v.rot + Math.sin(t * 3) * 6})`}>
+            <g transform="translate(-48 -48) scale(4)"><path d={ICONO.chispa} fill="#fff" /></g>
+          </g>
+        )}
+        <Particulas t={t} en={valor} x={130} y={130} n={12} radio={150} />
+        <Destello t={t} en={continua} x={238} y={40} tam={26} color={C.amarillo} />
+        <Destello t={t} en={continua + 0.3} x={20} y={210} tam={20} />
+        <Destello t={t} en={continua + 0.6} x={232} y={226} tam={18} color={C.amarillo} />
       </svg>
     </Ventana>
   );
 };
 
-// "este modelo de instalación más mantenimiento": las dos piezas del modelo, unidas con un "+"
+// "este modelo de instalación más mantenimiento": las dos piezas saltan con muelle, cada una con su órbita punteada,
+// el "+" gira hasta su sitio y una chispa viaja de una pieza a la otra
 const MODELO = {a: 56.72, b: 59.7, instalacion: 57.36, mas: 58.04, mantenimiento: 58.24};
 const Modelo: React.FC<{t: number}> = ({t}) => {
   const {a, b, instalacion, mas, mantenimiento} = MODELO;
-  const pieza = (en: number, d: string, x: number, gira: boolean) => {
-    const p = iv(t, [en, en + 11 * F], [0, 1], MUELLE_E);
+  const pieza = (en: number, d: string, x: number, gira: boolean, fase: number) => {
     if (t < en) return null;
+    const ap = aparece(t, en, -18);
+    const fl = flota(t, fase, 5);
     return (
-      <g transform={`translate(${x} 130) scale(${p}) rotate(${(1 - p) * -40})`}>
-        <circle r={96} fill="rgba(16,16,20,0.82)" stroke={C.amarillo} strokeWidth={7} style={{filter: `drop-shadow(0 0 14px rgba(${GLOW_AMARILLO},0.7))`}} />
-        <g transform={`rotate(${gira ? (t - en) * 120 : 0}) translate(-48 -48) scale(4)`}><path d={d} fill={C.amarillo} /></g>
+      <g transform={`translate(${x} ${130 + fl.y})`}>
+        <g transform={`rotate(${(t - en) * 40})`}>
+          <circle r={118} fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth={4} strokeDasharray="6 16" opacity={lim((t - en) / 0.4)} />
+        </g>
+        <g transform={`scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+          <circle r={96} fill="rgba(16,16,20,0.82)" stroke={C.amarillo} strokeWidth={7} style={{filter: `drop-shadow(0 0 14px rgba(${GLOW_AMARILLO},0.7))`}} />
+          <g transform={`rotate(${gira ? (t - en) * 120 : 0})`}><IconoTrazado d={d} t={t} en={en + 2 * F} color={C.amarillo} size={96} x={-48} y={-48} /></g>
+        </g>
+        <Particulas t={t} en={en} x={0} y={0} n={10} radio={150} />
       </g>
     );
   };
-  const m = iv(t, [mas, mas + 8 * F], [0, 1], MUELLE_E);
+  const m = muelle(t, mas, 2.4, 6);
+  const viaje = lim((t - mantenimiento - 0.35) / 0.6);
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <svg style={{position: 'absolute', left: 0, top: 110, overflow: 'visible', filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.7))'}} width={1080} height={260}>
-        {pieza(instalacion, ICONO.instalar, 330, false)}
+      <svg style={{position: 'absolute', left: 0, top: 110, overflow: 'visible', filter: SOMBRA_ICONOS}} width={1080} height={260}>
+        {pieza(instalacion, ICONO.instalar, 330, false, 0)}
         {t >= mas && (
-          <g transform={`translate(540 130) scale(${m})`}>
+          <g transform={`translate(540 130) scale(${m}) rotate(${(1 - m) * 90})`}>
             <path d="M -30 0 H 30 M 0 -30 V 30" stroke="#fff" strokeWidth={14} strokeLinecap="round" />
           </g>
         )}
-        {pieza(mantenimiento, ICONO.ciclo, 750, true)}
+        {pieza(mantenimiento, ICONO.ciclo, 750, true, 1.6)}
+        {viaje > 0 && viaje < 1 && <circle cx={330 + 420 * viaje} cy={130 - Math.sin(viaje * Math.PI) * 70} r={10} fill={C.amarillo} style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},1))`}} />}
+        <Destello t={t} en={mantenimiento + 0.95} x={750} y={130} tam={30} />
       </svg>
     </Ventana>
   );
 };
 
-// Barra de progreso del montaje final (identificar → ofrecer → organizar)
+// Barra de progreso del montaje final (identificar → ofrecer → organizar): cada paso salta con muelle y lanza un pulso;
+// la barra se llena con un cometa brillante en la punta
 const MONTAJE = [{a: 62.8, b: 64.68}, {a: 64.68, b: 65.96}, {a: 65.96, b: 67.46}];
 const Progreso: React.FC<{t: number}> = ({t}) => {
   const ini = MONTAJE[0].a, fin = MONTAJE[MONTAJE.length - 1].b;
+  const x0 = 150, ancho = 780, tramo = (ancho - 2 * 22) / 3;
   return (
     <Ventana suave t={t} a={ini} b={fin}>
-      <div style={{position: 'absolute', left: 150, right: 150, top: 1720, display: 'flex', alignItems: 'center', gap: 22, filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))'}}>
+      <svg style={{position: 'absolute', left: 0, top: 1690, overflow: 'visible', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.8))'}} width={1080} height={80}>
         {MONTAJE.map((m, i) => {
-          const lleno = iv(t, [m.a, m.b], [0, 1]);
-          const punto = iv(t, [m.a, m.a + 8 * F], [0, 1], MUELLE_E);
+          const xa = x0 + i * (tramo + 22);
+          const lleno = lim((t - m.a) / (m.b - m.a));
+          const ap = aparece(t, m.a, 0);
           return (
-            <div key={i} style={{flex: 1, position: 'relative', height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.28)'}}>
-              <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: `${lleno * 100}%`, borderRadius: 6, background: C.amarillo, boxShadow: `0 0 12px rgba(${GLOW_AMARILLO},0.9)`}} />
-              <div style={{position: 'absolute', left: -14, top: -11, width: 34, height: 34, borderRadius: '50%', background: t >= m.a ? C.amarillo : 'rgba(255,255,255,0.5)', border: '4px solid #fff', scale: `${t >= m.a ? 0.7 + 0.3 * punto : 0.7}`}} />
-            </div>
+            <g key={i}>
+              <rect x={xa} y={34} width={tramo} height={12} rx={6} fill="rgba(255,255,255,0.28)" />
+              <rect x={xa} y={34} width={tramo * lleno} height={12} rx={6} fill={C.amarillo} style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.9))`}} />
+              {lleno > 0 && lleno < 1 && <circle cx={xa + tramo * lleno} cy={40} r={9} fill="#fff" style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},1))`}} />}
+              <Pulso t={t} en={m.a} x={xa} y={40} r={18} color={C.amarillo} />
+              <g transform={`translate(${xa} 40) scale(${t >= m.a ? 0.7 + 0.3 * ap.sx : 0.7} ${t >= m.a ? 0.7 + 0.3 * ap.sy : 0.7})`}>
+                <circle r={17} fill={t >= m.a ? C.amarillo : 'rgba(255,255,255,0.5)'} stroke="#fff" strokeWidth={4} />
+              </g>
+            </g>
           );
         })}
-      </div>
+      </svg>
     </Ventana>
   );
 };
@@ -603,7 +671,7 @@ export const ReelA8: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Marcador t={t} n={1} a={18.72} paso={0} color="#2ee59d" tipo="v" top={200} desde={18.42} hasta={19.3} />
+      <Visto t={t} en={18.72} a={18.42} b={19.3} top={150} />
       <Ciclo t={t} />
       <Modelo t={t} />
       <Progreso t={t} />

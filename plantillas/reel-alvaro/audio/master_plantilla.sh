@@ -1,5 +1,5 @@
 #!/bin/bash
-# Masteriza el audio del reel: voz tratada + efectos (stem de Remotion) + música de fondo con ducking → -14 LUFS, pico < -1 dB
+# Masteriza el audio del reel: voz del cliente SIN retocar + efectos (stem de Remotion) + música de fondo con ducking → -14 LUFS, pico < -1 dB
 # La música se calibra sola: queda SEP LU por debajo de la voz (de fondo, se oye pero nunca tapa la voz).
 # Uso: master.sh <video_con_stem_sfx.mp4> <salida.mp4> [crf_video|copy]
 set -e
@@ -27,16 +27,14 @@ MGAIN=$(python3 -c "print(round(($IV-$SEP)-($IM),2))")
 echo "voz $IV LUFS, música $IM LUFS → ganancia música $MGAIN dB"
 FC="$(fc $MGAIN);
 [0:a]aresample=48000[sfx];
-[voz][musd][sfx]amix=inputs=3:duration=first:normalize=0,alimiter=limit=0.84:attack=3:release=60[mix]; [vm]anullsink"
+[voz][musd][sfx]amix=inputs=3:duration=first:normalize=0[mix]; [vm]anullsink"
 
-# 1ª pasada: medir
-ffmpeg -hide_banner -nostats -v info -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1.5:LRA=9:print_format=json[ao]" -map "[ao]" -f null - 2> medida.txt
-read IL TP LRA TH OFF <<< $(python3 -c "
-import json;t=open('medida.txt').read();d=json.loads(t[t.rindex('{'):t.rindex('}')+1])
-print(d['input_i'],d['input_tp'],d['input_lra'],d['input_thresh'],d['target_offset'])")
-echo "medido I=$IL TP=$TP LRA=$LRA"
-# 2ª pasada: aplicar
+# Normalización LINEAL (la voz del cliente no se toca): se mide la mezcla y se aplica una ganancia fija hasta -14 LUFS;
+# después solo un limitador SIN autonivel (level=0) y sobremuestreado (picos entre muestras) que actúa en los picos sueltos.
+IL=$(ffmpeg -hide_banner -nostats -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "$FC;[mix]ebur128=framelog=quiet[x]" -map "[x]" -f null - 2>&1 | grep -E "^\s+I:" | tail -1 | awk '{print $2}')
+G=$(python3 -c "print(round(-14-($IL),2))")
+echo "mezcla $IL LUFS → ganancia lineal $G dB"
 if [ "$V" = copy ]; then VC="-c:v copy"; else VC="-c:v libx264 -preset slow -crf $V -pix_fmt yuv420p -profile:v high"; fi
-ffmpeg -v error -y -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1.5:LRA=9:measured_I=$IL:measured_TP=$TP:measured_LRA=$LRA:measured_thresh=$TH:offset=$OFF:linear=true[ao]" \
+ffmpeg -v error -y -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "$FC;[mix]volume=${G}dB,aresample=192000,alimiter=limit=0.82:attack=1:release=50:level=0,aresample=48000[ao]" \
   -map 0:v -map "[ao]" $VC -c:a aac -b:a 320k -ar 48000 -movflags +faststart -t $DUR "$OUT"
 ffmpeg -i "$OUT" -af ebur128=framelog=quiet:peak=true -vn -f null - 2>&1 | grep -E " I:|Peak:" | head -2

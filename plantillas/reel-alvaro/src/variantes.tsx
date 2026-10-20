@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador';
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo';
 export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos' | 'garabato';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte'};
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -89,6 +89,11 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       // se hunde como una tecla al pulsarla: baja, se aplasta un poco y rebota a su sitio
       anim = {translate: `0px ${Math.sin(Math.min(1, p) * Math.PI) * 10 - s * 24}px`, scale: `${1 + 0.06 * Math.sin(p * Math.PI)} ${1 - 0.12 * Math.sin(p * Math.PI)}`,
         opacity: Math.min(1, p * 4) * (1 - s), transformOrigin: '50% 100%'};
+      break;
+    case 'persiana':
+      // baja desde arriba detrás de una máscara (como una persiana que se abre) y se asienta con un pequeño rebote
+      mascara = (p > 0 && p < 1) || s > 0;
+      anim = {translate: `0px ${(1 - MUELLE(p)) * -100 + s * 100}%`, opacity: Math.min(1, p * 3) * (1 - s * 0.5)};
       break;
     case 'bisagra':
       // gira desde el borde izquierdo como una tarjeta que se abre y se asienta con un pequeño rebote
@@ -171,6 +176,13 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       const f = k >= 0 && k < parpadeo.length ? parpadeo[k] : 1;
       const brillo = 1 + 0.9 * Math.max(0, 1 - (t - en) / (12 * F));
       return {opacity: (t < en ? 0 : f) * (1 - s), scale: 1.06 - 0.06 * e - 0.06 * s, filter: `brightness(${brillo}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
+    }
+    case 'latigo': {
+      // entra de lado como un latigazo: muy inclinada y desenfocada en horizontal, se pasa un poco y vuelve a su sitio
+      const q = Math.min(1, Math.max(0, (t - en) / (11 * F)));
+      const m = MUELLE(q);
+      return {opacity: op, translate: `${(1 - m) * -140}px ${-20 * s}px`, transform: `skewX(${(1 - EXPO_OUT(q)) * -24}deg)`,
+        filter: `blur(${(1 - EXPO_OUT(q)) * 7 + s * 8}px)`, scale: 1 - 0.06 * s};
     }
     case 'marcador': {
       // entra con un muelle desde la base y una leve inclinación que se endereza (sin líneas ni subrayados)
@@ -345,6 +357,13 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       const f = (k * 0.9) % 1;
       const g = f < 0.4 ? Math.sin((f / 0.4) * Math.PI) : 0;
       return {transform: `perspective(300px) rotateX(${(f < 0.4 ? f / 0.4 : 0) * 360}deg)`, translate: `0px ${g * 8}px`};
+    }
+    case 'escalon': {
+      // baja a saltos, como escalones (tres pasos y vuelve arriba)
+      const f = (k * 1.5) % 1;
+      const paso = Math.floor(f * 3);
+      const dentro = (f * 3) % 1;
+      return {translate: `0px ${(paso + EXPO_OUT(Math.min(1, dentro * 3))) * 9 - 9}px`, opacity: f > 0.92 ? 1 - (f - 0.92) / 0.08 : 1};
     }
     case 'resorte': {
       // cae y rebota como un muelle que se va calmando; repite cada 1,4 s
