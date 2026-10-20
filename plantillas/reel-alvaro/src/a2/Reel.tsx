@@ -165,7 +165,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -200,7 +200,7 @@ const Telefono: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
   const pop = iv(t, [a, a + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   const vib = t < b - 0.3 ? Math.sin(t * 60) * 7 : 0;
   return (
-    <Ventana t={t} a={a} b={b}>
+    <Ventana suave t={t} a={a} b={b}>
       <div style={{position: 'absolute', left: 540 - 110, top: 260, width: 220, height: 220, scale: 0.6 + 0.4 * pop, filter: SOMBRA}}>
         {[0, 1].map((k) => {
           const p = ((t - a) * 1.6 + k * 0.5) % 1;
@@ -221,7 +221,7 @@ const Telefono: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
 
 // Restaurante que tarda en responder: burbujas de mensajes sin leer que se apilan + reloj que gira
 const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => (
-  <Ventana t={t} a={a} b={b}>
+  <Ventana suave t={t} a={a} b={b}>
     <div style={{position: 'absolute', left: 150, right: 330, top: 230, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start', filter: SOMBRA}}>
       {[0, 1, 2].map((k) => {
         const en = a + 0.15 + k * 0.4;
@@ -249,7 +249,7 @@ const Pasos: React.FC<{t: number}> = ({t}) => {
   const x0 = 270;
   const x1 = 810;
   return (
-    <Ventana t={t} a={55.04} b={60.76}>
+    <Ventana suave t={t} a={55.04} b={60.76}>
       <svg style={{position: 'absolute', left: 0, top: 260, overflow: 'visible', filter: SOMBRA}} width={1080} height={120}>
         <line x1={x0} y1={60} x2={x1} y2={60} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeLinecap="round" />
         {PASOS.map((en, i) => {

@@ -108,10 +108,10 @@ const camara = (t: number) => {
 type B = {src: string; a: number; b: number; etiqueta?: React.ReactNode; desde?: number; foco: number; vertical?: boolean};
 const BROLL: B[] = [
   {src: 'ordenadores', a: 9.6, b: 10.36, desde: 1, foco: 0.5},
-  {src: 'codigo', a: 10.36, b: 10.88, desde: 1, foco: 0.5, vertical: true},
+  {src: 'codigo', a: 10.36, b: 10.88, desde: 3, foco: 0.5},
   {src: 'matematicas', a: 10.88, b: 12.12, desde: 2, foco: 0.5},
   {src: 'estudiando', a: 12.12, b: 14.8, desde: 1, foco: 0.5},
-  {src: 'peluqueria', a: 27.4, b: 32.56, desde: 1, foco: 0.5},
+  {src: 'peluqueria', a: 27.4, b: 32.56, desde: 1, foco: 0.5, vertical: true},
 ];
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
@@ -181,7 +181,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -235,7 +235,7 @@ const Comparacion: React.FC<{t: number}> = ({t}) => {
     );
   };
   return (
-    <Ventana t={t} a={15.56} b={26.3}>
+    <Ventana suave t={t} a={15.56} b={26.3}>
       {tarjeta(90, <>desarrollar<br />ia</>, 15.56, 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z', 22.68)}
       {tarjeta(580, <>vender<br /><span style={amarillo}>soluciones</span><br />de ia</>, 20.76, 'M12 2 1 7l11 5 9-4.1V17h2V7L12 2zM5 13.2v4L12 21l7-3.8v-4L12 17l-7-3.8z')}
       <div style={{position: 'absolute', left: 480, top: 330, width: 120, textAlign: 'center', ...H, fontSize: 50, opacity: iv(t, [20.76, 21.0], [0, 1])}}>vs</div>
@@ -252,7 +252,7 @@ const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
   const visibles = llegadas.filter((en) => t >= en).length;
   const salida = iv(t, [b - 0.3, b], [0, 1], Easing.bezier(0.55, 0, 1, 0.45));
   return (
-    <Ventana t={t} a={a} b={b}>
+    <Ventana suave t={t} a={a} b={b}>
       <div style={{position: 'absolute', left: 110, right: 110, top: 190, height: 460, opacity: 1 - salida, filter: SOMBRA}}>
         {llegadas.map((en, k) => {
           if (t < en) return null;

@@ -172,7 +172,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -207,7 +207,7 @@ const Telefono: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
   const pop = iv(t, [a, a + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   const vib = t < b - 0.3 ? Math.sin(t * 60) * 7 : 0;
   return (
-    <Ventana t={t} a={a} b={b}>
+    <Ventana suave t={t} a={a} b={b}>
       <div style={{position: 'absolute', left: 540 - 110, top: 260, width: 220, height: 220, scale: 0.6 + 0.4 * pop, filter: SOMBRA}}>
         {[0, 1].map((k) => {
           const p = ((t - a) * 1.6 + k * 0.5) % 1;
@@ -235,7 +235,7 @@ const NODOS: [number, string][] = [
 const Flujo: React.FC<{t: number}> = ({t}) => {
   const xs = [230, 540, 850];
   return (
-    <Ventana t={t} a={20.56} b={27.3}>
+    <Ventana suave t={t} a={20.56} b={27.3}>
       <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
         {[0, 1].map((i) => {
           const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -273,7 +273,7 @@ const Cobro: React.FC<{t: number}> = ({t}) => {
   const a1 = iv(t, [52.72, 52.72 + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   const a2 = iv(t, [54.32, 54.32 + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   return (
-    <Ventana t={t} a={52.52} b={56.44}>
+    <Ventana suave t={t} a={52.52} b={56.44}>
       <svg style={{position: 'absolute', left: 0, top: 260, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
         <g transform={`translate(360 100) scale(${a1})`}>
           <circle r={85} fill={C.amarillo} style={{filter: `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))`}} />

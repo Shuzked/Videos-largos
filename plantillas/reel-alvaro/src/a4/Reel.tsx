@@ -171,7 +171,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -212,7 +212,7 @@ const CHIPS: Chip[] = [
   ['chatbots', 14.84, 800, 370, -2],
 ];
 const Pastillas: React.FC<{t: number; desde: number; fuera: number; retraso?: number}> = ({t, desde, fuera, retraso = 0}) => (
-  <Ventana t={t} a={desde} b={fuera + 0.6}>
+  <Ventana suave t={t} a={desde} b={fuera + 0.6}>
     {CHIPS.map(([txt, en0, x, y, giro], i) => {
       const en = retraso ? desde + i * retraso : en0;
       const p = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
@@ -251,7 +251,7 @@ const DosPartes: React.FC<{t: number}> = ({t}) => {
   };
   const enlace = iv(t, [41.92, 41.92 + 10 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
   return (
-    <Ventana t={t} a={26.08} b={43.48}>
+    <Ventana suave t={t} a={26.08} b={43.48}>
       <svg style={{position: 'absolute', left: 0, top: 230, overflow: 'visible', filter: SOMBRA}} width={1080} height={220}>
         <line x1={420} y1={110} x2={420 + 240 * enlace} y2={110} stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" style={{filter: `drop-shadow(0 0 12px rgba(${GLOW_AMARILLO},1))`}} />
         {icono(330, ICONO_CAPTAR, 28.52, [[32.12, 35.6]])}

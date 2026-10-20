@@ -102,7 +102,7 @@ const camara = (t: number) => {
 // foco = posición horizontal (0-1) de lo importante dentro del plano 16:9
 type B = {src: string; a: number; b: number; etiqueta?: React.ReactNode; desde?: number; foco: number; vertical?: boolean};
 const BROLL: B[] = [
-  {src: 'peluqueria', a: 9.16, b: 14.84, desde: 0.5, foco: 0.5},
+  {src: 'peluqueria', a: 9.16, b: 14.84, desde: 0.5, foco: 0.3},
   {src: 'clinica', a: 14.84, b: 18.8, desde: 1, foco: 0.5},
   {src: 'restaurante', a: 18.8, b: 24.4, desde: 2, foco: 0.5},
   {src: 'ciudad', a: 25.6, b: 28.36, desde: 4, foco: 0.5},
@@ -178,7 +178,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -219,7 +219,7 @@ const Barrio: React.FC<{t: number}> = ({t}) => {
   const dib = iv(t, [a - 0.2, a + 0.6], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
   const pop = iv(t, [a - 0.2, a + 0.2], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   return (
-    <Ventana t={t} a={a - 0.2} b={35.4}>
+    <Ventana suave t={t} a={a - 0.2} b={35.4}>
       <div style={{position: 'absolute', left: 120, top: 190, width: 840, height: 440, borderRadius: 44, overflow: 'hidden', background: 'rgba(20,22,28,0.82)',
         border: '2px solid rgba(255,255,255,0.2)', scale: 0.85 + 0.15 * pop, opacity: pop, filter: SOMBRA}}>
         <svg width={840} height={440}>
@@ -254,7 +254,7 @@ const NODOS: [number, string][] = [
 const Flujo: React.FC<{t: number}> = ({t}) => {
   const xs = [230, 540, 850];
   return (
-    <Ventana t={t} a={10.32} b={14.84}>
+    <Ventana suave t={t} a={10.32} b={14.84}>
       <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
         {[0, 1].map((i) => {
           const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));

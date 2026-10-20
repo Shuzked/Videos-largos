@@ -178,7 +178,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -221,7 +221,7 @@ const Llamada: React.FC<{t: number}> = ({t}) => {
   const ia = enIA(t);
   const seg = Math.max(0, Math.floor(t - a));
   return (
-    <Ventana t={t} a={a} b={b}>
+    <Ventana suave t={t} a={a} b={b}>
       <div style={{position: 'absolute', left: 140, right: 140, top: 200, height: 170, borderRadius: 40, background: 'rgba(18,18,22,0.78)', border: '2px solid rgba(255,255,255,0.18)',
         display: 'flex', alignItems: 'center', gap: 28, padding: '0 36px', scale: 0.8 + 0.2 * pop, opacity: pop, filter: SOMBRA}}>
         <div style={{width: 96, height: 96, borderRadius: '50%', background: '#2fd36b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -249,7 +249,7 @@ const NODOS: [number, string][] = [
 const Flujo: React.FC<{t: number}> = ({t}) => {
   const xs = [230, 540, 850];
   return (
-    <Ventana t={t} a={22.56} b={29.0}>
+    <Ventana suave t={t} a={22.56} b={29.0}>
       <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
         {[0, 1].map((i) => {
           const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));

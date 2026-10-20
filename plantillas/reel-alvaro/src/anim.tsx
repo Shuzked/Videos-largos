@@ -130,8 +130,18 @@ export const Son: React.FC<{s: string; en: number; db?: number; dur?: number}> =
 };
 
 // Muestra a sus hijos solo entre a y b (segundos)
-export const Ventana: React.FC<{t: number; a: number; b: number; children: React.ReactNode}> = ({t, a, b, children}) =>
-  t >= a && t < b ? <>{children}</> : null;
+// suave: las animaciones (Lottie) aparecen y desaparecen poco a poco: fundido + escala con rebote al entrar, fundido + encoger al salir
+export const Ventana: React.FC<{t: number; a: number; b: number; suave?: boolean; children: React.ReactNode}> = ({t, a, b, suave, children}) => {
+  if (t < a || t >= b) return null;
+  if (!suave) return <>{children}</>;
+  const entra = iv(t, [a, a + 9 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+  const sale = iv(t, [b - 8 * F, b], [0, 1], Easing.bezier(0.55, 0, 1, 0.45));
+  return (
+    <div style={{position: 'absolute', inset: 0, opacity: Math.min(1, iv(t, [a, a + 6 * F], [0, 1])) * (1 - sale), scale: 0.9 + 0.1 * entra - 0.08 * sale, transformOrigin: '50% 25%'}}>
+      {children}
+    </div>
+  );
+};
 
 // Frase en minúsculas palabra a palabra, cada una en su tiempo hablado (estilo "de marketing")
 export const Palabras: React.FC<{

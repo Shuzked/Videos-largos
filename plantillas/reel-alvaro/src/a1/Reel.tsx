@@ -184,7 +184,7 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 }) => {
   const d = n > 5 ? 82 : 130;
   return (
-    <Ventana t={t} a={desde} b={hasta}>
+    <Ventana suave t={t} a={desde} b={hasta}>
       <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
         {Array.from({length: n}, (_, i) => {
           const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
@@ -220,7 +220,7 @@ const Camino: React.FC<{t: number}> = ({t}) => {
   const x1 = 910;
   const top = 1560;
   return (
-    <Ventana t={t} a={pasos[0].a} b={pasos[4].b}>
+    <Ventana suave t={t} a={pasos[0].a} b={pasos[4].b}>
       <svg style={{position: 'absolute', left: 0, top: top - 40, overflow: 'visible'}} width={1080} height={80}>
         <line x1={x0} y1={40} x2={x1} y2={40} stroke="rgba(255,255,255,0.25)" strokeWidth={5} strokeLinecap="round" />
         {pasos.map((p, i) => {
