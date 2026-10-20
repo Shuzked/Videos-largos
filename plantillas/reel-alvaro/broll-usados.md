@@ -40,7 +40,7 @@ Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 |---|---|---|---|---|---|
 | A1 | mascara | muelle | rayos | bote | whoosh |
 | A2 | pop | sello | onda | pulso | swoosh2 |
-| A3 | enfoque | destello | chispas | desliza | slide2 |
+| A3 | enfoque | destello | chispas | desliza | whoosh |
 | A4 | deslizar | barrido | rayas | gira | swish |
 | A1 1E | maquina | glitch | cuadros | latido | swoosh3 |
 | A2 1E | giro | zoom | circulos | cae | whoosh |
@@ -48,7 +48,7 @@ Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 | A4 1E | espaciado | tinta | halo | vibra | slide2 |
 | A5 Evergreen | ola | eco | rombos | pendulo | swoosh2 |
 | A5 1E | estela | neon | estrella | elastica | slide |
-| A6 Evergreen | tecla | contorno | serpentinas | voltea | suck |
-| A7 Evergreen | rodar | cortina | polvo | salto | snaprev |
+| A6 Evergreen | tecla | contorno | serpentinas | voltea | whoosh |
+| A7 Evergreen | rodar | cortina | polvo | salto | whoosh |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.

@@ -557,7 +557,7 @@ export const ReelA7: React.FC = () => {
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="snaprev" en={c} db={-6} />
+        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 74.52, 74.74, 75.04, 75.34].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
