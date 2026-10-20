@@ -265,7 +265,10 @@ const GRANDES: Grande[] = [
   {a: 7.0, b: 8.3, top: 130, lineas: [{ws: [['que', 7.0], ['yo', 7.2], ['no', 7.4], ['había', 7.56]], size: 80}, {ws: [['elegido', 7.8, amarillo]], size: 180, golpe: true}]},
   // Montaje "el plan de siempre" (B-roll): alterna grande / subtítulo
   {a: 10.6, b: 11.2, top: 280, lineas: [{ws: [['que', 10.6], ['estudies', 10.76]], size: 130}]},
+  {a: 11.28, b: 12.4, top: 260, lineas: [{ws: [['que', 11.28], ['saques', 11.44]], size: 120}, {ws: [['buenas', 11.72], ['notas', 12.08, amarillo]], size: 120}]},
+  {a: 12.48, b: 14.1, top: 260, lineas: [{ws: [['que', 12.48], ['encuentres', 12.6]], size: 110}, {ws: [['un', 13.08], ['trabajo', 13.24], ['estable', 13.6, amarillo]], size: 110}]},
   {a: 14.2, b: 15.48, top: 260, lineas: [{ws: [['que', 14.2], ['cobres', 14.36]], size: 120}, {ws: [['tu', 14.8], ['sueldo', 15.0, amarillo]], size: 120}]},
+  {a: 15.56, b: 17.6, top: 260, lineas: [{ws: [['y', 15.56], ['que', 15.8], ['esperes', 15.92]], size: 110}, {ws: [['al', 16.48], ['fin', 16.68], ['de', 16.88]], size: 110}, {ws: [['semana', 17.0, amarillo]], size: 140, golpe: true}]},
   {a: 22.0, b: 23.45, top: 260, lineas: [{ws: [['yo', 22.0], ['estaba', 22.16], ['estudiando', 22.44]], size: 80}, {ws: [['empresariales', 22.84]], size: 120, golpe: true}]},
   // 21 años
   {a: 24.76, b: 25.9, top: 1000, lineas: [{ws: [['tenía', 24.76]], size: 80}, {ws: [['21', 25.12, amarillo]], size: 300, golpe: true}, {ws: [['años', 25.6]], size: 80}]},
@@ -343,7 +346,7 @@ export const BLOQUES: {a: number; b: number; ws: W[]}[] = (() => {
   return out.map((bq) => {
     const g = GRANDES.find((x) => bq.a >= x.b && bq.a < x.b + SALIDA);
     return g ? {...bq, a: g.b + SALIDA} : bq;
-  });
+  }).filter((bq) => bq.b > bq.a + 0.1); // un bloque que se queda sin tiempo no se muestra (ni suena)
 })();
 const PALABRAS_VISIBLES = BLOQUES.flatMap((bq) => bq.ws.map((w) => w[1]));
 const CLAVE = new Set(['servicios', 'profesional', 'valor', 'malo', 'oportunidades']);

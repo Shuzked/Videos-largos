@@ -20,16 +20,16 @@ FC="
 [m1][m2]concat=n=2:v=0:a=1,volume=0.30[mus];
 [mus][llave]sidechaincompress=threshold=0.025:ratio=7:attack=15:release=380:makeup=1[musd];
 [0:a]aresample=48000[sfx];
-[voz][musd][sfx]amix=inputs=3:duration=first:normalize=0,alimiter=limit=0.89:attack=3:release=60[mix]"
+[voz][musd][sfx]amix=inputs=3:duration=first:normalize=0,alimiter=limit=0.84:attack=3:release=60[mix]"
 
 # 1ª pasada: medir
-ffmpeg -hide_banner -nostats -v info -i "$IN" -i "$VOZ" -i "$MA" -i "$MB" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1:LRA=9:print_format=json[ao]" -map "[ao]" -f null - 2> medida.txt
+ffmpeg -hide_banner -nostats -v info -i "$IN" -i "$VOZ" -i "$MA" -i "$MB" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1.5:LRA=9:print_format=json[ao]" -map "[ao]" -f null - 2> medida.txt
 read IL TP LRA TH OFF <<< $(python3 -c "
 import json;t=open('medida.txt').read();d=json.loads(t[t.rindex('{'):t.rindex('}')+1])
 print(d['input_i'],d['input_tp'],d['input_lra'],d['input_thresh'],d['target_offset'])")
 echo "medido I=$IL TP=$TP LRA=$LRA"
 # 2ª pasada: aplicar
 if [ "$V" = copy ]; then VC="-c:v copy"; else VC="-c:v libx264 -preset slow -crf $V -pix_fmt yuv420p -profile:v high"; fi
-ffmpeg -v error -y -i "$IN" -i "$VOZ" -i "$MA" -i "$MB" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1:LRA=9:measured_I=$IL:measured_TP=$TP:measured_LRA=$LRA:measured_thresh=$TH:offset=$OFF:linear=true[ao]" \
+ffmpeg -v error -y -i "$IN" -i "$VOZ" -i "$MA" -i "$MB" -filter_complex "$FC;[mix]loudnorm=I=-14:TP=-1.5:LRA=9:measured_I=$IL:measured_TP=$TP:measured_LRA=$LRA:measured_thresh=$TH:offset=$OFF:linear=true[ao]" \
   -map 0:v -map "[ao]" $VC -c:a aac -b:a 320k -ar 48000 -movflags +faststart -t $DUR "$OUT"
 ffmpeg -i "$OUT" -af ebur128=framelog=quiet:peak=true -vn -f null - 2>&1 | grep -E " I:|Peak:" | head -2
