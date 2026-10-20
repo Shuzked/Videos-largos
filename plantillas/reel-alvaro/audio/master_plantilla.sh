@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")"
 IN="$1"; OUT="$2"; V="${3:-copy}"
-VOZ=trabajo/voz-original.mka   # audio del original (copia exacta del stream)
+VOZ=trabajo/voz-original.mka   # audio de la nueva versión del cliente
 MUS=../musica-hiphop/34.mp3   # Raising Me Higher (Ahjay Stelino, Mixkit): motivacional con ritmo
 MOFF=2    # segundo de la música en el que empieza (la parte con más fuerza)
 HOOK=8.52   # fin del hook: hasta aquí la música sube un poco (hook con más fuerza)
@@ -14,9 +14,7 @@ SEP=23       # LU que la música queda por debajo de la voz (23 = muy de fondo; 
 
 fc() { # $1 = ganancia de la música en dB (después del ducking)
 echo "
-[1:a]pan=mono|c0=c0,aresample=48000,highpass=f=80,afftdn=nr=8:nf=-45:tn=1,
- equalizer=f=300:t=q:w=1.2:g=-1.5,equalizer=f=6500:t=q:w=2:g=-1,
- deesser=i=0.5,acompressor=threshold=-20dB:ratio=2:attack=8:release=120:makeup=1.5dB,
+[1:a]pan=mono|c0=c0,aresample=48000,
  asplit=3[voz][llave][vm];
 [2:a]aresample=48000,atrim=$MOFF:$(python3 -c "print($MOFF+$DUR)"),asetpts=PTS-STARTPTS,afade=t=in:d=0.15,afade=t=out:st=$(python3 -c "print($DUR-1.6)"):d=1.6,equalizer=f=2500:t=q:w=1.2:g=-5,equalizer=f=450:t=q:w=1.0:g=-2,volume=0.15[mus];
 [mus][llave]sidechaincompress=threshold=0.02:ratio=6:attack=10:release=450:makeup=1,volume=$1dB,volume='1+0.6*clip(($HOOK+0.5-t)/0.5\,0\,1)':eval=frame[musd]"
