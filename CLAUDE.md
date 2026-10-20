@@ -50,3 +50,15 @@ Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/credito
 - Conserva siempre el original; trabaja sobre copias.
 - El repo es público: las releases también lo son. Recuérdaselo al usuario si el vídeo parece privado.
 - El disco de la sesión es limitado (~30 GB). Borra `trabajo/<pedido>/` cuando el resultado ya esté publicado.
+
+## Estilo de edición del cliente (aplicar SIEMPRE en todos los vídeos)
+
+- **Color**: no cambies el color ni pongas filtros/etalonaje/viñetas sobre la cámara; deja la imagen tal cual viene. Solo se oscurece el B-roll o la pantalla cuando hay texto encima, para que se lea.
+- **Animaciones**: profesionales y creativas, siempre estilo Lottie (máscaras, muelles que se asientan, trazos que se dibujan, ráfagas en los impactos, nada de plantillas genéricas ni "AI slop").
+- **Texto**: Montserrat con glow (titular grande blanco + línea secundaria fina; destacados en amarillo). Subtítulos en minúsculas palabra a palabra con el "TIC" en cada palabra. Nunca dupliques texto: si algo sale en grande, no sale en pequeño, y viceversa. Los CTA ("haz clic aquí abajo", "enlace aquí debajo") van en estilo subtítulo con flecha, no como titular grande. Sin tachados.
+- **Cámara**: tracking de la cara (la cámara sigue la cara), encuadre cuidado, zooms sutiles constantes con buena curva y zooms de impacto en las palabras clave. Nunca se ven bordes.
+- **B-roll**: gratis y sin marca de agua, que muestre literalmente lo que se dice, a pantalla completa (no en recuadro), bien encuadrado.
+- **Transiciones**: la transición del cliente (separación RGB + desenfoque + mini zoom, 12 fotogramas) en cortes y entradas/salidas de B-roll. Transiciones limpias: nunca dejes ver unos fotogramas del plano anterior.
+- **Sonido**: música de fondo sin copyright ni atribución (Mixkit) adaptada al arco del vídeo y con ducking bajo la voz, y efectos de su banco de sonidos (Drive) alineados por el pico. Audio masterizado: voz limpia (EQ + compresión), -14 LUFS, pico real -1 dB.
+- **Flujo**: primero quick review en baja calidad para validar; el render final a máxima calidad solo cuando lo aprueba.
+
