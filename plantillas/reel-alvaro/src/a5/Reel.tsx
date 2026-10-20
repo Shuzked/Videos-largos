@@ -15,7 +15,7 @@ const ESTILO: Estilo = {texto: 'ola', golpe: 'eco', impacto: 'rombos', sub: 'ola
 
 // Álvaro hasta "…cómo fue su proceso" (T1), luego el testimonio de Billy (D s) y después el CTA de Álvaro
 const FUENTE = 70.25;
-const T1 = 64.95;
+const T1 = 65.2; // en el silencio tras "proceso" (la palabra termina en 65,14 y "Si quieres" empieza en 65,28)
 const D_TESTIMONIO = 18.86;
 export const DURACION_A5 = 89.11;
 const TESTIMONIO = {a: T1, b: T1 + D_TESTIMONIO};
@@ -92,12 +92,12 @@ const ZOOM: K[] = [
   [56.5, 1.07, 3.0, 'suave'],
   [59.7, 1.04, 0.8, 'suave'],
   [60.6, 1.07, 4.0, 'suave'],
-  [64.95, 1.0, 0, 'corte'],
-  [83.81, 1.0, 0, 'corte'],
-  [83.83, 1.05, 0.8, 'suave'],
+  [65.2, 1.0, 0, 'corte'],
+  [84.06, 1.0, 0, 'corte'],
+  [84.08, 1.05, 0.8, 'suave'],
   [84.71, 1.08, 2.0, 'suave'],
-  [87.53, 1.1, 0.4, 'suave'],
-  [88.61, 1.13, 0.2, 'golpe'],
+  [87.45, 1.1, 0.4, 'suave'],
+  [88.36, 1.13, 0.2, 'golpe'],
 ];
 const escala = (t: number) => {
   let v = 1;
@@ -388,7 +388,7 @@ const GRANDES: Grande[] = [
 ];
 // La cascada "hay que aprender a prospectar / reunirse con negocios / presentar propuestas / entregar un buen servicio" cuenta como texto grande
 const LISTA: [number, number] = [33.7, 39.55];
-const CTA = 87.53;
+const CTA = 87.45;
 const CTA_FIN = DURACION_A5; // "haz clic aquí abajo" hasta el final
 const SALIDA = 6 * F;
 // Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
@@ -595,11 +595,11 @@ export const ReelA5: React.FC = () => {
       <Ventana t={t} a={CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={87.53}>haz</Sube>
-          <Sube t={t} en={87.74}>clic</Sube>
-          <Sube t={t} en={88.0}>aquí</Sube>
-          <Sube t={t} en={88.61} style={amarillo}>abajo</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 88.81 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 88.81)}}>↓</span>
+          <Sube t={t} en={87.45}>haz</Sube>
+          <Sube t={t} en={87.76}>clic</Sube>
+          <Sube t={t} en={88.14}>aquí</Sube>
+          <Sube t={t} en={88.36} style={amarillo}>abajo</Sube>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 88.56 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 88.56)}}>↓</span>
         </div>
       </Ventana>
 
@@ -607,7 +607,7 @@ export const ReelA5: React.FC = () => {
       {CORTES.map((c) => (
         <Son key={`w${c}`} s="swoosh2" en={c} db={-6} />
       ))}
-      {[...PALABRAS_VISIBLES, 87.53, 87.74, 88.0, 88.61].map((a, i) => (
+      {[...PALABRAS_VISIBLES, 87.45, 87.76, 88.14, 88.36].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([

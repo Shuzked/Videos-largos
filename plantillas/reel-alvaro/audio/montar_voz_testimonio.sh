@@ -2,7 +2,7 @@
 # Voz del reel A5: Álvaro [0, T1) + testimonio de Billy (igualado al nivel de Álvaro) + Álvaro [T1, fin)
 set -e
 cd /home/user/videos-largos/trabajo/a5-evergreen
-T1=64.95
+T1=65.20  # en el silencio tras "proceso" (cortar siempre en una pausa, nunca a mitad de palabra)
 A=trabajo/voz-original.mka; B=testimonio/frag-billy-48k.wav
 LA=$(ffmpeg -nostats -i $A -af "pan=mono|c0=c0,ebur128" -f null - 2>&1 | grep -A3 Summary | grep "I:" | awk '{print $2}')
 echo "Álvaro (canal izq.) $LA LUFS → Billy a ese nivel"
