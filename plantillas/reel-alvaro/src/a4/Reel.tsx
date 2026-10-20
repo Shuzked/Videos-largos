@@ -203,13 +203,13 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
 // Nombres de herramientas que se van amontonando alrededor de Álvaro y luego saltan por los aires
 type Chip = [string, number, number, number, number]; // texto, entra, x, y, giro
 const CHIPS: Chip[] = [
-  ['Claude', 8.32, 250, 300, -6],
-  ['Claude Code', 8.88, 810, 260, 5],
-  ['ChatGPT', 9.6, 230, 470, 4],
-  ['herramientas', 11.56, 830, 430, -4],
-  ['automatizaciones', 12.77, 330, 640, -3],
-  ['asistentes de voz', 13.72, 770, 610, 4],
-  ['chatbots', 14.84, 540, 200, -2],
+  ['Claude', 8.32, 300, 190, -6],
+  ['Claude Code', 8.88, 770, 180, 5],
+  ['ChatGPT', 9.6, 280, 280, 4],
+  ['herramientas', 11.56, 790, 280, -4],
+  ['automatizaciones', 12.77, 540, 100, -3],
+  ['asistentes de voz', 13.72, 330, 370, 3],
+  ['chatbots', 14.84, 800, 370, -2],
 ];
 const Pastillas: React.FC<{t: number; desde: number; fuera: number; retraso?: number}> = ({t, desde, fuera, retraso = 0}) => (
   <Ventana t={t} a={desde} b={fuera + 0.6}>
@@ -222,7 +222,7 @@ const Pastillas: React.FC<{t: number; desde: number; fuera: number; retraso?: nu
       return (
         <div key={txt} style={{position: 'absolute', left: x, top: y, translate: `calc(-50% + ${Math.cos(ang) * 900 * sale}px) calc(-50% + ${Math.sin(ang) * 900 * sale + flota}px)`,
           rotate: `${giro + sale * 90}deg`, scale: t < en ? 0 : p * (1 - 0.3 * sale), opacity: 1 - sale, filter: SOMBRA,
-          background: 'rgba(255,255,255,0.95)', color: '#111', borderRadius: 999, padding: '16px 34px', ...H, fontSize: 50, textShadow: 'none', whiteSpace: 'nowrap'}}>
+          background: 'rgba(255,255,255,0.95)', color: '#111', borderRadius: 999, padding: '12px 28px', ...H, fontSize: 40, textShadow: 'none', whiteSpace: 'nowrap'}}>
           {txt}
         </div>
       );
@@ -276,7 +276,7 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 // Solo frases CORTAS en grande (2-4 palabras, enteras), alternando con frases en subtítulo
 const GRANDES: Grande[] = [
   // HOOK (detrás de Álvaro)
-  {a: 0.28, b: 3.2, top: 70, lineas: [{ws: [['aprender', 0.28], ['a', 0.68], ['construir', 0.76], ['el', 1.32], ['mejor', 1.52]], size: 72}, {ws: [['agente de ia', 1.92, amarillo]], size: 130, golpe: true}, {ws: [['del', 2.6], ['mundo', 2.84]], size: 84, abajo: true}]},
+  {a: 0.0, b: 3.2, top: 60, lineas: [{ws: [['puedes', 0.0], ['aprender', 0.28]], size: 72}, {ws: [['a', 0.68], ['construir', 0.76], ['el', 1.32], ['mejor', 1.52]], size: 72}, {ws: [['agente de ia', 1.92, amarillo]], size: 130, golpe: true}, {ws: [['del', 2.6], ['mundo', 2.84]], size: 84, abajo: true}]},
   // Sin un solo cliente
   {a: 3.24, b: 5.68, top: 1000, lineas: [{ws: [['y', 3.24], ['seguir', 3.48], ['sin', 3.92], ['tener', 4.2]], size: 80}, {ws: [['un solo cliente', 4.48, rosaFuerte]], size: 120, golpe: true}]},
   // La gran pregunta
