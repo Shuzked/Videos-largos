@@ -12,6 +12,7 @@
 | A4 1E | 36426 vídeos, 28723 formaciones, 308 herramientas (dashboard), 46677 cliente |
 | A5 1E | 23116 empresas (reunión), 38354 asistentes de voz (llamada), 4915 WhatsApp (escribiendo en el móvil), 21921 chatbots (robot), 47266 automatizaciones (máquina) |
 | A6 Evergreen | 4607 empresa (oficina), 4835 organizando información (papeles), 1737 seguimiento a mano (libreta), 48610 consumen tiempo (cansada) |
+| A7 Evergreen | 4520 universidad, 48714 negocios (dueña de tienda), 5537 captación (reunión cenital), 4844 entrega (portátil) |
 
 ## Música (Mixkit) — una pista distinta por reel
 
@@ -27,8 +28,9 @@
 | A4 1E | 101 Smooth Grooves |
 | A5 1E | 1007 Move Your Body |
 | A6 Evergreen | 1091 Carry On |
+| A7 Evergreen | 953 Feel Alive |
 
-Libres: 31 Dreaming Big, 768 Hip-Hop Beat, 953 Feel Alive, 989 Dirty Thinkin'.
+Libres: 31 Dreaming Big, 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 
 ## Animaciones (src/variantes.tsx) — combinación propia por reel
 
@@ -44,5 +46,6 @@ Libres: 31 Dreaming Big, 768 Hip-Hop Beat, 953 Feel Alive, 989 Dirty Thinkin'.
 | A4 1E | espaciado | tinta | halo | vibra | slide2 |
 | A5 1E | estela | neon | estrella | elastica | slide |
 | A6 Evergreen | tecla | contorno | serpentinas | voltea | suck |
+| A7 Evergreen | rodar | cortina | polvo | salto | snaprev |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.
