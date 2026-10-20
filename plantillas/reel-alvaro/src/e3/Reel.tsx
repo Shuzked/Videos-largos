@@ -302,8 +302,8 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 // Solo frases CORTAS en grande (2-4 palabras, enteras), alternando con frases en subtítulo
 const GRANDES: Grande[] = [
   // HOOK: primera frase delante (abajo); segunda detrás de Álvaro
-  {a: 0.04, b: 3.45, top: 980, lineas: [{ws: [['voy', 0.04], ['a', 0.28], ['enseñar', 0.32], ['dónde', 0.76]], size: 72}, {ws: [['podrías', 1.12], ['encontrar', 1.6]], size: 80}, {ws: [['tus primeros clientes', 2.12, amarillo]], size: 110, golpe: true}]},
-  {a: 5.56, b: 9.1, top: 60, lineas: [{ws: [['y', 5.56], ['probablemente', 5.76], ['pases', 6.44]], size: 72}, {ws: [['por', 6.72], ['delante', 6.92], ['de', 7.28], ['ellos', 7.4]], size: 72}, {ws: [['todos los días', 7.84, amarillo]], size: 120, golpe: true}]},
+  {a: 0.04, b: 3.45, top: 980, lineas: [{ws: [['voy', 0.04], ['a', 0.28], ['enseñar', 0.32], ['dónde', 0.76]], size: 72}, {ws: [['podrías', 1.12], ['encontrar', 1.6]], size: 80}, {ws: [['tus primeros', 2.12]], size: 110, golpe: true}, {ws: [['clientes', 2.76, amarillo]], size: 160, golpe: true}]},
+  {a: 5.56, b: 9.1, top: 60, lineas: [{ws: [['y', 5.56], ['probablemente', 5.76], ['pases', 6.44]], size: 84, abajo: true}, {ws: [['por', 6.72], ['delante', 6.92], ['de', 7.28], ['ellos', 7.4]], size: 84, abajo: true}, {ws: [['todos los', 7.84]], size: 120, golpe: true}, {ws: [['días', 8.6, amarillo]], size: 170, golpe: true}]},
   // Peluquería / clínica / restaurante (B-roll)
   {a: 9.16, b: 10.3, top: 1150, lineas: [{ws: [['mira', 9.16], ['esta', 9.48]], size: 90}, {ws: [['peluquería', 9.68, amarillo]], size: 130, golpe: true}]},
   {a: 14.88, b: 16.7, top: 260, lineas: [{ws: [['ahora', 14.88], ['mira', 15.28], ['aquella', 15.6]], size: 90}, {ws: [['clínica', 16.16, amarillo]], size: 150, golpe: true}]},
@@ -325,6 +325,11 @@ const LISTA: [number, number] = [47.16, 54.1];
 const CTA = 67.32;
 const CTA_FIN = 68.1; // tras "pulsa el botón" sigue en subtítulos
 const SALIDA = 6 * F;
+// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+[...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
+  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+});
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((g) => x >= g.a - 0.01 && x < g.b) || (x >= LISTA[0] - 0.01 && x < LISTA[1]);
 
