@@ -13,6 +13,9 @@ def lag(a, b):  # segundos que b va retrasado respecto a a
     k = int(np.argmax(c)); k = k - n if k > n // 2 else k
     return k / SR, c.max() / (np.linalg.norm(a) * np.linalg.norm(b))
 ref, new = sys.argv[1], sys.argv[2]
-for ss in (2, 40, 60):
-    d, q = lag(pcm(ref, ss, 15), pcm(new, ss, 15))
+for ss in (2, 40, 60, 75):
+    x, y = pcm(ref, ss, 15), pcm(new, ss, 15)
+    if len(x) < SR or len(y) < SR:  # el audio no llega a este punto
+        continue
+    d, q = lag(x, y)
     print(f'  t={ss:>2}s desfase={d*1000:+.1f} ms  corr={q:.2f}')
