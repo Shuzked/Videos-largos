@@ -9,6 +9,10 @@ import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
+import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'caida', golpe: 'rebote', impacto: 'confeti', sub: 'caida', flecha: 'balanceo'};
+
 export const DURACION_E3 = 73.1;
 const FPS = 25;
 const fr = (s: number) => Math.round(s * FPS);
@@ -245,44 +249,51 @@ const Barrio: React.FC<{t: number}> = ({t}) => {
   );
 };
 
-// Ilustración: llamada entrante → asistente de IA → reserva (iconos, sin datos de reservas reales)
+// Ilustración: tareas pendientes de la peluquería que se apilan (citas, llamadas, preguntas); solo iconos, el texto va en subtítulo
 const NODOS: [number, string][] = [
   [11.32, 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 7h14v10H5V9zm5.2 7.6L7.7 14l1.4-1.4 1.1 1.1 3.9-3.9 1.4 1.4-5.3 5.4z'],
   [11.68, 'M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z'],
   [12.8, 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2zm4 5v2h2V9H8zm4 0v2h2V9h-2zm4 0v2h2V9h-2z'],
 ];
-const Flujo: React.FC<{t: number}> = ({t}) => {
-  const xs = [230, 540, 850];
+const PILA = {a: 10.32, b: 14.84, top: 170};
+const Pila: React.FC<{t: number}> = ({t}) => {
+  const {a, b, top} = PILA;
+  const llegadas = NODOS.filter(([en]) => t >= en).length;
+  const ultimo = llegadas ? NODOS[llegadas - 1][0] : a;
+  const temblor = llegadas ? Math.sin((t - ultimo) * 38) * 3.5 * Math.exp(-(t - ultimo) * 5) : 0;
+  const badge = iv(t, [ultimo, ultimo + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
   return (
-    <Ventana suave t={t} a={10.32} b={14.84}>
-      <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
-        {[0, 1].map((i) => {
-          const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const xa = xs[i] + 95;
-          const xb = xs[i + 1] - 95;
-          return (
-            <g key={i}>
-              <line x1={xa} y1={100} x2={xb} y2={100} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeDasharray="4 14" strokeLinecap="round" />
-              <line x1={xa} y1={100} x2={xa + (xb - xa) * p} y2={100} stroke={C.amarillo} strokeWidth={6} strokeLinecap="round" />
-              {p > 0 && <path d={`M ${xa + (xb - xa) * p - 14} 86 L ${xa + (xb - xa) * p} 100 L ${xa + (xb - xa) * p - 14} 114`} stroke={C.amarillo} strokeWidth={6} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
-            </g>
-          );
-        })}
+    <Ventana suave t={t} a={a} b={b}>
+      <div style={{position: 'absolute', left: 0, right: 0, top, height: 420, filter: SOMBRA, rotate: `${temblor * 0.3}deg`}}>
         {NODOS.map(([en, d], i) => {
-          const on = t >= en;
-          const pop = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const entra = iv(t, [10.32 + i * 0.12, 10.32 + i * 0.12 + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const anillo = on && i === 0 ? ((t - en) * 1.5) % 1 : 0;
+          if (t < en) return null;
+          const cae = iv(t, [en, en + 10 * F], [0, 1], Easing.bezier(0.22, 1.25, 0.36, 1));
+          const encima = llegadas - 1 - i; // 0 = la última que ha caído
+          const hund = iv(t, [NODOS[Math.min(i + encima, 2)][0], NODOS[Math.min(i + encima, 2)][0] + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+          const prof = encima > 0 ? encima - 1 + hund : 0;
+          const giro = [-4, 3, -2][i];
           return (
-            <g key={i} transform={`translate(${xs[i]} 100) scale(${entra * (on ? 1 + 0.08 * pop : 0.9)})`}>
-              {anillo > 0 && t < NODOS[1][0] && <circle r={80 + anillo * 50} fill="none" stroke={C.amarillo} strokeWidth={5} opacity={1 - anillo} />}
-              <circle r={80} fill={on ? C.amarillo : 'rgba(0,0,0,0.5)'} stroke={on ? C.amarillo : 'rgba(255,255,255,0.75)'} strokeWidth={6}
-                style={{filter: on ? `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))` : 'none'}} />
-              <g transform="translate(-42 -42) scale(3.5)"><path d={d} fill={on ? '#111' : '#fff'} /></g>
-            </g>
+            <div key={i} style={{position: 'absolute', left: 230, width: 620, top: 150 - prof * 52, height: 150, borderRadius: 34,
+              background: `rgba(${255 - prof * 22},${255 - prof * 22},${255 - prof * 20},0.97)`, boxShadow: '0 18px 40px rgba(0,0,0,0.45)',
+              translate: `0px ${(1 - cae) * -420}px`, rotate: `${giro * (1 - cae) * 4 + giro * 0.5}deg`, scale: `${1 - prof * 0.07}`, opacity: Math.min(1, cae * 3),
+              display: 'flex', alignItems: 'center', gap: 28, padding: '0 34px', zIndex: 10 + i, overflow: 'hidden'}}>
+              <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, width: 14, background: C.amarillo}} />
+              <div style={{width: 92, height: 92, borderRadius: 26, background: '#1b1b20', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 10}}>
+                <svg width={54} height={54} viewBox="0 0 24 24"><path d={d} fill={C.amarillo} /></svg>
+              </div>
+              <div style={{display: 'flex', flexDirection: 'column', gap: 16, flex: 1}}>
+                <div style={{height: 22, width: '78%', borderRadius: 11, background: '#2b2d31'}} />
+                <div style={{height: 16, width: '52%', borderRadius: 8, background: '#b9bcc4'}} />
+              </div>
+              <div style={{width: 26, height: 26, borderRadius: '50%', background: '#ff3b30', boxShadow: '0 0 0 6px rgba(255,59,48,0.2)', flexShrink: 0}} />
+            </div>
           );
         })}
-      </svg>
+        {llegadas > 0 && (
+          <div style={{position: 'absolute', left: 806, top: 128 - 52 * Math.max(0, llegadas - 1) * 0 , width: 74, height: 74, borderRadius: '50%', background: '#ff3b30', border: '6px solid #fff', zIndex: 30,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', ...H, fontSize: 40, textShadow: 'none', color: '#fff', scale: `${0.4 + 0.6 * badge}`}}>{llegadas}</div>
+        )}
+      </div>
     </Ventana>
   );
 };
@@ -410,9 +421,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -455,12 +466,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -507,16 +518,16 @@ export const ReelE3: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
-      <Flujo t={t} />
+      <Pila t={t} />
       <Barrio t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.filter((_, i) => i !== 1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={2.12} x={540} y={1250} />
-      <Rafaga t={t} en={64.48} x={540} y={1180} radio={220} />
-      <Rafaga t={t} en={66.72} x={540} y={1250} radio={240} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={2.12} x={540} y={1250} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={64.48} x={540} y={1180} radio={220} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={66.72} x={540} y={1250} radio={240} />
 
       {/* Lista: qué necesita el negocio / cómo presentarle tu propuesta / cómo implementar correctamente el servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
@@ -525,7 +536,7 @@ export const ReelE3: React.FC = () => {
             {([['detectar\nlos problemas', 47.16], ['hablar con\nlos responsables', 50.6], ['presentar una\npropuesta útil', 52.16]] as [string, number][]).map(([txt, en], i) => {
               const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
               return (
-                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpe(t, en, LISTA[1])}}>
+                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
                   <svg width={84} height={84} viewBox="0 0 84 84" style={{overflow: 'visible', flexShrink: 0}}>
                     <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} />
                     <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
@@ -544,22 +555,22 @@ export const ReelE3: React.FC = () => {
       <Ventana t={t} a={CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={67.32}>pulsa</Sube>
-          <Sube t={t} en={67.64}>el</Sube>
-          <Sube t={t} en={67.76} style={amarillo}>botón</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 67.9 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 67.9) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={67.32}>pulsa</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={67.64}>el</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={67.76} style={amarillo}>botón</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 67.9 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 67.9)}}>↓</span>
         </div>
       </Ventana>
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
+        <Son key={`w${c}`} s="swoosh2" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 67.32, 67.64, 67.76].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
-        ['hit', 0.04, -2], ['boom', 2.12, -3], ['thud', 7.84, -3], ['pop', 9.68, -3], ['ding', 11.32, -6], ['ding', 11.68, -6], ['ding', 12.8, -6],
+        ['hit', 0.04, -2], ['boom', 2.12, -3], ['thud', 7.84, -3], ['pop', 9.68, -3], ['notif', 11.32, -6], ['notif', 11.68, -6], ['notif', 12.8, -6], ['alerta', 13.4, -9],
         ['pop', 16.16, -3], ['pop', 19.28, -3], ['popup', 28.36, -6], ['popup', 28.9, -6], ['popup', 29.2, -6], ['popup', 29.72, -6], ['popup', 30.2, -6], ['boom', 29.04, -4],
         ['thud', 41.68, -3], ['pop', 45.04, -3], ['click', 47.16], ['click', 50.6], ['click', 52.16], ['hit', 55.48, -3], ['pop', 63.72, -3], ['boom', 64.48, -3],
         ['riser', 66.72, -3], ['boom', 66.72, -2], ['twinkle', 66.95, -6],

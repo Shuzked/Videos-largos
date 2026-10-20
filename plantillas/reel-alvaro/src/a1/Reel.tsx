@@ -7,6 +7,11 @@ import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from './transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
+import ENCUADRE from './encuadre.json';
+
+import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'mascara', golpe: 'muelle', impacto: 'rayos', sub: 'mascara', flecha: 'bote'};
 
 export const DURACION_A1 = 68.08;
 const FPS = 25;
@@ -110,8 +115,18 @@ const BROLL: B[] = [
 const CORTES = Array.from(new Set([8.52, 42.08, 56.4, ...BROLL.flatMap((b) => [b.a, b.b])])).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
 
+// Encuadre automático (scripts/encuadre.py): pista de foco que sigue al sujeto de cada clip
+const PISTAS = ENCUADRE as unknown as Record<string, [number, number][]>;
+const focoEn = (b: B, t: number) => {
+  const p = PISTAS[b.src];
+  if (!p) return b.foco;
+  const x = Math.max(0, t - b.a) * 5;
+  const i = Math.min(p.length - 1, Math.floor(x));
+  const j = Math.min(p.length - 1, i + 1);
+  return p[i][1] + (p[j][1] - p[i][1]) * (x - i);
+};
 const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
-  const left = Math.min(0, Math.max(1080 - ANCHO_BROLL, 540 - b.foco * ANCHO_BROLL));
+  const left = Math.min(0, Math.max(1080 - ANCHO_BROLL, 540 - focoEn(b, t) * ANCHO_BROLL));
   return (
     <Ventana t={t} a={b.a} b={b.b}>
       <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
@@ -377,9 +392,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -422,12 +437,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -488,15 +503,15 @@ export const ReelA1: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
-      <Rafaga t={t} en={3.76} x={540} y={330} color={C.rosa} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={3.76} x={540} y={330} color={C.rosa} />
       <Camino t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.slice(3).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={25.12} x={540} y={1250} radio={200} />
-      <Rafaga t={t} en={36.8} x={540} y={385} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={25.12} x={540} y={1250} radio={200} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={36.8} x={540} y={385} />
       <Marcador t={t} n={10} a={33.0} paso={0.1} color="#ff3b55" tipo="x" top={300} desde={32.48} hasta={34.3} />
       <Marcador t={t} n={3} a={39.52} paso={0.2} color="#3ddc84" tipo="v" top={260} desde={38.72} hasta={40.12} />
 
@@ -507,7 +522,7 @@ export const ReelA1: React.FC = () => {
           {([['captar clientes', 59.24], ['vender', 60.36], ['entregar\nsoluciones', 61.0]] as [string, number][]).map(([txt, en]) => {
             const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
             return (
-              <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 22, ...golpe(t, en, LISTA[1])}}>
+              <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 22, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
                 <svg width={70} height={70} viewBox="0 0 70 70" style={{overflow: 'visible'}}>
                   <circle cx={35} cy={35} r={31} fill="none" stroke={C.amarillo} strokeWidth={5} strokeDasharray={195} strokeDashoffset={195 * (1 - tr)} />
                   <path d="M 21 37 L 31 47 L 50 25" stroke={C.amarillo} strokeWidth={7} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeDasharray={50} strokeDashoffset={50 * (1 - iv(t, [en + 4 * F, en + 10 * F], [0, 1]))} />
@@ -518,9 +533,9 @@ export const ReelA1: React.FC = () => {
           })}
           </div>
           <div style={{display: 'flex', gap: '0.24em', ...H, fontSize: 66, marginTop: 8}}>
-            <Sube t={t} en={62.16} sale={LISTA[1]}>que</Sube>
-            <Sube t={t} en={62.36} sale={LISTA[1]}>aporten</Sube>
-            <Sube t={t} en={62.96} sale={LISTA[1]} style={amarillo}>valor</Sube>
+            <Entra estilo={ESTILO.texto} t={t} en={62.16} sale={LISTA[1]}>que</Entra>
+            <Entra estilo={ESTILO.texto} t={t} en={62.36} sale={LISTA[1]}>aporten</Entra>
+            <Entra estilo={ESTILO.texto} t={t} en={62.96} sale={LISTA[1]} style={amarillo}>valor</Entra>
           </div>
         </div>
       </Ventana>
@@ -532,11 +547,11 @@ export const ReelA1: React.FC = () => {
       <Ventana t={t} a={CTA} b={DURACION_A1}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={66.44}>haz</Sube>
-          <Sube t={t} en={66.76}>clic</Sube>
-          <Sube t={t} en={66.96} style={amarillo}>aquí</Sube>
-          <Sube t={t} en={67.16} style={amarillo}>abajo</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 67.3 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 67.3) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={66.44}>haz</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={66.76}>clic</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={66.96} style={amarillo}>aquí</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={67.16} style={amarillo}>abajo</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 67.3 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 67.3)}}>↓</span>
         </div>
       </Ventana>
 

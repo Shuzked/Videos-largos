@@ -1,0 +1,262 @@
+import React from 'react';
+import {Easing} from 'remotion';
+import {F, iv} from './anim';
+import {C, GLOW_AMARILLO} from './estilo';
+
+// Variantes de animación: cada reel usa una combinación distinta para que no se repitan entre vídeos.
+// Todas siguen el mismo lenguaje Lottie (curvas expo/muelle, entradas y salidas suaves) pero con un movimiento propio.
+
+const EXPO_OUT = Easing.bezier(0.16, 1, 0.3, 1);
+const EXPO_IN = Easing.bezier(0.7, 0, 0.84, 0);
+const MUELLE = Easing.bezier(0.34, 1.56, 0.64, 1);
+const SUAVE = Easing.bezier(0.65, 0, 0.35, 1);
+// rebote amortiguado (cae, rebota dos veces y se asienta)
+const REBOTE = (x: number) => {
+  if (x >= 1) return 1;
+  const n = 7.5625;
+  const d = 2.75;
+  if (x < 1 / d) return n * x * x;
+  if (x < 2 / d) return n * (x -= 1.5 / d) * x + 0.75;
+  if (x < 2.5 / d) return n * (x -= 2.25 / d) * x + 0.9375;
+  return n * (x -= 2.625 / d) * x + 0.984375;
+};
+
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon';
+export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella';
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica'};
+
+// ---------------- Entrada palabra a palabra ----------------
+// Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
+export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: EstiloTexto; style?: React.CSSProperties; children: React.ReactNode}> = ({
+  t, en, sale, estilo, style, children,
+}) => {
+  const dur = estilo === 'maquina' ? 4 : estilo === 'caida' ? 12 : 8;
+  const p = iv(t, [en, en + dur * F], [0, 1]);
+  const s = sale === undefined ? 0 : iv(t, [sale, sale + 6 * F], [0, 1], EXPO_IN);
+  const visible = t >= en && s < 1;
+  const caja: React.CSSProperties = {display: 'inline-block', verticalAlign: 'bottom'};
+  let anim: React.CSSProperties = {};
+  let mascara = false;
+  const e = EXPO_OUT(p);
+  switch (estilo) {
+    case 'mascara':
+      mascara = (p > 0 && p < 1) || s > 0;
+      anim = {translate: `0px ${(1 - e) * 110 - s * 110}%`, rotate: `${(1 - e) * 5}deg`, filter: `blur(${(1 - e) * 3}px)`, transformOrigin: '0% 100%'};
+      break;
+    case 'pop':
+      anim = {scale: Math.max(0, MUELLE(p)) * (1 - 0.3 * s), opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '50% 80%'};
+      break;
+    case 'enfoque':
+      anim = {opacity: Math.min(1, p * 1.6) * (1 - s), filter: `blur(${(1 - e) * 14 + s * 10}px)`, scale: 1.25 - 0.25 * e + 0.1 * s};
+      break;
+    case 'deslizar':
+      anim = {translate: `${(1 - e) * -70 + s * 60}px 0px`, transform: `skewX(${(1 - e) * -16}deg)`, opacity: Math.min(1, p * 2) * (1 - s)};
+      break;
+    case 'maquina': {
+      // letra a letra con cursor
+      const txt = typeof children === 'string' ? children : '';
+      if (txt) {
+        const n = Math.round(txt.length * Math.min(1, (t - en) / (txt.length * 1.2 * F)));
+        return (
+          <span style={{...caja, opacity: 1 - s, ...style}}>
+            <span>{txt.slice(0, Math.max(0, n))}</span>
+            <span style={{opacity: 0}}>{txt.slice(Math.max(0, n))}</span>
+          </span>
+        );
+      }
+      anim = {opacity: p > 0 ? 1 - s : 0};
+      break;
+    }
+    case 'giro':
+      anim = {transform: `perspective(600px) rotateX(${(1 - e) * -95 + s * 95}deg)`, transformOrigin: '50% 100%', opacity: Math.min(1, p * 2.5) * (1 - s)};
+      break;
+    case 'caida':
+      anim = {translate: `0px ${(1 - REBOTE(p)) * -55 + s * 30}px`, opacity: Math.min(1, p * 3) * (1 - s)};
+      break;
+    case 'espaciado':
+      anim = {scale: `${1 + (1 - e) * 0.45} 1`, opacity: Math.min(1, p * 1.5) * (1 - s), filter: `blur(${(1 - e) * 4 + s * 4}px)`};
+      break;
+    case 'estela':
+      // sube desde abajo dejando un rastro de luz (copias que se desvanecen) y se asienta
+      anim = {translate: `0px ${(1 - e) * 46 - s * 30}px`, opacity: Math.min(1, p * 2.2) * (1 - s),
+        ...(p < 1 ? {textShadow: `0 ${(1 - e) * 26}px 0 rgba(255,255,255,${0.32 * (1 - e)}), 0 ${(1 - e) * 52}px 2px rgba(255,255,255,${0.14 * (1 - e)})`} : {})};
+      break;
+  }
+  return (
+    <span style={{...caja, overflow: mascara ? 'hidden' : 'visible', padding: '0.18em 0.12em 0.1em', margin: '-0.18em -0.12em -0.1em'}}>
+      <span style={{display: 'inline-block', opacity: visible ? 1 : 0, ...anim, ...style, ...(anim.opacity !== undefined ? {opacity: visible ? (anim.opacity as number) : 0} : {})}}>
+        {children}
+      </span>
+    </span>
+  );
+};
+
+// ---------------- Golpe de la palabra clave ----------------
+// Devuelve el estilo de la palabra clave (entra de golpe y se asienta). Las variantes con color usan el del propio texto.
+export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number): React.CSSProperties => {
+  const p = Math.min(1, Math.max(0, (t - en) / (10 * F)));
+  const e = EXPO_OUT(p);
+  const s = sale === undefined ? 0 : iv(t, [sale, sale + 6 * F], [0, 1], EXPO_IN);
+  const op = t < en ? 0 : Math.min(1, (t - en) / (2 * F)) * (1 - s);
+  switch (estilo) {
+    case 'muelle':
+      return {opacity: op, scale: 0.72 + 0.28 * MUELLE(p) - 0.08 * s, filter: `blur(${(1 - e) * 6 + s * 8}px)`, letterSpacing: `${0.12 * (1 - e) - 0.015}em`, translate: `0px ${-30 * s}px`};
+    case 'sello': {
+      // cae como un sello: grande y girado, golpea, pequeño temblor y se queda
+      const q = Math.min(1, Math.max(0, (t - en) / (6 * F)));
+      const tiembla = t >= en + 6 * F && t < en + 12 * F ? Math.sin((t - en) * 90) * 3 * (1 - (t - en - 6 * F) / (6 * F)) : 0;
+      return {opacity: op, scale: 1.45 - 0.45 * EXPO_IN(q) - 0.1 * s, rotate: `${-7 + 7 * EXPO_IN(q) + tiembla * 0.4}deg`, translate: `${tiembla}px ${-20 * s}px`};
+    }
+    case 'destello':
+      return {opacity: op, scale: 0.9 + 0.1 * e - 0.06 * s, filter: `brightness(${1 + 1.6 * (1 - e)}) blur(${(1 - e) * 4 + s * 8}px)`};
+    case 'barrido':
+      // aparece de izquierda a derecha detrás de una franja de color que se retira
+      return {opacity: t < en ? 0 : 1 - s, clipPath: `inset(-20% ${(1 - e) * 100}% -20% -5%)`, translate: `0px ${-20 * s}px`};
+    case 'glitch': {
+      const q = Math.min(1, Math.max(0, (t - en) / (9 * F)));
+      const k = Math.floor((t - en) * 25);
+      const j = q < 1 ? ((k * 37) % 7) - 3 : 0;
+      return {opacity: op, translate: `${j * 6 * (1 - q)}px ${-20 * s}px`, textShadow: q < 1 ? `${8 * (1 - q)}px 0 rgba(255,40,80,0.9), ${-8 * (1 - q)}px 0 rgba(40,220,255,0.9)` : undefined, clipPath: q < 0.5 && k % 2 ? 'inset(10% 0 35% 0)' : undefined};
+    }
+    case 'zoom':
+      return {opacity: op, scale: 2.4 - 1.4 * e - 0.1 * s, filter: `blur(${(1 - e) * 10 + s * 8}px)`};
+    case 'rebote': {
+      const q = Math.min(1, Math.max(0, (t - en) / (14 * F)));
+      // aplastar y estirar (squash & stretch) desde la base, con rebote amortiguado
+      return {opacity: op, scale: `${(1 + 0.3 * (1 - REBOTE(q))) * (1 - 0.06 * s)} ${Math.max(0.05, REBOTE(q)) * (1 - 0.06 * s)}`, transformOrigin: '50% 90%', translate: `0px ${-30 * s}px`};
+    }
+    case 'neon': {
+      // se enciende como un rótulo de neón: dos parpadeos rápidos y queda encendido con un pico de brillo
+      const k = Math.floor((t - en) * 25);
+      const parpadeo = [1, 0.15, 1, 1, 0.35, 1];
+      const f = k >= 0 && k < parpadeo.length ? parpadeo[k] : 1;
+      const brillo = 1 + 0.9 * Math.max(0, 1 - (t - en) / (12 * F));
+      return {opacity: (t < en ? 0 : f) * (1 - s), scale: 1.06 - 0.06 * e - 0.06 * s, filter: `brightness(${brillo}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
+    }
+    case 'tinta':
+      // se revela de abajo arriba como tinta que sube, con ligera inclinación que se endereza
+      return {opacity: t < en ? 0 : 1 - s, clipPath: `inset(${(1 - e) * 100}% -5% -20% -5%)`, transform: `skewX(${(1 - e) * -8}deg)`, translate: `0px ${-24 * s}px`};
+  }
+};
+
+// ---------------- Ráfaga de impacto ----------------
+export const Impacto: React.FC<{t: number; en: number; x: number; y: number; estilo: EstiloImpacto; color?: string; radio?: number}> = ({
+  t, en, x, y, estilo, color = C.amarillo, radio = 260,
+}) => {
+  const dur = estilo === 'confeti' ? 22 : estilo === 'halo' ? 16 : 13;
+  const p = iv(t, [en, en + dur * F], [0, 1], EXPO_OUT);
+  if (t < en || p >= 1) return null;
+  const c = radio * 1.8;
+  const svg = (hijos: React.ReactNode) => (
+    <svg style={{position: 'absolute', left: x - c, top: y - c, overflow: 'visible'}} width={c * 2} height={c * 2}>
+      {hijos}
+    </svg>
+  );
+  const sombra = {filter: `drop-shadow(0 0 10px ${color})`};
+  switch (estilo) {
+    case 'rayos':
+      return svg(Array.from({length: 12}, (_, i) => {
+        const a = (i / 12) * Math.PI * 2 + 0.13;
+        const r1 = radio * (0.55 + 0.75 * p);
+        const r2 = radio * (0.75 + 0.85 * p);
+        return <line key={i} x1={c + Math.cos(a) * r1} y1={c + Math.sin(a) * r1} x2={c + Math.cos(a) * r2} y2={c + Math.sin(a) * r2} stroke={color} strokeWidth={10 * (1 - p) + 1} strokeLinecap="round" opacity={1 - p * 0.9} style={sombra} />;
+      }));
+    case 'onda':
+      return svg(<>
+        <circle cx={c} cy={c} r={radio * (0.3 + 1.1 * p)} fill="none" stroke={color} strokeWidth={18 * (1 - p) + 1} opacity={1 - p} style={sombra} />
+        <circle cx={c} cy={c} r={radio * (0.15 + 0.8 * iv(t, [en + 3 * F, en + 16 * F], [0, 1], EXPO_OUT))} fill="none" stroke="#fff" strokeWidth={6 * (1 - p) + 0.5} opacity={0.8 * (1 - p)} />
+      </>);
+    case 'chispas':
+      return svg(Array.from({length: 9}, (_, i) => {
+        const a = (i / 9) * Math.PI * 2 + 0.4;
+        const r = radio * (0.4 + 0.9 * p) * (i % 2 ? 0.8 : 1.05);
+        const sz = (i % 3 === 0 ? 34 : 22) * (1 - p * 0.7);
+        const cx = c + Math.cos(a) * r;
+        const cy = c + Math.sin(a) * r;
+        return <path key={i} transform={`translate(${cx} ${cy}) rotate(${p * 90})`} d={`M0 ${-sz} C ${sz * 0.12} ${-sz * 0.12} ${sz * 0.12} ${-sz * 0.12} ${sz} 0 C ${sz * 0.12} ${sz * 0.12} ${sz * 0.12} ${sz * 0.12} 0 ${sz} C ${-sz * 0.12} ${sz * 0.12} ${-sz * 0.12} ${sz * 0.12} ${-sz} 0 C ${-sz * 0.12} ${-sz * 0.12} ${-sz * 0.12} ${-sz * 0.12} 0 ${-sz} Z`} fill={i % 3 ? color : '#fff'} opacity={1 - p} style={sombra} />;
+      }));
+    case 'rayas':
+      return svg(Array.from({length: 16}, (_, i) => {
+        const a = (i / 16) * Math.PI * 2;
+        const r1 = radio * (0.35 + 1.0 * p);
+        const r2 = r1 + radio * 0.35 * (1 - p);
+        return <line key={i} x1={c + Math.cos(a) * r1} y1={c + Math.sin(a) * r1} x2={c + Math.cos(a) * r2} y2={c + Math.sin(a) * r2} stroke={color} strokeWidth={5} strokeDasharray="10 8" strokeLinecap="round" opacity={1 - p} />;
+      }));
+    case 'cuadros':
+      return svg(Array.from({length: 14}, (_, i) => {
+        const a = ((i * 137.5) % 360) * (Math.PI / 180);
+        const r = radio * (0.3 + 1.1 * p) * (0.6 + ((i * 7) % 5) / 8);
+        const sz = (8 + ((i * 3) % 4) * 6) * (1 - p * 0.6);
+        return <rect key={i} x={c + Math.cos(a) * r - sz / 2} y={c + Math.sin(a) * r - sz / 2} width={sz} height={sz} fill={i % 4 === 0 ? '#5EE1FF' : color} opacity={(1 - p) * (Math.floor((t - en) * 25 + i) % 3 === 0 ? 0.4 : 1)} />;
+      }));
+    case 'circulos':
+      return svg([0, 1, 2].map((k) => {
+        const q = iv(t, [en + k * 2 * F, en + (k * 2 + 11) * F], [0, 1], EXPO_OUT);
+        return <circle key={k} cx={c} cy={c} r={radio * (0.25 + (0.5 + k * 0.3) * q)} fill="none" stroke={k === 1 ? '#fff' : color} strokeWidth={7 * (1 - q) + 1} opacity={(1 - q) * (q > 0 ? 1 : 0)} />;
+      }));
+    case 'confeti':
+      return svg(Array.from({length: 22}, (_, i) => {
+        const a = ((i * 97) % 360) * (Math.PI / 180);
+        const v = radio * (0.7 + ((i * 13) % 7) / 6);
+        const cx = c + Math.cos(a) * v * EXPO_OUT(p);
+        const cy = c + Math.sin(a) * v * EXPO_OUT(p) + 220 * p * p; // caen por gravedad
+        const cols = [color, '#ff7eb6', '#5EE1FF', '#ffffff', '#9be564'];
+        return <rect key={i} x={cx - 7} y={cy - 4} width={14} height={8} rx={2} fill={cols[i % 5]} transform={`rotate(${(i * 40 + p * 720) % 360} ${cx} ${cy})`} opacity={1 - Math.max(0, p - 0.6) / 0.4} />;
+      }));
+    case 'estrella': {
+      const pts = Array.from({length: 16}, (_, i) => {
+        const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
+        const r = radio * (0.35 + 0.9 * p) * (i % 2 ? 0.55 : 1);
+        return `${c + Math.cos(a) * r},${c + Math.sin(a) * r}`;
+      }).join(' ');
+      return svg(<g transform={`rotate(${p * 40} ${c} ${c})`}>
+        <polygon points={pts} fill={color} fillOpacity={0.18 * (1 - p)} stroke={color} strokeWidth={9 * (1 - p) + 1} strokeLinejoin="round" opacity={1 - p} style={sombra} />
+        <circle cx={c} cy={c} r={radio * 0.2 * (1 - p)} fill="#fff" opacity={1 - p} />
+      </g>);
+    }
+    case 'halo':
+      return svg(<>
+        <defs>
+          <radialGradient id={`halo${Math.round(en * 100)}`}>
+            <stop offset="0%" stopColor={color} stopOpacity={0.55} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </radialGradient>
+        </defs>
+        <circle cx={c} cy={c} r={radio * (0.6 + 0.6 * p)} fill={`url(#halo${Math.round(en * 100)})`} opacity={Math.sin(p * Math.PI)} />
+      </>);
+  }
+};
+
+// ---------------- Flecha del CTA ----------------
+export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): React.CSSProperties => {
+  const k = t - desde;
+  if (k < 0) return {opacity: 0};
+  switch (estilo) {
+    case 'bote':
+      return {translate: `0px ${Math.abs(Math.sin(k * 7)) * 18}px`};
+    case 'pulso':
+      return {scale: 1 + 0.18 * Math.abs(Math.sin(k * 5)), translate: '0px 4px'};
+    case 'desliza':
+      return {translate: `0px ${((k * 1.6) % 1) * 26}px`, opacity: 1 - ((k * 1.6) % 1) * 0.6};
+    case 'gira':
+      return {rotate: `${Math.sin(k * 6) * 12}deg`, translate: `0px ${Math.abs(Math.sin(k * 6)) * 10}px`};
+    case 'latido': {
+      const f = k % 1;
+      return {scale: 1 + 0.2 * Math.max(0, Math.sin(f * Math.PI * 4)) * (f < 0.5 ? 1 : 0)};
+    }
+    case 'cae':
+      return {translate: `0px ${-30 + ((k * 1.3) % 1) * 40}px`, opacity: Math.min(1, ((k * 1.3) % 1) * 4) * (1 - ((k * 1.3) % 1) * 0.5)};
+    case 'balanceo':
+      return {translate: `${Math.sin(k * 4) * 10}px ${Math.abs(Math.cos(k * 4)) * 8}px`};
+    case 'vibra':
+      return {translate: `0px ${(Math.floor(k * 25) % 2) * 5 + Math.abs(Math.sin(k * 3)) * 12}px`};
+    case 'elastica': {
+      const f = (k * 1.4) % 1;
+      const estira = Math.sin(Math.min(1, f / 0.35) * Math.PI);
+      return {scale: `${1 - 0.15 * estira} ${1 + 0.4 * estira}`, transformOrigin: '50% 0%', translate: `0px ${estira * 10}px`};
+    }
+  }
+};
+
+export {EXPO_OUT, EXPO_IN, MUELLE, SUAVE, REBOTE, GLOW_AMARILLO};

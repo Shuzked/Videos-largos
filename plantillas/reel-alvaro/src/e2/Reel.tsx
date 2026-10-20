@@ -9,6 +9,10 @@ import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
+import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'giro', golpe: 'zoom', impacto: 'circulos', sub: 'giro', flecha: 'cae'};
+
 export const DURACION_E2 = 70.12;
 const FPS = 25;
 const fr = (s: number) => Math.round(s * FPS);
@@ -419,9 +423,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -464,12 +468,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -523,9 +527,9 @@ export const ReelE2: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={1.04} x={540} y={330} color={C.rosa} />
-      <Rafaga t={t} en={56.44} x={540} y={1180} radio={220} />
-      <Rafaga t={t} en={61.48} x={540} y={1250} radio={240} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={1.04} x={540} y={330} color={C.rosa} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={56.44} x={540} y={1180} radio={220} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={61.48} x={540} y={1250} radio={240} />
 
       {/* Lista: qué necesita el negocio / cómo presentarle tu propuesta / cómo implementar correctamente el servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
@@ -534,7 +538,7 @@ export const ReelE2: React.FC = () => {
             {([['entender\nqué necesita', 45.56], ['ofrecerle el\nservicio adecuado', 46.92], ['asegurarte de que se\nentrega correctamente', 48.96]] as [string, number][]).map(([txt, en], i) => {
               const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
               return (
-                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpe(t, en, LISTA[1])}}>
+                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
                   <svg width={84} height={84} viewBox="0 0 84 84" style={{overflow: 'visible', flexShrink: 0}}>
                     <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} />
                     <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
@@ -553,12 +557,12 @@ export const ReelE2: React.FC = () => {
       <Ventana t={t} a={CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={62.57}>haz</Sube>
-          <Sube t={t} en={62.84}>clic</Sube>
-          <Sube t={t} en={63.04}>en</Sube>
-          <Sube t={t} en={63.16}>el</Sube>
-          <Sube t={t} en={63.32} style={amarillo}>botón</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 63.45 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 63.45) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={62.57}>haz</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={62.84}>clic</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={63.04}>en</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={63.16}>el</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={63.32} style={amarillo}>botón</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 63.45 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 63.45)}}>↓</span>
         </div>
       </Ventana>
 

@@ -7,6 +7,11 @@ import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
+import ENCUADRE from './encuadre.json';
+
+import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'pop', golpe: 'sello', impacto: 'onda', sub: 'pop', flecha: 'pulso'};
 
 export const DURACION_A2 = 65.0;
 const FPS = 25;
@@ -111,8 +116,18 @@ const BROLL: B[] = [
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
 
+// Encuadre automático (scripts/encuadre.py): pista de foco que sigue al sujeto de cada clip
+const PISTAS = ENCUADRE as unknown as Record<string, [number, number][]>;
+const focoEn = (b: B, t: number) => {
+  const p = PISTAS[b.src];
+  if (!p) return b.foco;
+  const x = Math.max(0, t - b.a) * 5;
+  const i = Math.min(p.length - 1, Math.floor(x));
+  const j = Math.min(p.length - 1, i + 1);
+  return p[i][1] + (p[j][1] - p[i][1]) * (x - i);
+};
 const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
-  const left = Math.min(0, Math.max(1080 - ANCHO_BROLL, 540 - b.foco * ANCHO_BROLL));
+  const left = Math.min(0, Math.max(1080 - ANCHO_BROLL, 540 - focoEn(b, t) * ANCHO_BROLL));
   return (
     <Ventana t={t} a={b.a} b={b.b}>
       <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
@@ -194,54 +209,78 @@ const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: 
   );
 };
 
-// Clínica que pierde llamadas: teléfono que suena con globo rojo de llamadas perdidas que sube
-const Telefono: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
-  const n = Math.max(0, Math.min(9, Math.floor((t - a - 0.2) / 0.16) + 1));
-  const pop = iv(t, [a, a + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-  const vib = t < b - 0.3 ? Math.sin(t * 60) * 7 : 0;
+// Clínica que pierde llamadas: contador circular rojo que se va llenando con las llamadas perdidas
+const LlamadasPerdidas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
+  const p = iv(t, [a + 0.15, b - 0.35], [0, 1], Easing.bezier(0.33, 0, 0.2, 1));
+  const n = Math.round(p * 12);
+  const R = 120;
+  const per = 2 * Math.PI * R;
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <div style={{position: 'absolute', left: 540 - 110, top: 260, width: 220, height: 220, scale: 0.6 + 0.4 * pop, filter: SOMBRA}}>
-        {[0, 1].map((k) => {
-          const p = ((t - a) * 1.6 + k * 0.5) % 1;
-          return <div key={k} style={{position: 'absolute', inset: 0, borderRadius: '50%', border: `6px solid ${C.amarillo}`, scale: 1 + p * 0.7, opacity: 0.8 * (1 - p)}} />;
-        })}
-        <div style={{position: 'absolute', inset: 0, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', rotate: `${vib}deg`}}>
-          <svg width={110} height={110} viewBox="0 0 24 24"><path fill="#111" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z" /></svg>
-        </div>
-        {n > 0 && (
-          <div style={{position: 'absolute', right: -14, top: -14, width: 84, height: 84, borderRadius: '50%', background: '#ff3b30', color: '#fff', ...H, fontSize: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', scale: 0.8 + 0.2 * iv(t, [a + 0.2 + (n - 1) * 0.16, a + 0.2 + (n - 1) * 0.16 + 3 * F], [1.4, 1])}}>
-            {n}
-          </div>
-        )}
-      </div>
+      <svg style={{position: 'absolute', left: 540 - 170, top: 210, overflow: 'visible', filter: SOMBRA}} width={340} height={340}>
+        <circle cx={170} cy={170} r={R + 34} fill="rgba(12,12,16,0.72)" />
+        <circle cx={170} cy={170} r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={22} />
+        <circle cx={170} cy={170} r={R} fill="none" stroke="#ff3b4e" strokeWidth={22} strokeLinecap="round" strokeDasharray={per} strokeDashoffset={per * (1 - p)}
+          transform="rotate(-90 170 170)" style={{filter: 'drop-shadow(0 0 14px rgba(255,59,78,0.8))'}} />
+        <g transform="translate(170 128) scale(1.6) translate(-12 -12)">
+          <path fill="#ff3b4e" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z" />
+          <path d="M15 3l6 6M21 3l-6 6" stroke="#ff3b4e" strokeWidth={2.2} strokeLinecap="round" />
+        </g>
+        <text x={170} y={232} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={84} fill="#fff"
+          style={{scale: `${1 + 0.12 * Math.max(0, 1 - ((t - a) * 25 % 3) / 3) * (n > 0 ? 1 : 0)}`, transformOrigin: '170px 205px'}}>{n}</text>
+      </svg>
     </Ventana>
   );
 };
 
-// Restaurante que tarda en responder: burbujas de mensajes sin leer que se apilan + reloj que gira
-const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => (
-  <Ventana suave t={t} a={a} b={b}>
-    <div style={{position: 'absolute', left: 150, right: 330, top: 230, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start', filter: SOMBRA}}>
-      {[0, 1, 2].map((k) => {
-        const en = a + 0.15 + k * 0.4;
-        const p = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-        return (
-          <div key={k} style={{opacity: t < en ? 0 : 1, scale: 0.5 + 0.5 * p, transformOrigin: '0% 100%', background: '#fff', borderRadius: '34px 34px 34px 8px', padding: '22px 30px', display: 'flex', gap: 12, marginLeft: k * 60}}>
-            {[0, 1, 2].map((d) => (
-              <div key={d} style={{width: 20, height: 20, borderRadius: '50%', background: '#9aa0a6', translate: `0px ${Math.sin((t - en) * 9 - d * 0.9) * -5}px`}} />
-            ))}
+// Restaurante que tarda horas en responder: ventana de chat tipo móvil (lado del cliente) con mensajes que suben,
+// doble check gris (sin leer) y un reloj que cuenta el tiempo sin respuesta
+const ChatSinResponder: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
+  const llegadas = [a + 0.15, a + 0.55, a + 0.95];
+  const anchos = [0.78, 0.62, 0.7];
+  const minutos = Math.round(iv(t, [a + 0.3, b - 0.25], [12, 167], Easing.bezier(0.33, 0, 0.2, 1)));
+  const reloj = minutos < 60 ? `${minutos} min` : `${Math.floor(minutos / 60)} h ${String(minutos % 60).padStart(2, '0')} min`;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <div style={{position: 'absolute', left: 140, right: 140, top: 190, borderRadius: 44, background: 'rgba(248,248,250,0.96)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', overflow: 'hidden'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: 20, padding: '24px 30px', background: '#fff', borderBottom: '2px solid #ececf0'}}>
+          <div style={{position: 'relative', width: 78, height: 78, borderRadius: '50%', background: '#f4a261', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
+            <svg width={44} height={44} viewBox="0 0 24 24"><path fill="#fff" d="M8.1 13.3l2.8-2.8L4 3.6a4 4 0 0 0 0 5.6l4.1 4.1zm6.8-1.8c1.5.7 3.7.2 5.3-1.4 1.9-1.9 2.3-4.7.8-6.2-1.5-1.5-4.3-1.1-6.2.8-1.6 1.6-2.1 3.8-1.4 5.3L3.7 19.8l1.4 1.4 6.9-6.9 6.9 6.9 1.4-1.4-6.9-6.9 1.5-1.4z" /></svg>
+            <div style={{position: 'absolute', right: 0, top: 2, width: 22, height: 22, borderRadius: '50%', background: '#ff3b30', border: '3px solid #fff'}} />
           </div>
-        );
-      })}
-    </div>
-    <svg style={{position: 'absolute', left: 780, top: 250, overflow: 'visible', filter: SOMBRA, opacity: iv(t, [a + 0.3, a + 0.5], [0, 1])}} width={150} height={150}>
-      <circle cx={75} cy={75} r={66} fill="none" stroke={C.amarillo} strokeWidth={10} />
-      <line x1={75} y1={75} x2={75 + 44 * Math.sin((t - a) * 9)} y2={75 - 44 * Math.cos((t - a) * 9)} stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" />
-      <line x1={75} y1={75} x2={75 + 30 * Math.sin((t - a) * 0.75)} y2={75 - 30 * Math.cos((t - a) * 0.75)} stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" />
-    </svg>
-  </Ventana>
-);
+          <div style={{display: 'flex', flexDirection: 'column', gap: 12, flex: 1}}>
+            <div style={{height: 22, width: 230, borderRadius: 11, background: '#2b2d31'}} />
+            <div style={{height: 16, width: 150, borderRadius: 8, background: '#b9bcc4'}} />
+          </div>
+        </div>
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16, padding: '26px 30px 22px', minHeight: 300}}>
+          {llegadas.map((en, k) => {
+            const p = iv(t, [en, en + 9 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+            return (
+              <div key={k} style={{width: `${anchos[k] * 100}%`, opacity: t < en ? 0 : Math.min(1, p * 2), scale: 0.6 + 0.4 * p, translate: `0px ${(1 - p) * 40}px`, transformOrigin: '100% 100%',
+                background: '#3478f6', borderRadius: '30px 30px 8px 30px', padding: '20px 24px', display: 'flex', alignItems: 'flex-end', gap: 14}}>
+                <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 10}}>
+                  <div style={{height: 16, width: '92%', borderRadius: 8, background: 'rgba(255,255,255,0.85)'}} />
+                  {k !== 1 && <div style={{height: 16, width: '55%', borderRadius: 8, background: 'rgba(255,255,255,0.6)'}} />}
+                </div>
+                <svg width={34} height={20} viewBox="0 0 34 20"><path d="M2 11l5 5L18 4M14 14l2 2L28 4" stroke="rgba(255,255,255,0.6)" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{display: 'flex', justifyContent: 'center', paddingBottom: 26}}>
+          <div style={{display: 'flex', alignItems: 'center', gap: 14, padding: '12px 26px', borderRadius: 999, background: '#ffe9e8', color: '#d62d20', ...H, fontSize: 40, textShadow: 'none',
+            opacity: iv(t, [a + 0.25, a + 0.45], [0, 1])}}>
+            <svg width={38} height={38} viewBox="0 0 24 24"><circle cx={12} cy={12} r={9.5} fill="none" stroke="#d62d20" strokeWidth={2.4} />
+              <line x1={12} y1={12} x2={12 + 6 * Math.sin((t - a) * 8)} y2={12 - 6 * Math.cos((t - a) * 8)} stroke="#d62d20" strokeWidth={2.4} strokeLinecap="round" />
+              <line x1={12} y1={12} x2={12 + 4 * Math.sin((t - a) * 0.7)} y2={12 - 4 * Math.cos((t - a) * 0.7)} stroke="#d62d20" strokeWidth={2.4} strokeLinecap="round" /></svg>
+            <span style={{fontVariantNumeric: 'tabular-nums'}}>{reloj}</span>
+          </div>
+        </div>
+      </div>
+    </Ventana>
+  );
+};
 
 // "Entender el modelo / adquirir habilidades / aprender a vender": camino de 3 pasos que se va completando
 const PASOS = [56.2, 57.36, 59.48];
@@ -394,9 +433,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -439,12 +478,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -491,38 +530,34 @@ export const ReelA2: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
-      <Telefono t={t} a={29.52} b={31.16} />
-      <Burbujas t={t} a={32.52} b={34.28} />
+      <LlamadasPerdidas t={t} a={29.52} b={31.16} />
+      <ChatSinResponder t={t} a={31.9} b={34.28} />
       <Pasos t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.slice(2).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={11.32} x={540} y={1120} />
-      <Rafaga t={t} en={38.6} x={540} y={1180} />
-      <Rafaga t={t} en={54.08} x={540} y={1150} color={C.rosa} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={11.32} x={540} y={1120} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={38.6} x={540} y={1180} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={54.08} x={540} y={1150} color={C.rosa} />
 
       {/* Lista: aprender a detectar un problema / ofrecer una solución / prestar un servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
         <div style={{position: 'absolute', left: -60, right: -60, top: 880, padding: '60px 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, background: VELO, filter: SOMBRA}}>
           <div style={{display: 'flex', gap: '0.24em', ...H, fontSize: 66, marginBottom: 6}}>
-            <Sube t={t} en={47.44} sale={LISTA[1]}>aprender</Sube>
-            <Sube t={t} en={48.0} sale={LISTA[1]}>a</Sube>
+            <Entra estilo={ESTILO.texto} t={t} en={47.44} sale={LISTA[1]}>aprender</Entra>
+            <Entra estilo={ESTILO.texto} t={t} en={48.0} sale={LISTA[1]}>a</Entra>
           </div>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14}}>
-            {([['detectar\nun problema', 48.04], ['ofrecer\nuna solución', 49.12], ['prestar\nun servicio', 50.48]] as [string, number][]).map(([txt, en], i) => {
-              const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-              return (
-                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpe(t, en, LISTA[1])}}>
-                  <svg width={84} height={84} viewBox="0 0 84 84" style={{overflow: 'visible', flexShrink: 0}}>
-                    <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} />
-                    <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
-                  </svg>
-                  <span style={{...H, fontSize: 70, lineHeight: 1.0, whiteSpace: 'pre'}}>{txt}</span>
-                </div>
-              );
-            })}
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10}}>
+            {([['detectar un problema', 48.04], ['ofrecer una solución', 49.12], ['prestar un servicio', 50.48]] as [string, number][]).map(([txt, en]) => (
+              <div key={txt} style={{...H, fontSize: 62, lineHeight: 1.05, whiteSpace: 'nowrap', ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>{txt}</div>
+            ))}
+            <div style={{position: 'relative', width: 700, height: 26, marginTop: 22, borderRadius: 13, background: 'rgba(255,255,255,0.18)', overflow: 'hidden'}}>
+              <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 13, background: C.amarillo, boxShadow: `0 0 18px rgba(${GLOW_AMARILLO},0.9)`,
+                width: `${100 * Math.max(...[48.04, 49.12, 50.48].map((en, i) => iv(t, [en, en + 9 * F], [i / 3, (i + 1) / 3], Easing.bezier(0.16, 1, 0.3, 1)) * (t >= en ? 1 : 0)))}%`}} />
+              {[1, 2].map((k) => <div key={k} style={{position: 'absolute', left: `${(100 * k) / 3}%`, top: 0, bottom: 0, width: 4, background: 'rgba(0,0,0,0.35)'}} />)}
+            </div>
           </div>
         </div>
       </Ventana>
@@ -533,25 +568,25 @@ export const ReelA2: React.FC = () => {
       <Ventana t={t} a={CTA} b={DURACION_A2}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={63.48}>haz</Sube>
-          <Sube t={t} en={63.8}>clic</Sube>
-          <Sube t={t} en={64.16} style={amarillo}>aquí</Sube>
-          <Sube t={t} en={64.44} style={amarillo}>debajo</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 64.6 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 64.6) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={63.48}>haz</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={63.8}>clic</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={64.16} style={amarillo}>aquí</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={64.44} style={amarillo}>debajo</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 64.6 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 64.6)}}>↓</span>
         </div>
       </Ventana>
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
+        <Son key={`w${c}`} s="swoosh2" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 63.48, 63.8, 64.16, 64.44].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
         ['hit', 0.04, -2], ['boom', 0.6, -3], ['pop', 0.84, -4], ['thud', 7.52, -3], ['pop', 9.76, -3], ['boom', 11.32, -4], ['pop', 19.36, -3],
-        ['click', 22.84, -4], ['click', 23.84, -4], ['pop', 24.36, -3], ['pop', 28.84, -3], ['popup', 29.72, -6], ['popup', 30.04, -6], ['popup', 30.36, -6],
-        ['popup', 32.67, -5], ['popup', 33.07, -5], ['popup', 33.47, -5], ['pop', 36.56, -3], ['riser', 38.6, -3], ['hit', 38.6], ['riserm', 39.32, -4],
+        ['click', 22.84, -4], ['click', 23.84, -4], ['pop', 24.36, -3], ['pop', 28.84, -3], ['negativo', 29.8, -7], ['negativo', 30.3, -7], ['negativo', 30.8, -7],
+        ['mensaje', 32.05, -7], ['mensaje', 32.45, -7], ['mensaje', 32.85, -7], ['pop', 36.56, -3], ['riser', 38.6, -3], ['hit', 38.6], ['riserm', 39.32, -4],
         ['pop', 45.96, -3], ['pop', 46.56, -3], ['click', 48.04], ['click', 49.12], ['click', 50.48], ['twinkle', 51.28, -6],
         ['thud', 54.08, -3], ['pop', 54.48, -4], ['ding', 56.2, -6], ['ding', 57.36, -6], ['ding', 59.48, -6],
       ] as [string, number, number?][]).map(([s, en, db], i) => (

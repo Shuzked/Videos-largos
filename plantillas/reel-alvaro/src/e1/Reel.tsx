@@ -9,6 +9,10 @@ import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
+import {Entra, golpeV, Impacto, flechaV, Estilo, MUELLE} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'maquina', golpe: 'glitch', impacto: 'cuadros', sub: 'maquina', flecha: 'latido'};
+
 export const DURACION_E1 = 77.56;
 const FPS = 25;
 const fr = (s: number) => Math.round(s * FPS);
@@ -107,8 +111,8 @@ type B = {src: string; a: number; b: number; etiqueta?: React.ReactNode; desde?:
 const BROLL: B[] = [
   {src: 'dental', a: 34.8, b: 35.88, desde: 2, foco: 0.5},
   {src: 'peluqueria', a: 35.88, b: 36.76, desde: 2, foco: 0.55},
-  {src: 'empresa', a: 36.76, b: 40.18, desde: 0.5, foco: 0.5},
-  {src: 'codigo', a: 46.32, b: 48.0, desde: 1, foco: 0.5, vertical: true},
+  {src: 'empresa', a: 36.76, b: 40.18, desde: 0.5, foco: 0.55},
+  {src: 'codigo', a: 46.32, b: 48.0, desde: 1, foco: 0.5},
 ];
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
@@ -240,43 +244,61 @@ const Llamada: React.FC<{t: number}> = ({t}) => {
   );
 };
 
-// Ilustración: llamada entrante → asistente de IA → reserva (iconos, sin datos de reservas reales)
+// Ilustración: núcleo de IA con sus capacidades en órbita (preguntas, llamadas, citas); solo iconos, el texto va en subtítulo
 const NODOS: [number, string][] = [
   [22.88, 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2zm4 5v2h2V9H8zm4 0v2h2V9h-2zm4 0v2h2V9h-2z'],
   [24.04, 'M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z'],
   [25.96, 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 7h14v10H5V9zm5.2 7.6L7.7 14l1.4-1.4 1.1 1.1 3.9-3.9 1.4 1.4-5.3 5.4z'],
 ];
-const Flujo: React.FC<{t: number}> = ({t}) => {
-  const xs = [230, 540, 850];
+const ORBITA = {a: 22.56, b: 29.0, cx: 540, cy: 255, rx: 370, ry: 70, config: 27.2};
+const Orbita: React.FC<{t: number}> = ({t}) => {
+  const {a, b, cx, cy, rx, ry, config} = ORBITA;
+  const nace = iv(t, [a, a + 10 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+  const giro = (t - a) * 0.42;
+  const engranaje = iv(t, [config, config + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+  const sats = NODOS.map(([en, d], i) => {
+    const ang = -Math.PI / 2 + giro + (i * 2 * Math.PI) / 3 + Math.PI / 3;
+    const sale = iv(t, [en, en + 11 * F], [0, 1], MUELLE);
+    const x = cx + Math.cos(ang) * rx * sale;
+    const y = cy + Math.sin(ang) * ry * sale;
+    const prof = (Math.sin(ang) + 1) / 2; // 0 detrás, 1 delante
+    return {en, d, x, y, sale, prof, esc: (0.7 + 0.3 * prof) * Math.min(1, sale * 1.4)};
+  });
+  const ondas = Array.from({length: 7}, (_, k) => 10 + 22 * Math.abs(Math.sin(t * 7.5 + k * 0.9)) * (1 - engranaje));
+  const satEl = (s: (typeof sats)[number], i: number) => {
+    if (t < s.en) return null;
+    const flash = iv(t, [s.en + 8 * F, s.en + 18 * F], [1, 0]);
+    const pulso = t > config ? 0.5 + 0.5 * Math.sin((t - config) * 9 - i * 1.4) : 0;
+    return (
+      <g key={i} transform={`translate(${s.x} ${s.y}) scale(${s.esc})`} opacity={0.55 + 0.45 * s.prof}>
+        {flash > 0 && <circle r={70 + (1 - flash) * 60} fill="none" stroke={C.amarillo} strokeWidth={5} opacity={flash} />}
+        <rect x={-68} y={-68} width={136} height={136} rx={40} fill="rgba(18,18,22,0.82)" stroke={C.amarillo} strokeWidth={5 + 3 * pulso}
+          style={{filter: `drop-shadow(0 0 ${10 + 14 * pulso}px rgba(${GLOW_AMARILLO},0.9))`}} />
+        <g transform="translate(-36 -36) scale(3)"><path d={s.d} fill={C.amarillo} /></g>
+      </g>
+    );
+  };
   return (
-    <Ventana suave t={t} a={22.56} b={29.0}>
-      <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
-        {[0, 1].map((i) => {
-          const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const xa = xs[i] + 95;
-          const xb = xs[i + 1] - 95;
-          return (
-            <g key={i}>
-              <line x1={xa} y1={100} x2={xb} y2={100} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeDasharray="4 14" strokeLinecap="round" />
-              <line x1={xa} y1={100} x2={xa + (xb - xa) * p} y2={100} stroke={C.amarillo} strokeWidth={6} strokeLinecap="round" />
-              {p > 0 && <path d={`M ${xa + (xb - xa) * p - 14} 86 L ${xa + (xb - xa) * p} 100 L ${xa + (xb - xa) * p - 14} 114`} stroke={C.amarillo} strokeWidth={6} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
-            </g>
-          );
-        })}
-        {NODOS.map(([en, d], i) => {
-          const on = t >= en;
-          const pop = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const entra = iv(t, [22.56 + i * 0.12, 22.56 + i * 0.12 + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const anillo = on && i === 0 ? ((t - en) * 1.5) % 1 : 0;
-          return (
-            <g key={i} transform={`translate(${xs[i]} 100) scale(${entra * (on ? 1 + 0.08 * pop : 0.9)})`}>
-              {anillo > 0 && t < NODOS[1][0] && <circle r={80 + anillo * 50} fill="none" stroke={C.amarillo} strokeWidth={5} opacity={1 - anillo} />}
-              <circle r={80} fill={on ? C.amarillo : 'rgba(0,0,0,0.5)'} stroke={on ? C.amarillo : 'rgba(255,255,255,0.75)'} strokeWidth={6}
-                style={{filter: on ? `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))` : 'none'}} />
-              <g transform="translate(-42 -42) scale(3.5)"><path d={d} fill={on ? '#111' : '#fff'} /></g>
-            </g>
-          );
-        })}
+    <Ventana suave t={t} a={a} b={b}>
+      <svg style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: SOMBRA}} width={1080} height={700}>
+        <ellipse cx={cx} cy={cy} rx={rx * nace} ry={ry * nace} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={4} strokeDasharray="3 16" strokeLinecap="round"
+          strokeDashoffset={-(t - a) * 60} />
+        {sats.map((s, i) => t >= s.en && (
+          <line key={`l${i}`} x1={cx} y1={cy} x2={s.x} y2={s.y} stroke={C.amarillo} strokeWidth={4} opacity={0.5 * s.sale} strokeDasharray="10 12" strokeDashoffset={(t - s.en) * -90} />
+        ))}
+        {sats.map((s, i) => (s.prof < 0.5 ? satEl(s, i) : null))}
+        <g transform={`translate(${cx} ${cy}) scale(${nace})`}>
+          <circle r={118 + 10 * Math.sin(t * 4)} fill={`rgba(${GLOW_AMARILLO},0.12)`} />
+          <circle r={92} fill="#141418" stroke={C.amarillo} strokeWidth={7} style={{filter: `drop-shadow(0 0 22px rgba(${GLOW_AMARILLO},1))`}} />
+          <g transform={`rotate(${(t - a) * 140})`}><circle r={106} fill="none" stroke={C.amarillo} strokeWidth={4} strokeDasharray="60 40 10 40" opacity={0.8} /></g>
+          <g opacity={1 - engranaje}>
+            {ondas.map((h, k) => <rect key={k} x={-57 + k * 17} y={-h / 2} width={10} height={h} rx={5} fill={C.amarillo} />)}
+          </g>
+          <g opacity={engranaje} transform={`scale(${0.6 + 0.4 * engranaje}) rotate(${(t - config) * 120})`}>
+            <path fill={C.amarillo} d="M-8-58h16l4 14a46 46 0 0 1 12 5l13-7 11 11-7 13a46 46 0 0 1 5 12l14 4v16l-14 4a46 46 0 0 1-5 12l7 13-11 11-13-7a46 46 0 0 1-12 5l-4 14h-16l-4-14a46 46 0 0 1-12-5l-13 7-11-11 7-13a46 46 0 0 1-5-12l-14-4v-16l14-4a46 46 0 0 1 5-12l-7-13 11-11 13 7a46 46 0 0 1 12-5zM0-22a22 22 0 1 0 0 44 22 22 0 1 0 0-44z" />
+          </g>
+        </g>
+        {sats.map((s, i) => (s.prof >= 0.5 ? satEl(s, i) : null))}
       </svg>
     </Ventana>
   );
@@ -303,7 +325,7 @@ const GRANDES: Grande[] = [
   // Asistente de IA
   {a: 20.24, b: 22.5, top: 1000, lineas: [{ws: [['un', 20.24], ['asistente', 20.44], ['de', 21.08]], size: 80}, {ws: [['inteligencia', 21.2]], size: 120, golpe: true}, {ws: [['artificial', 21.8, amarillo]], size: 120, golpe: true}]},
   // Clínica / peluquería / empresa (B-roll)
-  {a: 34.8, b: 35.86, top: 260, lineas: [{ws: [['piensa', 34.8], ['en', 35.08]], size: 90}, {ws: [['una clínica', 35.16, amarillo]], size: 130, golpe: true}]},
+  {a: 34.8, b: 35.86, top: 1250, lineas: [{ws: [['piensa', 34.8], ['en', 35.08]], size: 90}, {ws: [['una clínica', 35.16, amarillo]], size: 130, golpe: true}]},
   {a: 35.88, b: 36.74, top: 260, lineas: [{ws: [['una peluquería', 35.88, amarillo]], size: 120, golpe: true}]},
   {a: 36.76, b: 40.16, top: 1150, lineas: [{ws: [['una', 36.76], ['empresa', 36.96], ['que', 37.36], ['recibe', 37.48]], size: 80}, {ws: [['constantemente', 37.84, amarillo]], size: 120, golpe: true}, {ws: [['llamadas', 38.92], ['de', 39.4], ['clientes', 39.56]], size: 80}]},
   // No necesitas ser programador (B-roll)
@@ -405,9 +427,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -450,12 +472,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -503,27 +525,31 @@ export const ReelE1: React.FC = () => {
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
       <Llamada t={t} />
-      <Flujo t={t} />
+      <Orbita t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={4.24} x={540} y={1130} color={C.rosa} />
-      <Rafaga t={t} en={63.36} x={540} y={1180} radio={220} />
-      <Rafaga t={t} en={70.12} x={540} y={1250} radio={240} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={4.24} x={540} y={1130} color={C.rosa} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={63.36} x={540} y={1180} radio={220} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={70.12} x={540} y={1250} radio={240} />
 
       {/* Lista: qué necesita el negocio / cómo presentarle tu propuesta / cómo implementar correctamente el servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
         <div style={{position: 'absolute', left: -60, right: -60, top: 860, padding: '60px 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: VELO, filter: SOMBRA}}>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 18}}>
-            {([['conocer las\nherramientas', 51.68], ['aprender a identificar\noportunidades', 53.16], ['comprender cómo se\nvenden estos servicios', 55.28]] as [string, number][]).map(([txt, en], i) => {
-              const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
+            {([['conocer las\nherramientas', 51.68, 'M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z'],
+              ['aprender a identificar\noportunidades', 53.16, 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13zm0 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z'],
+              ['comprender cómo se\nvenden estos servicios', 55.28, 'M12.2 5.6l-4.7 4.6a1.4 1.4 0 0 0 2 2l2.8-2.7 6.4 6.3 1.6-1.6a2 2 0 0 0 0-2.8l-4.6-4.6a3 3 0 0 0-3.5-.2zM2 9.4l3.6-3.6a2 2 0 0 1 2.8 0l.7.7-3 3a3.4 3.4 0 0 0 4.8 4.8l2.4-2.4 5.3 5.3-.9.9a2 2 0 0 1-2.8 0l-.4-.4-.4.4a2 2 0 0 1-2.8 0L2 12.2a2 2 0 0 1 0-2.8z']] as [string, number, string][]).map(([txt, en, ico]) => {
+              const tr = iv(t, [en, en + 9 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
+              const ic = iv(t, [en + 5 * F, en + 13 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
               return (
-                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpe(t, en, LISTA[1])}}>
-                  <svg width={84} height={84} viewBox="0 0 84 84" style={{overflow: 'visible', flexShrink: 0}}>
-                    <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} />
-                    <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
+                <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 26, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
+                  <svg width={92} height={92} viewBox="-46 -46 92 92" style={{overflow: 'visible', flexShrink: 0}}>
+                    <polygon points="0,-42 36.4,-21 36.4,21 0,42 -36.4,21 -36.4,-21" fill={`rgba(${GLOW_AMARILLO},${0.18 * tr})`} stroke={C.amarillo} strokeWidth={6} strokeLinejoin="round"
+                      strokeDasharray={252} strokeDashoffset={252 * (1 - tr)} transform={`rotate(${(1 - tr) * -60})`} style={{filter: `drop-shadow(0 0 ${12 * tr}px rgba(${GLOW_AMARILLO},0.9))`}} />
+                    <g transform={`scale(${ic * 1.75}) translate(-12 -12)`}><path d={ico} fill={C.amarillo} /></g>
                   </svg>
                   <span style={{...H, fontSize: 56, lineHeight: 1.0, whiteSpace: 'pre'}}>{txt}</span>
                 </div>
@@ -539,23 +565,23 @@ export const ReelE1: React.FC = () => {
       <Ventana t={t} a={CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={71.24}>pulsa</Sube>
-          <Sube t={t} en={71.72}>el</Sube>
-          <Sube t={t} en={71.84} style={amarillo}>botón</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 71.95 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 71.95) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={71.24}>pulsa</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={71.72}>el</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={71.84} style={amarillo}>botón</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 71.95 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 71.95)}}>↓</span>
         </div>
       </Ventana>
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
+        <Son key={`w${c}`} s="swoosh3" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 71.24, 71.72, 71.84].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
         ['hit', 0.04, -2], ['boom', 1.0, -3], ['thud', 4.24, -3], ['popup', 5.0, -5], ['pop', 21.2, -3], ['pop', 21.8, -3],
-        ['ding', 22.88, -6], ['ding', 24.04, -6], ['ding', 25.96, -6], ['hit', 29.2, -3], ['pop', 35.16, -3], ['pop', 35.88, -3], ['pop', 37.84, -3], ['thud', 47.4, -3],
+        ['reveal', 22.56, -8], ['bloop', 22.88, -5], ['bloop', 24.04, -5], ['bloop', 25.96, -5], ['interruptor', 27.2, -6], ['hit', 29.2, -3], ['pop', 35.16, -3], ['pop', 35.88, -3], ['pop', 37.84, -3], ['thud', 47.4, -3],
         ['click', 51.68], ['click', 53.16], ['click', 55.28], ['pop', 60.08, -3], ['boom', 63.36, -3], ['riser', 70.12, -3], ['boom', 70.12, -2], ['twinkle', 70.4, -6],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />

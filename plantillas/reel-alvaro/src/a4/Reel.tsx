@@ -7,6 +7,11 @@ import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
+import ENCUADRE from './encuadre.json';
+
+import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+// Animaciones propias de este reel (no se repiten en otros vídeos)
+const ESTILO: Estilo = {texto: 'deslizar', golpe: 'barrido', impacto: 'rayas', sub: 'deslizar', flecha: 'gira'};
 
 export const DURACION_A4 = 66.76;
 const FPS = 25;
@@ -116,9 +121,19 @@ const BROLL: B[] = [
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
 
+// Encuadre automático (scripts/encuadre.py): pista de foco que sigue al sujeto de cada clip
+const PISTAS = ENCUADRE as unknown as Record<string, [number, number][]>;
+const focoEn = (b: B, t: number) => {
+  const p = PISTAS[b.src];
+  if (!p) return b.foco;
+  const x = Math.max(0, t - b.a) * 5;
+  const i = Math.min(p.length - 1, Math.floor(x));
+  const j = Math.min(p.length - 1, i + 1);
+  return p[i][1] + (p[j][1] - p[i][1]) * (x - i);
+};
 const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   const ancho = b.vertical ? 1080 : ANCHO_BROLL;
-  const left = Math.min(0, Math.max(1080 - ancho, 540 - b.foco * ancho));
+  const left = Math.min(0, Math.max(1080 - ancho, 540 - focoEn(b, t) * ancho));
   return (
     <Ventana t={t} a={b.a} b={b.b}>
       <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
@@ -385,9 +400,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Sube>
+            </Entra>
           ))}
         </div>
       )}
@@ -430,12 +445,12 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
-                <span style={{display: 'inline-block', ...golpe(t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
+                <span style={{display: 'inline-block', ...golpeV(ESTILO.golpe, t, l.ws[0][1], g.b), ...l.ws[0][2]}}>{l.ws.map((w) => w[0]).join(' ')}</span>
               ) : (
                 l.ws.map(([w, en, st], wi) => (
-                  <Sube key={wi} t={t} en={en} sale={g.b} style={st}>
+                  <Entra estilo={ESTILO.texto} key={wi} t={t} en={en} sale={g.b} style={st}>
                     {w}
-                  </Sube>
+                  </Entra>
                 ))
               )}
             </div>
@@ -490,15 +505,15 @@ export const ReelA4: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Rafaga t={t} en={4.48} x={540} y={1150} color={C.rosa} />
-      <Rafaga t={t} en={20.04} x={540} y={1250} />
-      <Rafaga t={t} en={43.68} x={540} y={1100} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={4.48} x={540} y={1150} color={C.rosa} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={20.04} x={540} y={1250} />
+      <Impacto estilo={ESTILO.impacto} t={t} en={43.68} x={540} y={1100} />
 
       {/* Tramo de herramientas: "aprendes sobre / aprendes a conectar / aprendes" arriba, en pequeño (el resto son las pastillas) */}
       {([[7.6, 10.62, [['aprendes', 7.6], ['sobre', 8.04]]], [10.68, 12.3, [['aprendes', 10.68], ['a', 11.12], ['conectar', 11.2]]], [12.32, 15.62, [['aprendes', 12.32]]]] as [number, number, [string, number][]][]).map(([a, b, ws]) => (
         <Ventana key={a} t={t} a={a} b={b}>
           <div style={{position: 'absolute', left: 100, right: 100, top: 1180, display: 'flex', justifyContent: 'center', gap: '0.24em', ...H, fontSize: 80, filter: SOMBRA}}>
-            {ws.map(([w, en]) => <Sube key={w + en} t={t} en={en} sale={b - 0.2}>{w}</Sube>)}
+            {ws.map(([w, en]) => <Entra estilo={ESTILO.texto} key={w + en} t={t} en={en} sale={b - 0.2}>{w}</Entra>)}
           </div>
         </Ventana>
       ))}
@@ -509,26 +524,26 @@ export const ReelA4: React.FC = () => {
       <Ventana t={t} a={CTA} b={DURACION_A4}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Sube t={t} en={65.12}>haz</Sube>
-          <Sube t={t} en={65.44}>clic</Sube>
-          <Sube t={t} en={65.76} style={amarillo}>aquí</Sube>
-          <Sube t={t} en={66.04} style={amarillo}>debajo</Sube>
-          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 66.2 ? 0 : 1, translate: `0px ${Math.abs(Math.sin((t - 66.2) * 7)) * 18}px`}}>↓</span>
+          <Entra estilo={ESTILO.sub} t={t} en={65.12}>haz</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={65.44}>clic</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={65.76} style={amarillo}>aquí</Entra>
+          <Entra estilo={ESTILO.sub} t={t} en={66.04} style={amarillo}>debajo</Entra>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 66.2 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 66.2)}}>↓</span>
         </div>
       </Ventana>
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
+        <Son key={`w${c}`} s="swish" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 65.12, 65.44, 65.76, 66.04, 7.6, 8.04, 10.68, 11.12, 11.2, 12.32].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
         ['hit', 0.04, -2], ['boom', 1.92, -3], ['thud', 4.48, -3],
-        ['popup', 8.32, -5], ['popup', 8.88, -5], ['popup', 9.6, -5], ['popup', 11.56, -5], ['popup', 12.77, -5], ['popup', 13.72, -5], ['popup', 14.84, -5],
-        ['riser', 18.0, -4], ['whoosh', 18.0, -2], ['boom', 19.6, -3], ['pop', 24.0, -3], ['pop', 26.08, -3], ['ding', 28.52, -5], ['ding', 30.56, -5],
-        ['snap', 32.12, -4], ['snap', 35.6, -4], ['thud', 39.4, -3], ['twinkle', 41.92, -6], ['pop', 42.36, -3], ['hit', 43.68, -3],
+        ['burbuja2', 8.32, -2], ['burbuja2', 8.88, -2], ['burbuja2', 9.6, -2], ['burbuja2', 11.56, -2], ['burbuja2', 12.77, -2], ['burbuja2', 13.72, -2], ['burbuja2', 14.84, -2],
+        ['riser', 18.0, -4], ['whoosh', 18.0, -2], ['boom', 19.6, -3], ['pop', 24.0, -3], ['pop', 26.08, -3], ['puntos', 28.52, -7], ['puntos', 30.56, -7],
+        ['negativo', 32.12, -5], ['negativo', 35.6, -5], ['thud', 39.4, -3], ['twinkle', 41.92, -6], ['pop', 42.36, -3], ['hit', 43.68, -3],
         ['popup', 53.84, -6], ['popup', 54.04, -6], ['popup', 54.24, -6], ['whoosh', 55.6, -3], ['pop', 60.32, -3],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />
