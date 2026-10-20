@@ -67,3 +67,7 @@ Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/credito
 - **Sonido**: música de fondo sin copyright ni atribución (Mixkit) adaptada al arco del vídeo y con ducking bajo la voz, y efectos de su banco de sonidos (Drive) alineados por el pico. Audio masterizado: voz limpia (EQ + compresión), -14 LUFS, pico real -1 dB.
 - **Flujo**: primero quick review en baja calidad para validar; el render final a máxima calidad solo cuando lo aprueba.
 
+
+### Plantilla de reels de Álvaro (para que todos se vean iguales)
+
+Todos los reels parten de `plantillas/reel-alvaro/` (código Remotion, sin vídeos): `src/a1/Reel.tsx` (cámara con tracking, B-roll, frases grandes, subtítulos, CTA, efectos), `src/a1/transicion.tsx` (transición calcada del cliente), `src/anim.tsx` / `texto.tsx` / `estilo.ts` (animaciones, tipografía, banco de sonidos) y `audio/master.sh` (voz + música con ducking + efectos → -14 LUFS, pico -1 dB). Para un reel nuevo: copia la plantilla a `trabajo/intro/remotion-intro/src/<reel>/` (o a un proyecto Remotion nuevo con esos archivos), cambia solo los datos (palabras, cortes, B-roll, frases grandes, música) y conserva componentes y estilos. Cuando el cliente corrija algo, aplícalo en la plantilla y en `CLAUDE.md` para los siguientes vídeos.
