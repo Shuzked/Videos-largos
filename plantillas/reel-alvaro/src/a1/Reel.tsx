@@ -32,8 +32,9 @@ const OBJ_X = 540;
 const OBJ_Y = 660;
 type K = [number, number, number, 'suave' | 'golpe' | 'corte'];
 const ZOOM: K[] = [
-  [0, 1.0, 0, 'corte'],
-  [0.1, 1.04, 1.3, 'suave'],
+  [0, 1.2, 0, 'corte'],
+  [0.02, 1.03, 0.45, 'golpe'],
+  [0.5, 1.05, 0.9, 'suave'],
   [1.44, 1.12, 0.16, 'golpe'],
   [3.12, 1.04, 0.6, 'suave'],
   [6.68, 1.1, 0.6, 'suave'],
@@ -71,7 +72,7 @@ const escala = (t: number) => {
   return v;
 };
 // Temblor corto en los impactos fuertes
-const IMPACTOS = [1.44, 36.8];
+const IMPACTOS = [1.44, 3.76, 7.8, 36.8];
 const SACUDIDA: [number, number][] = [[12, -8], [-9, 6], [5, -3], [-2, 1]];
 const camara = (t: number) => {
   const s = BASE * escala(t);
@@ -542,7 +543,7 @@ export const ReelA1: React.FC = () => {
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
-        ['boom', 1.44], ['switch', 1.44, -4], ['pop', 3.76, -2], ['pop', 6.68, -2], ['pop', 10.6, -4], ['pop', 11.44, -4], ['pop', 12.6, -4], ['pop', 14.2, -4], ['twinkle', 17.0, -6],
+        ['hit', 0.04, -2], ['boom', 1.44], ['switch', 1.44, -4], ['boom', 3.76, -6], ['pop', 3.76, -2], ['pop', 6.68, -2], ['pop', 10.6, -4], ['pop', 11.44, -4], ['pop', 12.6, -4], ['pop', 14.2, -4], ['twinkle', 17.0, -6],
         ['hit', 20.76, -2], ['pop', 22.84, -3], ['boom', 25.12, -4], ['pop', 26.76, -3], ['pop', 29.4, -3], ['pop', 31.64, -3], ['riser', 33.0, -2], ['thud', 34.08, -3],
         ['riserm', 36.8, -2], ['hit', 36.8], ['ding', 39.52, -3], ['pop', 40.64, -3], ['pop', 46.72], ['pop', 47.08, -3], ['pop', 54.72, -3], ['pop', 55.52, -3],
         ['pop', 57.6], ['click', 59.24], ['click', 60.36], ['click', 61.0], ['twinkle', 62.96, -6],

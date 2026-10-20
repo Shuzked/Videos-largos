@@ -32,8 +32,9 @@ const OBJ_X = 540;
 const OBJ_Y = 660;
 type K = [number, number, number, 'suave' | 'golpe' | 'corte'];
 const ZOOM: K[] = [
-  [0, 1.0, 0, 'corte'],
-  [0.1, 1.04, 1.2, 'suave'],
+  [0, 1.2, 0, 'corte'],
+  [0.02, 1.03, 0.45, 'golpe'],
+  [0.5, 1.05, 0.8, 'suave'],
   [1.4, 1.12, 0.16, 'golpe'],
   [2.44, 1.0, 0, 'corte'],
   [4.68, 1.02, 0, 'corte'],
@@ -82,7 +83,7 @@ const escala = (t: number) => {
   return v;
 };
 // Temblor corto en los impactos fuertes
-const IMPACTOS = [7.72, 28.8];
+const IMPACTOS = [1.76, 7.72, 28.8];
 const SACUDIDA: [number, number][] = [[12, -8], [-9, 6], [5, -3], [-2, 1]];
 const camara = (t: number) => {
   const s = BASE * escala(t);
@@ -303,7 +304,7 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 // Solo frases CORTAS en grande (2-4 palabras, enteras), alternando con frases en subtítulo
 const GRANDES: Grande[] = [
   // HOOK (detrás de Álvaro)
-  {a: 0.04, b: 2.4, top: 70, lineas: [{ws: [['imagínate', 0.04], ['que', 0.8], ['tienes', 0.92], ['una', 1.2]], size: 72}, {ws: [['clínica', 1.4]], size: 150, golpe: true}, {ws: [['dental', 1.76, amarillo]], size: 150, golpe: true}]},
+  {a: 0.04, b: 2.4, top: 70, lineas: [{ws: [['imagínate', 0.04], ['que', 0.8], ['tienes', 0.92], ['una', 1.2]], size: 84, abajo: true}, {ws: [['clínica', 1.4]], size: 150, golpe: true}, {ws: [['dental', 1.76, amarillo]], size: 150, golpe: true}]},
   // Recepcionista (B-roll)
   {a: 2.44, b: 4.6, top: 260, lineas: [{ws: [['cada', 2.44], ['vez', 2.76], ['que', 2.92], ['tu', 3.0]], size: 90}, {ws: [['recepcionista', 3.12]], size: 120, golpe: true}, {ws: [['está', 3.76], ['ocupada', 4.0]], size: 90}]},
   // Sin responder
@@ -561,7 +562,7 @@ export const ReelA3: React.FC = () => {
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
       ))}
       {([
-        ['pop', 1.4, -3], ['boom', 1.76, -3], ['pop', 3.12, -3], ['popup', 4.88, -6], ['popup', 5.04, -6], ['popup', 5.2, -6], ['thud', 7.72, -3],
+        ['hit', 0.04, -2], ['pop', 1.4, -3], ['boom', 1.76, -3], ['pop', 3.12, -3], ['popup', 4.88, -6], ['popup', 5.04, -6], ['popup', 5.2, -6], ['thud', 7.72, -3],
         ['pop', 14.16, -3], ['pop', 19.2, -3], ['pop', 19.76, -3], ['ding', 21.2, -6], ['ding', 22.92, -6], ['ding', 25.96, -6],
         ['boom', 28.8, -4], ['riserm', 29.36, -4], ['hit', 30.04, -2], ['thud', 33.36, -3], ['pop', 34.64, -3],
         ['click', 39.28], ['click', 40.88], ['click', 43.2], ['twinkle', 45.96, -6], ['pop', 48.12, -3], ['ding', 53.24, -5], ['pop', 54.64, -3], ['pop', 60.28, -3],
