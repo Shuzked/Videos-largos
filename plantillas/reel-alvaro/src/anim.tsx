@@ -51,7 +51,8 @@ export const Sube: React.FC<{
 }> = ({t, en, sale, style, children}) => {
   const p = iv(t, [en, en + 7 * F], [0, 1], EXPO_OUT);
   const s = sale === undefined ? 0 : iv(t, [sale, sale + 6 * F], [0, 1], EXPO_IN);
-  const moviendo = (p > 0 && p < 1) || s > 0;
+  // la máscara ya está activa en el primer fotograma (si no, la palabra asoma un fotograma por debajo de la línea)
+  const moviendo = (t >= en && p < 1) || s > 0;
   return (
     <span
       style={{
