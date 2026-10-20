@@ -9,6 +9,7 @@ import {ReelE2, DURACION_E2} from './e2/Reel';
 import {ReelE3, DURACION_E3} from './e3/Reel';
 import {ReelE4, DURACION_E4} from './e4/Reel';
 import {ReelE5, DURACION_E5} from './e5/Reel';
+import {ReelA5, DURACION_A5} from './a5/Reel';
 import {ReelA6, DURACION_A6} from './a6/Reel';
 import {ReelA7, DURACION_A7} from './a7/Reel';
 import {Catalogo, DURACION_CAT} from './Catalogo';
@@ -33,6 +34,7 @@ export const RemotionRoot = () => (
   <Composition id="Catalogo" component={Catalogo} width={1080} height={1920} fps={25} durationInFrames={DURACION_CAT * 25} />
   <Composition id="ReelE4" component={ReelE4} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_E4 * 25)} />
   <Composition id="ReelE5" component={ReelE5} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_E5 * 25)} />
+  <Composition id="ReelA5" component={ReelA5} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A5 * 25)} />
   <Composition id="ReelA6" component={ReelA6} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A6 * 25)} />
   <Composition id="ReelA7" component={ReelA7} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A7 * 25)} />
   </>

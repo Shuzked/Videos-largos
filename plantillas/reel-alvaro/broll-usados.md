@@ -10,6 +10,7 @@
 | A2 1E | 14396 ordenadores, 9757 código, 29981 matemáticas, 41652 estudiando, 43242 barbería (vertical) |
 | A3 1E | 40592 peluquería, 24968 clínica, 4350 restaurante, 4348 barrio, 4437 ciudad, 33952 multinacional, 6424 cercanas (florista), 6161 comercial |
 | A4 1E | 36426 vídeos, 28723 formaciones, 308 herramientas (dashboard), 46677 cliente |
+| A5 Evergreen | sin B-roll: testimonio de Billy (videollamada) |
 | A5 1E | 23116 empresas (reunión), 38354 asistentes de voz (llamada), 4915 WhatsApp (escribiendo en el móvil), 21921 chatbots (robot), 47266 automatizaciones (máquina) |
 | A6 Evergreen | 4607 empresa (oficina), 4835 organizando información (papeles), 1737 seguimiento a mano (libreta), 48610 consumen tiempo (cansada) |
 | A7 Evergreen | 4520 universidad, 48714 negocios (dueña de tienda), 5537 captación (reunión cenital), 4844 entrega (portátil) |
@@ -26,11 +27,12 @@
 | A2 1E | 739 Hip Hop 03 |
 | A3 1E | 876 Like a Loop Machine |
 | A4 1E | 101 Smooth Grooves |
+| A5 Evergreen | 31 Dreaming Big |
 | A5 1E | 1007 Move Your Body |
 | A6 Evergreen | 1091 Carry On |
 | A7 Evergreen | 953 Feel Alive |
 
-Libres: 31 Dreaming Big, 768 Hip-Hop Beat, 989 Dirty Thinkin'.
+Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 
 ## Animaciones (src/variantes.tsx) — combinación propia por reel
 
@@ -44,6 +46,7 @@ Libres: 31 Dreaming Big, 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 | A2 1E | giro | zoom | circulos | cae | whoosh |
 | A3 1E | caida | rebote | confeti | balanceo | swoosh2 |
 | A4 1E | espaciado | tinta | halo | vibra | slide2 |
+| A5 Evergreen | ola | eco | rombos | pendulo | swoosh2 |
 | A5 1E | estela | neon | estrella | elastica | slide |
 | A6 Evergreen | tecla | contorno | serpentinas | voltea | suck |
 | A7 Evergreen | rodar | cortina | polvo | salto | snaprev |

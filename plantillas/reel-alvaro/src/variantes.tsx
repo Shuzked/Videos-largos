@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina';
-export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto'};
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco';
+export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos';
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -76,6 +76,10 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       break;
     case 'espaciado':
       anim = {scale: `${1 + (1 - e) * 0.45} 1`, opacity: Math.min(1, p * 1.5) * (1 - s), filter: `blur(${(1 - e) * 4 + s * 4}px)`};
+      break;
+    case 'ola':
+      // crece desde la base como una ola (estirada en vertical que se asienta con un pequeño rebote)
+      anim = {scale: `${0.9 + 0.1 * e} ${Math.max(0.05, MUELLE(p))}`, transform: `skewX(${(1 - e) * 10}deg)`, opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '50% 100%', translate: `0px ${-s * 24}px`};
       break;
     case 'rodar':
       // entra rodando desde la derecha y se frena en su sitio
@@ -134,6 +138,13 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       const q = Math.min(1, Math.max(0, (t - en) / (14 * F)));
       // aplastar y estirar (squash & stretch) desde la base, con rebote amortiguado
       return {opacity: op, scale: `${(1 + 0.3 * (1 - REBOTE(q))) * (1 - 0.06 * s)} ${Math.max(0.05, REBOTE(q)) * (1 - 0.06 * s)}`, transformOrigin: '50% 90%', translate: `0px ${-30 * s}px`};
+    }
+    case 'eco': {
+      // entra con dos ecos detrás que se van recogiendo hasta fundirse con la palabra
+      const q = Math.min(1, Math.max(0, (t - en) / (12 * F)));
+      const r = 1 - EXPO_OUT(q);
+      return {opacity: op, scale: 1.12 - 0.12 * EXPO_OUT(q) - 0.06 * s, translate: `0px ${-20 * s}px`,
+        textShadow: r > 0.01 ? `0 ${-34 * r}px 0 rgba(255,255,255,${0.35 * r}), 0 ${-68 * r}px 0 rgba(255,255,255,${0.15 * r})` : undefined};
     }
     case 'cortina': {
       // se abre desde la línea central hacia arriba y abajo, con un pequeño estirón vertical que se asienta
@@ -227,6 +238,13 @@ export const Impacto: React.FC<{t: number; en: number; x: number; y: number; est
         const cols = [color, '#ff7eb6', '#5EE1FF', '#ffffff', '#9be564'];
         return <rect key={i} x={cx - 7} y={cy - 4} width={14} height={8} rx={2} fill={cols[i % 5]} transform={`rotate(${(i * 40 + p * 720) % 360} ${cx} ${cy})`} opacity={1 - Math.max(0, p - 0.6) / 0.4} />;
       }));
+    case 'rombos':
+      return svg([0, 1, 2].map((k) => {
+        const q = iv(t, [en + k * 2 * F, en + (k * 2 + 12) * F], [0, 1], EXPO_OUT);
+        const l = radio * (0.3 + (0.7 + k * 0.25) * q);
+        return <rect key={k} x={c - l} y={c - l} width={l * 2} height={l * 2} rx={l * 0.18} fill="none" stroke={k === 1 ? '#fff' : color} strokeWidth={8 * (1 - q) + 1}
+          transform={`rotate(${45 + q * (k % 2 ? 20 : -20)} ${c} ${c})`} opacity={(1 - q) * (q > 0 ? 1 : 0)} style={sombra} />;
+      }));
     case 'polvo':
       return svg(Array.from({length: 18}, (_, i) => {
         const a = (i / 18) * Math.PI * 2 + (i % 2) * 0.17;
@@ -293,6 +311,8 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       return {translate: `${Math.sin(k * 4) * 10}px ${Math.abs(Math.cos(k * 4)) * 8}px`};
     case 'vibra':
       return {translate: `0px ${(Math.floor(k * 25) % 2) * 5 + Math.abs(Math.sin(k * 3)) * 12}px`};
+    case 'pendulo':
+      return {rotate: `${Math.sin(k * 5) * 16}deg`, transformOrigin: '50% -40%'};
     case 'salto': {
       const f = (k * 1.2) % 1;
       const h = f < 0.5 ? Math.sin((f / 0.5) * Math.PI) : 0;
