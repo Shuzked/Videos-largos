@@ -7,6 +7,7 @@ import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
+import ENCUADRE from './encuadre.json';
 
 export const DURACION_E1 = 77.56;
 const FPS = 25;
@@ -112,9 +113,19 @@ const BROLL: B[] = [
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);
 const ANCHO_BROLL = 3413; // 16:9 a 1920 de alto
 
+// Encuadre automático (scripts/encuadre.py): pista de foco que sigue al sujeto de cada clip
+const PISTAS = ENCUADRE as unknown as Record<string, [number, number][]>;
+const focoEn = (b: B, t: number) => {
+  const p = PISTAS[b.src];
+  if (!p || b.vertical) return b.foco;
+  const x = Math.max(0, t - b.a) * 5;
+  const i = Math.min(p.length - 1, Math.floor(x));
+  const j = Math.min(p.length - 1, i + 1);
+  return p[i][1] + (p[j][1] - p[i][1]) * (x - i);
+};
 const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   const ancho = b.vertical ? 1080 : ANCHO_BROLL;
-  const left = Math.min(0, Math.max(1080 - ancho, 540 - b.foco * ancho));
+  const left = Math.min(0, Math.max(1080 - ancho, 540 - focoEn(b, t) * ancho));
   return (
     <Ventana t={t} a={b.a} b={b.b}>
       <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
@@ -294,7 +305,7 @@ const GRANDES: Grande[] = [
   // Clínica / peluquería / empresa (B-roll)
   {a: 34.8, b: 35.86, top: 260, lineas: [{ws: [['piensa', 34.8], ['en', 35.08]], size: 90}, {ws: [['una clínica', 35.16, amarillo]], size: 130, golpe: true}]},
   {a: 35.88, b: 36.74, top: 260, lineas: [{ws: [['una peluquería', 35.88, amarillo]], size: 120, golpe: true}]},
-  {a: 36.76, b: 40.16, top: 260, lineas: [{ws: [['una', 36.76], ['empresa', 36.96], ['que', 37.36], ['recibe', 37.48]], size: 80}, {ws: [['constantemente', 37.84, amarillo]], size: 120, golpe: true}, {ws: [['llamadas', 38.92], ['de', 39.4], ['clientes', 39.56]], size: 80}]},
+  {a: 36.76, b: 40.16, top: 1150, lineas: [{ws: [['una', 36.76], ['empresa', 36.96], ['que', 37.36], ['recibe', 37.48]], size: 80}, {ws: [['constantemente', 37.84, amarillo]], size: 120, golpe: true}, {ws: [['llamadas', 38.92], ['de', 39.4], ['clientes', 39.56]], size: 80}]},
   // No necesitas ser programador (B-roll)
   {a: 46.32, b: 47.98, top: 260, lineas: [{ws: [['y', 46.32], ['no', 46.44], ['necesitas', 46.56], ['ser', 47.16]], size: 80}, {ws: [['programador', 47.4, rosaFuerte]], size: 130, golpe: true}]},
   // Curso introductorio
