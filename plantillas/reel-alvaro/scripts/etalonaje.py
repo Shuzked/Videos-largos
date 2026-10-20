@@ -3,7 +3,7 @@
 
 Analiza ~16 fotogramas del vídeo y devuelve un filtro ffmpeg que:
   1. corrige solo parte de la dominante de color (balance de blancos parcial, la escena sigue cálida),
-  2. levanta un poco los negros aplastados y aplica una curva S suave (contraste con detalle en sombras),
+  2. levanta un poco los negros aplastados, deja los medios y recoge las altas luces con un hombro suave (sin brillos excesivos),
   3. baja la saturación hasta un nivel natural (sin pasar de -30 %), sin tocar el tono.
 Uso: etalonaje.py <video> [--json]   → imprime el filtro (o un JSON con medidas y filtro).
 """
@@ -45,9 +45,11 @@ def filtro(m):
     gris = (r + g + b) / 3
     gan = [1 + WB_PARCIAL * (gris / max(c, 1e-3) - 1) for c in (r, g, b)]
     gan = [min(1.12, max(0.9, x)) for x in gan]
-    # 2) curva de tono: negros levantados suavemente + S suave; blancos sin tocar
+    # 2) curva de tono: negros levantados suavemente, medios igual y hombro suave en las altas luces
+    #    (los brillos de piel y reflejos se recogen para que la imagen no se vea "brillosa"; más cuanto más alto llega el material)
     negro = max(0.0, NEGRO_OBJ - m['y_p05'])
-    pts = [(0, negro), (0.06, 0.06 + negro * 0.55), (0.25, 0.235), (0.5, 0.5), (0.78, 0.8), (1, 1)]
+    techo = 0.93 if m['y_p995'] < 0.85 else 0.90  # blanco máximo tras el hombro
+    pts = [(0, negro), (0.06, 0.06 + negro * 0.55), (0.25, 0.235), (0.5, 0.485), (0.7, 0.655), (0.85, 0.765), (1, techo)]
     curva = ' '.join(f'{x:.3f}/{y:.3f}' for x, y in pts)
     # 3) saturación hacia el objetivo, sin quitar más de un 30 % ni añadir
     s = min(1.0, max(0.7, SAT_OBJ / max(m['sat'], 1e-3)))
