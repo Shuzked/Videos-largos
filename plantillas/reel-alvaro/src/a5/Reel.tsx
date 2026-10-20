@@ -1,6 +1,6 @@
 import React from 'react';
-import {AbsoluteFill, Easing, OffthreadVideo, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
-import {Video} from '@remotion/media';
+import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
+import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
 import {H, MIN, amarillo, rosa} from '../texto';
