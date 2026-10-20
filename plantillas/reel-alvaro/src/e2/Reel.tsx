@@ -243,29 +243,57 @@ const Comparacion: React.FC<{t: number}> = ({t}) => {
   );
 };
 
-// Restaurante que tarda en responder: burbujas de mensajes sin leer que se apilan + reloj que gira
-const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => (
-  <Ventana t={t} a={a} b={b}>
-    <div style={{position: 'absolute', left: 150, right: 330, top: 230, display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'flex-start', filter: SOMBRA}}>
-      {[0, 1, 2].map((k) => {
-        const en = a + 0.15 + k * 0.4;
-        const p = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-        return (
-          <div key={k} style={{opacity: t < en ? 0 : 1, scale: 0.5 + 0.5 * p, transformOrigin: '0% 100%', background: '#fff', borderRadius: '34px 34px 34px 8px', padding: '22px 30px', display: 'flex', gap: 12, marginLeft: k * 60}}>
-            {[0, 1, 2].map((d) => (
-              <div key={d} style={{width: 20, height: 20, borderRadius: '50%', background: '#9aa0a6', translate: `0px ${Math.sin((t - en) * 9 - d * 0.9) * -5}px`}} />
-            ))}
+// Mensajes de clientes sin responder: pila de notificaciones tipo móvil (icono de chat, avatar, líneas de mensaje)
+// que entran desde arriba y empujan a las anteriores hacia atrás, con contador de no leídos
+const AVATARES = ['#f4a261', '#8ecae6', '#e76f51', '#90be6d', '#cdb4db'];
+const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
+  const N = 5;
+  const llegadas = Array.from({length: N}, (_, k) => a + 0.1 + k * 0.62);
+  const visibles = llegadas.filter((en) => t >= en).length;
+  const salida = iv(t, [b - 0.3, b], [0, 1], Easing.bezier(0.55, 0, 1, 0.45));
+  return (
+    <Ventana t={t} a={a} b={b}>
+      <div style={{position: 'absolute', left: 110, right: 110, top: 190, height: 460, opacity: 1 - salida, filter: SOMBRA}}>
+        {llegadas.map((en, k) => {
+          if (t < en) return null;
+          const p = iv(t, [en, en + 9 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
+          const fondo = visibles - 1 - k; // 0 = la más nueva (delante)
+          const y = (1 - p) * -160 + fondo * 46;
+          const esc = 1 - fondo * 0.05;
+          return (
+            <div key={k} style={{position: 'absolute', left: 0, right: 0, top: 0, translate: `0px ${y}px`, scale: esc, opacity: p * (fondo > 3 ? 0 : 1 - fondo * 0.18), zIndex: 10 - fondo,
+              height: 190, borderRadius: 40, background: 'rgba(250,250,252,0.95)', boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
+              display: 'flex', alignItems: 'center', gap: 24, padding: '0 30px'}}>
+              <div style={{position: 'relative', width: 116, height: 116, flexShrink: 0}}>
+                <div style={{width: 116, height: 116, borderRadius: '50%', background: AVATARES[k % AVATARES.length], display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden'}}>
+                  <svg width={90} height={90} viewBox="0 0 24 24"><path fill="rgba(255,255,255,0.9)" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4.4 0-9 2.2-9 5v3h18v-3c0-2.8-4.6-5-9-5z" /></svg>
+                </div>
+                <div style={{position: 'absolute', right: -6, bottom: -6, width: 50, height: 50, borderRadius: 15, background: '#25d366', border: '3px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                  <svg width={30} height={30} viewBox="0 0 24 24"><path fill="#fff" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z" /></svg>
+                </div>
+              </div>
+              <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 14}}>
+                <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
+                  <div style={{height: 26, width: 190 + (k % 3) * 50, borderRadius: 13, background: '#2b2d31'}} />
+                  <div style={{marginLeft: 'auto', height: 20, width: 80, borderRadius: 10, background: '#b9bcc4'}} />
+                </div>
+                <div style={{height: 20, width: `${90 - (k % 3) * 14}%`, borderRadius: 10, background: '#9a9ea8'}} />
+                <div style={{height: 20, width: `${60 - (k % 2) * 16}%`, borderRadius: 10, background: '#c3c6cd'}} />
+              </div>
+            </div>
+          );
+        })}
+        {visibles > 0 && (
+          <div style={{position: 'absolute', right: -26, top: -30, zIndex: 20, minWidth: 82, height: 82, padding: '0 18px', borderRadius: 41, background: '#ff3b30', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', ...H, fontSize: 46, textShadow: 'none', boxShadow: '0 8px 24px rgba(255,59,48,0.5)',
+            scale: iv(t, [llegadas[visibles - 1], llegadas[visibles - 1] + 5 * F], [1.35, 1], Easing.bezier(0.34, 1.56, 0.64, 1))}}>
+            {visibles * 3 - 1}
           </div>
-        );
-      })}
-    </div>
-    <svg style={{position: 'absolute', left: 780, top: 250, overflow: 'visible', filter: SOMBRA, opacity: iv(t, [a + 0.3, a + 0.5], [0, 1])}} width={150} height={150}>
-      <circle cx={75} cy={75} r={66} fill="none" stroke={C.amarillo} strokeWidth={10} />
-      <line x1={75} y1={75} x2={75 + 44 * Math.sin((t - a) * 9)} y2={75 - 44 * Math.cos((t - a) * 9)} stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" />
-      <line x1={75} y1={75} x2={75 + 30 * Math.sin((t - a) * 0.75)} y2={75 - 30 * Math.cos((t - a) * 0.75)} stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" />
-    </svg>
-  </Ventana>
-);
+        )}
+      </div>
+    </Ventana>
+  );
+};
 
 // ---------------- Texto: frase entera en grande o entera en subtítulo ----------------
 type W = [string, number, number, boolean];
@@ -538,7 +566,7 @@ export const ReelE2: React.FC = () => {
       ))}
       {([
         ['hit', 0.04, -2], ['boom', 1.04, -3], ['pop', 9.6, -3], ['pop', 10.36, -3], ['pop', 10.88, -3], ['pop', 13.04, -3],
-        ['popup', 15.56, -4], ['popup', 20.76, -4], ['snap', 22.68, -4], ['popup', 28.83, -6], ['popup', 29.23, -6], ['popup', 29.63, -6],
+        ['popup', 15.56, -4], ['popup', 20.76, -4], ['snap', 22.68, -4], ['popup', 28.78, -7], ['popup', 29.4, -7], ['popup', 30.02, -7], ['popup', 30.64, -7], ['popup', 31.26, -7],
         ['pop', 35.0, -3], ['ding', 41.56, -5], ['click', 45.56], ['click', 46.92], ['click', 48.96], ['pop', 55.64, -3], ['boom', 56.44, -3],
         ['riser', 61.48, -3], ['boom', 61.48, -2], ['twinkle', 61.7, -6], ['thud', 68.76, -3],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
