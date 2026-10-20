@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco';
-export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo'};
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador';
+export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos' | 'garabato';
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -89,6 +89,10 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       // se hunde como una tecla al pulsarla: baja, se aplasta un poco y rebota a su sitio
       anim = {translate: `0px ${Math.sin(Math.min(1, p) * Math.PI) * 10 - s * 24}px`, scale: `${1 + 0.06 * Math.sin(p * Math.PI)} ${1 - 0.12 * Math.sin(p * Math.PI)}`,
         opacity: Math.min(1, p * 4) * (1 - s), transformOrigin: '50% 100%'};
+      break;
+    case 'bisagra':
+      // gira desde el borde izquierdo como una tarjeta que se abre y se asienta con un pequeño rebote
+      anim = {transform: `perspective(700px) rotateY(${(1 - MUELLE(p)) * -80 + s * 70}deg)`, transformOrigin: '0% 50%', opacity: Math.min(1, p * 2.5) * (1 - s)};
       break;
     case 'estela':
       // sube desde abajo dejando un rastro de luz (copias que se desvanecen) y se asienta
@@ -168,6 +172,11 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       const brillo = 1 + 0.9 * Math.max(0, 1 - (t - en) / (12 * F));
       return {opacity: (t < en ? 0 : f) * (1 - s), scale: 1.06 - 0.06 * e - 0.06 * s, filter: `brightness(${brillo}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
     }
+    case 'marcador': {
+      // entra con un muelle desde la base y una leve inclinación que se endereza (sin líneas ni subrayados)
+      const q = Math.min(1, Math.max(0, (t - en) / (12 * F)));
+      return {opacity: op, scale: 0.84 + 0.16 * MUELLE(Math.min(1, q * 1.5)) - 0.06 * s, rotate: `${(1 - EXPO_OUT(q)) * -4}deg`, transformOrigin: '50% 90%', translate: `0px ${-20 * s}px`};
+    }
     case 'tinta':
       // se revela de abajo arriba como tinta que sube, con ligera inclinación que se endereza
       return {opacity: t < en ? 0 : 1 - s, clipPath: `inset(${(1 - e) * 100}% -5% -20% -5%)`, transform: `skewX(${(1 - e) * -8}deg)`, translate: `0px ${-24 * s}px`};
@@ -178,7 +187,7 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
 export const Impacto: React.FC<{t: number; en: number; x: number; y: number; estilo: EstiloImpacto; color?: string; radio?: number}> = ({
   t, en, x, y, estilo, color = C.amarillo, radio = 260,
 }) => {
-  const dur = estilo === 'confeti' ? 22 : estilo === 'halo' ? 16 : 13;
+  const dur = estilo === 'confeti' ? 22 : estilo === 'halo' ? 16 : estilo === 'garabato' ? 20 : 13;
   const p = iv(t, [en, en + dur * F], [0, 1], EXPO_OUT);
   if (t < en || p >= 1) return null;
   const c = radio * 1.8;
@@ -275,6 +284,19 @@ export const Impacto: React.FC<{t: number; en: number; x: number; y: number; est
         <circle cx={c} cy={c} r={radio * 0.2 * (1 - p)} fill="#fff" opacity={1 - p} />
       </g>);
     }
+    case 'garabato': {
+      // trazos de énfasis a mano a los dos lados de la palabra (x, y = centro de la palabra; radio = media anchura):
+      // tres rayitas que salen hacia fuera y arriba, se dibujan con un pequeño latigazo y se borran
+      const dib = iv(t, [en, en + 7 * F], [0, 1], EXPO_OUT);
+      const borra = iv(t, [en + 9 * F, en + dur * F], [0, 1]);
+      return svg([-1, 1].flatMap((lado) => [-0.5, 0, 0.5].map((k, i) => {
+        const ang = (lado < 0 ? Math.PI : 0) - lado * (0.55 + k * 0.62);
+        const x0 = c + lado * (radio + 18), y0 = c - radio * 0.12;
+        const r1 = 16 + 40 * borra, r2 = 16 + 64 * dib;
+        return <line key={`${lado}${i}`} x1={x0 + Math.cos(ang) * r1} y1={y0 + Math.sin(ang) * r1} x2={x0 + Math.cos(ang) * r2} y2={y0 + Math.sin(ang) * r2}
+          stroke={color} strokeWidth={9} strokeLinecap="round" opacity={1 - borra} style={sombra} />;
+      })));
+    }
     case 'halo':
       return svg(<>
         <defs>
@@ -323,6 +345,11 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       const f = (k * 0.9) % 1;
       const g = f < 0.4 ? Math.sin((f / 0.4) * Math.PI) : 0;
       return {transform: `perspective(300px) rotateX(${(f < 0.4 ? f / 0.4 : 0) * 360}deg)`, translate: `0px ${g * 8}px`};
+    }
+    case 'resorte': {
+      // cae y rebota como un muelle que se va calmando; repite cada 1,4 s
+      const f = (k / 1.4) % 1;
+      return {translate: `0px ${Math.sin(f * Math.PI * 6) * 16 * Math.exp(-f * 5)}px`, scale: `1 ${1 + 0.12 * Math.sin(f * Math.PI * 6) * Math.exp(-f * 5)}`, transformOrigin: '50% 0%'};
     }
     case 'elastica': {
       const f = (k * 1.4) % 1;

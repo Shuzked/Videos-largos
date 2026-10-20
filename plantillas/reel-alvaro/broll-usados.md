@@ -14,6 +14,7 @@
 | A5 1E | 23116 empresas (reunión), 38354 asistentes de voz (llamada), 4915 WhatsApp (escribiendo en el móvil), 21921 chatbots (robot), 47266 automatizaciones (máquina) |
 | A6 Evergreen | 4607 empresa (oficina), 4835 organizando información (papeles), 1737 seguimiento a mano (libreta), 48610 consumen tiempo (cansada) |
 | A7 Evergreen | 4520 universidad, 48714 negocios (dueña de tienda), 5537 captación (reunión cenital), 4844 entrega (portátil) |
+| A8 Evergreen | 46610 agencia (equipo en mesa), 23112 contrata (firma), 12918 magia (cartas), 47413 suscripción (pago con tarjeta), 8813 identificar (notas adhesivas), 9069 ofrecer (rotafolio), 42629 organizar (tableta) |
 
 ## Música (Mixkit) — una pista distinta por reel
 
@@ -31,6 +32,7 @@
 | A5 1E | 1007 Move Your Body |
 | A6 Evergreen | 1091 Carry On |
 | A7 Evergreen | 953 Feel Alive |
+| A8 Evergreen | 768 (desde el segundo 20) |
 
 Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 
@@ -50,5 +52,6 @@ Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 | A5 1E | estela | neon | estrella | elastica | slide |
 | A6 Evergreen | tecla | contorno | serpentinas | voltea | whoosh |
 | A7 Evergreen | rodar | cortina | polvo | salto | whoosh |
+| A8 Evergreen | bisagra | marcador (sin líneas) | — (sin trazos sobre los títulos) | resorte | whoosh |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.
