@@ -68,6 +68,10 @@ Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/credito
 - **Flujo**: primero quick review en baja calidad para validar; el render final a máxima calidad solo cuando lo aprueba.
 
 
+### Subtítulos sin erratas
+
+Antes de subtitular, cruza la transcripción del cliente con el guion y con una segunda transcripción (`hyperframes transcribe <voz.wav> -e parakeet -l es --json`, palabras en las líneas de stderr) y compara palabra a palabra (difflib). Toda palabra en la que no coincidan se revisa y se corrige en `palabras.json` (p. ej. "hay"→"hoy", "termina"→"terminas"). Nunca se subtitula una palabra dudosa sin comprobarla.
+
 ### Plantilla de reels de Álvaro (para que todos se vean iguales)
 
 Todos los reels parten de `plantillas/reel-alvaro/` (código Remotion, sin vídeos): `src/a1/Reel.tsx` (cámara con tracking, B-roll, frases grandes, subtítulos, CTA, efectos), `src/a1/transicion.tsx` (transición calcada del cliente), `src/anim.tsx` / `texto.tsx` / `estilo.ts` (animaciones, tipografía, banco de sonidos) y `audio/master.sh` (voz + música con ducking + efectos → -14 LUFS, pico -1 dB). Para un reel nuevo: copia la plantilla a `trabajo/intro/remotion-intro/src/<reel>/` (o a un proyecto Remotion nuevo con esos archivos), cambia solo los datos (palabras, cortes, B-roll, frases grandes, música) y conserva componentes y estilos. Cuando el cliente corrija algo, aplícalo en la plantilla y en `CLAUDE.md` para los siguientes vídeos.
