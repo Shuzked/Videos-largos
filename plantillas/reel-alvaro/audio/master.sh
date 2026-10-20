@@ -14,8 +14,8 @@ FC="
  equalizer=f=220:t=q:w=1.2:g=-2.5,equalizer=f=3200:t=q:w=1.0:g=2.5,equalizer=f=9000:t=h:w=1:g=1.5,
  deesser=i=0.35,acompressor=threshold=-22dB:ratio=3:attack=6:release=90:makeup=3dB,
  asplit=2[voz][llave];
-[2:a]aresample=48000,atrim=$MOFF:$(python3 -c "print($MOFF+$DUR)"),asetpts=PTS-STARTPTS,afade=t=in:d=0.15,afade=t=out:st=$(python3 -c "print($DUR-1.6)"):d=1.6,volume=0.26[mus];
-[mus][llave]sidechaincompress=threshold=0.025:ratio=7:attack=15:release=380:makeup=1[musd];
+[2:a]aresample=48000,atrim=$MOFF:$(python3 -c "print($MOFF+$DUR)"),asetpts=PTS-STARTPTS,afade=t=in:d=0.15,afade=t=out:st=$(python3 -c "print($DUR-1.6)"):d=1.6,equalizer=f=2500:t=q:w=1.2:g=-5,equalizer=f=450:t=q:w=1.0:g=-2,volume=0.13[mus];
+[mus][llave]sidechaincompress=threshold=0.015:ratio=10:attack=10:release=450:makeup=1[musd];
 [0:a]aresample=48000[sfx];
 [voz][musd][sfx]amix=inputs=3:duration=first:normalize=0,alimiter=limit=0.84:attack=3:release=60[mix]"
 
