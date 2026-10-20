@@ -64,7 +64,7 @@ Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/credito
 - **Cámara**: tracking de la cara (la cámara sigue la cara), encuadre cuidado, zooms sutiles constantes con buena curva y zooms de impacto en las palabras clave. Nunca se ven bordes.
 - **B-roll**: gratis y sin marca de agua, que muestre literalmente lo que se dice, a pantalla completa (no en recuadro), bien encuadrado.
 - **Transiciones**: la transición del cliente (separación RGB + desenfoque + mini zoom, 12 fotogramas) en cortes y entradas/salidas de B-roll. Transiciones limpias: nunca dejes ver unos fotogramas del plano anterior.
-- **Sonido**: música de fondo sin copyright ni atribución (Mixkit) adaptada al arco del vídeo y con ducking bajo la voz, y efectos de su banco de sonidos (Drive) alineados por el pico. Audio masterizado: voz limpia (EQ + compresión), -14 LUFS, pico real -1 dB.
+- **Sonido**: música con ritmo (beats hip hop / upbeat de Mixkit, sin copyright ni atribución; ver `trabajo/musica-hiphop/` o https://mixkit.co/free-stock-music/hip-hop/), una por reel, entrando ya con energía desde el primer segundo y con ducking bajo la voz, y efectos de su banco de sonidos (Drive) alineados por el pico. Audio masterizado: voz limpia (EQ + compresión), -14 LUFS, pico real -1 dB.
 - **Flujo**: primero quick review en baja calidad para validar; el render final a máxima calidad solo cuando lo aprueba.
 
 
