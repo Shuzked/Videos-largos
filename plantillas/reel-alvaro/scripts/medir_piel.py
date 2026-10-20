@@ -36,10 +36,17 @@ def medir(video, cara_json, n=14):
     sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
     luz = mx > 0.15
     medios = (Y(a) > 0.12) & (Y(a) < 0.7) & (sat < 0.45)
+    # colores fríos (azules, cianes, magentas) saturados: fondos de neón que se pueden calmar sin tocar la piel
+    sub = a[::7]; mxs, mns = sub.max(1), sub.min(1)
+    hue = np.array([colorsys.rgb_to_hsv(*c)[0] * 360 for c in sub])
+    sats = np.where(mxs > 0, (mxs - mns) / np.maximum(mxs, 1e-6), 0)
+    frio = (hue > 160) & (hue < 330) & (mxs > 0.15) & (sats > 0.2)
+    luzs = mxs > 0.15
     return {
         'piel_Y': float(np.median(Y(p))), 'piel_sat': float(np.median(hsv[:, 1])), 'piel_hue': float(np.median(hsv[:, 0]) * 360),
         'y_p05': float(np.percentile(Y(a), 0.5)), 'y_p50': float(np.percentile(Y(a), 50)), 'y_p995': float(np.percentile(Y(a), 99.5)), 'y_p999': float(np.percentile(Y(a), 99.9)),
         'sat': float(sat[luz].mean()) if luz.any() else 0.0,
+        'sat_frios': float(sats[frio].mean()) if frio.any() else 0.0, 'frac_frios': float(frio.sum() / max(1, luzs.sum())),
         'rgb_medios': [float(v) for v in (a[medios].mean(0) if medios.any() else a.mean(0))],
     }
 
