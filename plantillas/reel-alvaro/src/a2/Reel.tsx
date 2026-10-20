@@ -10,7 +10,7 @@ import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
 import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
-// Animaciones propias de este reel (no se repiten en otros vídeos)
+// Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 const ESTILO: Estilo = {texto: 'pop', golpe: 'sello', impacto: 'onda', sub: 'pop', flecha: 'pulso'};
 
 export const DURACION_A2 = 65.0;
@@ -433,9 +433,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Entra>
+            </Sube>
           ))}
         </div>
       )}
@@ -568,10 +568,10 @@ export const ReelA2: React.FC = () => {
       <Ventana t={t} a={CTA} b={DURACION_A2}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Entra estilo={ESTILO.sub} t={t} en={63.48}>haz</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={63.8}>clic</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={64.16} style={amarillo}>aquí</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={64.44} style={amarillo}>debajo</Entra>
+          <Sube t={t} en={63.48}>haz</Sube>
+          <Sube t={t} en={63.8}>clic</Sube>
+          <Sube t={t} en={64.16} style={amarillo}>aquí</Sube>
+          <Sube t={t} en={64.44} style={amarillo}>debajo</Sube>
           <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 64.6 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 64.6)}}>↓</span>
         </div>
       </Ventana>

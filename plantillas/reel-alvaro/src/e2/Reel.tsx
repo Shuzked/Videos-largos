@@ -10,7 +10,7 @@ import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
 import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
-// Animaciones propias de este reel (no se repiten en otros vídeos)
+// Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 const ESTILO: Estilo = {texto: 'giro', golpe: 'zoom', impacto: 'circulos', sub: 'giro', flecha: 'cae'};
 
 export const DURACION_E2 = 70.12;
@@ -423,9 +423,9 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
       {bl && (
         <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
-            <Entra estilo={ESTILO.sub} key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
+            <Sube key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
-            </Entra>
+            </Sube>
           ))}
         </div>
       )}
@@ -557,11 +557,11 @@ export const ReelE2: React.FC = () => {
       <Ventana t={t} a={CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
-          <Entra estilo={ESTILO.sub} t={t} en={62.57}>haz</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={62.84}>clic</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={63.04}>en</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={63.16}>el</Entra>
-          <Entra estilo={ESTILO.sub} t={t} en={63.32} style={amarillo}>botón</Entra>
+          <Sube t={t} en={62.57}>haz</Sube>
+          <Sube t={t} en={62.84}>clic</Sube>
+          <Sube t={t} en={63.04}>en</Sube>
+          <Sube t={t} en={63.16}>el</Sube>
+          <Sube t={t} en={63.32} style={amarillo}>botón</Sube>
           <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 63.45 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 63.45)}}>↓</span>
         </div>
       </Ventana>
