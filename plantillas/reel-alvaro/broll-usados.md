@@ -15,6 +15,8 @@
 | A6 Evergreen | 4607 empresa (oficina), 4835 organizando información (papeles), 1737 seguimiento a mano (libreta), 48610 consumen tiempo (cansada) |
 | A7 Evergreen | 4520 universidad, 48714 negocios (dueña de tienda), 5537 captación (reunión cenital), 4844 entrega (portátil) |
 | A8 Evergreen | 46610 agencia (equipo en mesa), 23112 contrata (firma), 12918 magia (cartas), 47413 suscripción (pago con tarjeta), 8813 identificar (notas adhesivas), 9069 ofrecer (rotafolio), 42629 organizar (tableta) |
+| A9 Evergreen | 30010 cliente, 5731 trabajo (portátil), 23073 llamada, 5601 agotado, 23016 expertos (sala de pantallas) |
+| A10 Evergreen | 46752 expertos (mentor guiando en el portátil), 8840 alumno (portátil en terraza). Descartado 41642: marcas ASUS/SAMSUNG/CORSAIR |
 
 ## Música (Mixkit) — una pista distinta por reel
 
@@ -33,8 +35,10 @@
 | A6 Evergreen | 1091 Carry On |
 | A7 Evergreen | 953 Feel Alive |
 | A8 Evergreen | 768 (desde el segundo 20) |
+| A9 Evergreen | 989 Dirty Thinkin' |
+| A10 Evergreen | 1123 (hip-hop con ritmo desde el segundo 0) |
 
-Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
+Libres (descargadas, sin usar): 389, 1158 (entra fuerte en el segundo 11), 883 (sube en el segundo 10).
 
 ## Animaciones (src/variantes.tsx) — combinación propia por reel
 
@@ -53,5 +57,7 @@ Libres: 768 Hip-Hop Beat, 989 Dirty Thinkin'.
 | A6 Evergreen | tecla | contorno | serpentinas | voltea | whoosh |
 | A7 Evergreen | rodar | cortina | polvo | salto | whoosh |
 | A8 Evergreen | bisagra | marcador (sin líneas) | — (sin trazos sobre los títulos) | resorte | whoosh |
+| A9 Evergreen | persiana | latigo | — | escalon | whoosh |
+| A10 Evergreen | iman | cartel | — | tiron | whoosh |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.

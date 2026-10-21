@@ -14,6 +14,7 @@ import {ReelA6, DURACION_A6} from './a6/Reel';
 import {ReelA7, DURACION_A7} from './a7/Reel';
 import {ReelA8, DURACION_A8} from './a8/Reel';
 import {ReelA9, DURACION_A9} from './a9/Reel';
+import {ReelA10, DURACION_A10} from './a10/Reel';
 import {PruebaIconos} from './PruebaIconos';
 import {Catalogo, DURACION_CAT} from './Catalogo';
 
@@ -42,6 +43,7 @@ export const RemotionRoot = () => (
   <Composition id="ReelA7" component={ReelA7} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A7 * 25)} />
   <Composition id="ReelA8" component={ReelA8} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A8 * 25)} />
   <Composition id="ReelA9" component={ReelA9} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A9 * 25)} />
+  <Composition id="ReelA10" component={ReelA10} width={1080} height={1920} fps={25} durationInFrames={Math.round(DURACION_A10 * 25)} />
   <Composition id="PruebaIconos" component={PruebaIconos} width={1080} height={1920} fps={25} durationInFrames={1} />
   </>
 );

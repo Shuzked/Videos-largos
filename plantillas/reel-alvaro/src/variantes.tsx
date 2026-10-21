@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo';
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana' | 'iman';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo' | 'cartel';
 export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos' | 'garabato';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon'};
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon' | 'tiron'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -99,6 +99,14 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       // gira desde el borde izquierdo como una tarjeta que se abre y se asienta con un pequeño rebote
       anim = {transform: `perspective(700px) rotateY(${(1 - MUELLE(p)) * -80 + s * 70}deg)`, transformOrigin: '0% 50%', opacity: Math.min(1, p * 2.5) * (1 - s)};
       break;
+    case 'iman': {
+      // la atrae un imán: llega desde arriba a la derecha algo más grande, se pasa un poco y se asienta con un muelle amortiguado
+      const k = Math.max(0, t - en);
+      const m = 1 - Math.exp(-7.5 * k) * Math.cos(2 * Math.PI * 2.8 * k);
+      anim = {translate: `${(1 - m) * 46}px ${(1 - m) * -58 - s * 26}px`, scale: 1 + (1 - m) * 0.32 - 0.05 * s, filter: `blur(${(1 - e) * 4 + s * 6}px)`,
+        opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '0% 100%'};
+      break;
+    }
     case 'estela':
       // sube desde abajo dejando un rastro de luz (copias que se desvanecen) y se asienta
       anim = {translate: `0px ${(1 - e) * 46 - s * 30}px`, opacity: Math.min(1, p * 2.2) * (1 - s),
@@ -188,6 +196,13 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       // entra con un muelle desde la base y una leve inclinación que se endereza (sin líneas ni subrayados)
       const q = Math.min(1, Math.max(0, (t - en) / (12 * F)));
       return {opacity: op, scale: 0.84 + 0.16 * MUELLE(Math.min(1, q * 1.5)) - 0.06 * s, rotate: `${(1 - EXPO_OUT(q)) * -4}deg`, transformOrigin: '50% 90%', translate: `0px ${-20 * s}px`};
+    }
+    case 'cartel': {
+      // cae como un cartel colgado de un punto por encima: baja con muelle y se balancea hasta quedarse quieto
+      const k = Math.max(0, t - en);
+      const cae = 1 - Math.exp(-8 * k) * Math.cos(2 * Math.PI * 2.4 * k);
+      const vaiven = 9 * Math.exp(-3.6 * k) * Math.cos(2 * Math.PI * 1.5 * k);
+      return {opacity: op, translate: `0px ${(1 - cae) * -90 - 20 * s}px`, rotate: `${vaiven}deg`, transformOrigin: '50% -80%', scale: 1 - 0.06 * s};
     }
     case 'tinta':
       // se revela de abajo arriba como tinta que sube, con ligera inclinación que se endereza
@@ -369,6 +384,14 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       // cae y rebota como un muelle que se va calmando; repite cada 1,4 s
       const f = (k / 1.4) % 1;
       return {translate: `0px ${Math.sin(f * Math.PI * 6) * 16 * Math.exp(-f * 5)}px`, scale: `1 ${1 + 0.12 * Math.sin(f * Math.PI * 6) * Math.exp(-f * 5)}`, transformOrigin: '50% 0%'};
+    }
+    case 'tiron': {
+      // cada 1,3 s: se recoge un poco hacia arriba (anticipación), baja de un tirón estirándose y vuelve con un muelle
+      const f = (k / 1.3) % 1;
+      const sube = f < 0.18 ? Math.sin((f / 0.18) * Math.PI / 2) : 0;
+      const g = f >= 0.18 ? f - 0.18 : 0;
+      const baja = f >= 0.18 ? 22 * Math.exp(-6 * g) * Math.cos(2 * Math.PI * 2.2 * g) : 0;
+      return {translate: `0px ${-6 * sube + baja}px`, scale: `${1 - 0.008 * baja} ${1 + 0.012 * Math.max(0, baja)}`, transformOrigin: '50% 0%'};
     }
     case 'elastica': {
       const f = (k * 1.4) % 1;

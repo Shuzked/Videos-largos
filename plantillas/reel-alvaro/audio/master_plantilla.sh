@@ -35,6 +35,15 @@ IL=$(ffmpeg -hide_banner -nostats -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "
 G=$(python3 -c "print(round(-14-($IL),2))")
 echo "mezcla $IL LUFS → ganancia lineal $G dB"
 if [ "$V" = copy ]; then VC="-c:v copy"; else VC="-c:v libx264 -preset slow -crf $V -pix_fmt yuv420p -profile:v high"; fi
+renderiza() {
 ffmpeg -v error -y -i "$IN" -i "$VOZ" -i "$MUS" -filter_complex "$FC;[mix]volume=${G}dB,aresample=192000,alimiter=limit=0.82:attack=1:release=50:level=0,aresample=48000[ao]" \
   -map 0:v -map "[ao]" $VC -c:a aac -b:a 320k -ar 48000 -movflags +faststart -t $DUR "$OUT"
+}
+renderiza
+# el limitador baja un poco la sonoridad: si se aparta más de 0,3 LU de -14, se corrige la ganancia una vez
+I1=$(ffmpeg -i "$OUT" -af ebur128=framelog=quiet -vn -f null - 2>&1 | grep -E "^\s+I:" | tail -1 | awk '{print $2}')
+DIF=$(python3 -c "print(round(-14-($I1),2))")
+if python3 -c "import sys; sys.exit(0 if abs($DIF) > 0.3 else 1)"; then
+  G=$(python3 -c "print(round($G+$DIF,2))"); echo "salida $I1 LUFS → ganancia corregida $G dB"; renderiza
+fi
 ffmpeg -i "$OUT" -af ebur128=framelog=quiet:peak=true -vn -f null - 2>&1 | grep -E " I:|Peak:" | head -2
