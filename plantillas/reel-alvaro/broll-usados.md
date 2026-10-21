@@ -47,6 +47,7 @@
 | A8 1E | 883 (desde el segundo 10) |
 | A9 1E | 460 (hip-hop con beat constante, desde el segundo 6) |
 | A10 1E | 400 (el beat entra en el segundo 13,2: se usa desde ahí) |
+| Alva patr #1 (vídeo largo 16:9) | 637 «Wounds» (0–2:17,9, desde su s 71,6) + 1136 «Daylight Robbery» (2:17,9–final) |
 
 Libres (descargadas en `trabajo/musica-hiphop/`, sin usar): 262, 282, 281, 369, 403, 364, 431, 305 (hip-hop de Mixkit). 431 tiene beat de 13,7 a 40 s y otra vez desde 55 s (en medio, 14 s sin percusión); 364 y 281 empiezan flojas.
 
