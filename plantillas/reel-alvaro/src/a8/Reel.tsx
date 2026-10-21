@@ -10,7 +10,7 @@ import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
 import {Entra, golpeV, flechaV, Estilo} from '../variantes';
-import {ICONOS, Destello, IconoTrazado, Particulas, Pulso, aparece, flota, muelle, puntaFlecha} from '../lottie';
+import {ICONOS, Destello, IconoTrazado, Particulas, Pulso, aparece, flota, muelle, puntaFlecha, Interrogante} from '../lottie';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 // (sin ráfagas ni trazos sobre los títulos: el cliente pidió quitar las líneas)
 const ESTILO: Estilo = {texto: 'bisagra', golpe: 'marcador', impacto: 'garabato', sub: 'bisagra', flecha: 'resorte'};
@@ -291,9 +291,11 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
       <Columna t={t} t0={a} lado={-1} left={100} titulo="INSTALACIÓN" icono={ICONO.instalar} fichas={IZQ} activa={fase === 0 || brilloIzq > 0.3} anima={fase === 0} brillo={brilloIzq} />
       <Columna t={t} t0={a} lado={1} left={550} titulo="MANTENIMIENTO" icono={ICONO.ciclo} fichas={fase === 0 ? [] : DER} activa={fase >= 1 && (fase === 1 || brilloDer > 0.3)} anima={fase === 1} brillo={brilloDer} gira={giro}
         extra={fase === 0 ? (
-          // la incógnita: bota, se balancea y parpadea esperando a "¿qué ocurre después?"
-          <div style={{marginTop: 90, ...H, fontSize: 170, color: TIZA, opacity: 0.32 + 0.18 * Math.sin(t * 5), filter: 'url(#tiza8)',
-            translate: `0px ${-Math.abs(Math.sin(t * 3.2)) * 18}px`, rotate: `${Math.sin(t * 2.4) * 8}deg`}}>?</div>
+          // la incógnita: una interrogación grande dibujada (gancho que se traza + punto con muelle) que bota y se balancea
+          // esperando a "¿qué ocurre después?"
+          <svg width={260} height={300} style={{marginTop: 50, overflow: 'visible', opacity: 0.85, translate: `0px ${-Math.abs(Math.sin(t * 3.2)) * 16}px`}}>
+            <Interrogante t={t} en={a + 0.35} x={130} y={160} s={1.8} color={TIZA} />
+          </svg>
         ) : cal && kcal > 0 ? (
           // calendario "mensual": sale con muelle y se balancea como un colgante
           <svg width={120} height={120} viewBox="0 0 24 24" style={{position: 'absolute', right: -20, top: -150, overflow: 'visible', transformOrigin: '50% 0%',

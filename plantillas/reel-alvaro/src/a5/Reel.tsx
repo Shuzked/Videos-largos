@@ -2,15 +2,17 @@ import React from 'react';
 import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
-import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
+import {F, Son, Sube, iv, Ventana} from '../anim';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
-import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+import {Entra, golpeV, flechaV, Estilo} from '../variantes';
+import {Chip, Conector, Cruz, Interrogante, Lienzo, OSCURO, ROJO, ICONOS, Destello, IconoTrazado, Particulas, Pulso, aparece, flota, muelle, puntaFlecha} from '../lottie';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
+// Sin ráfagas ni trazos sobre los títulos (el cliente no quiere líneas encima del texto)
 const ESTILO: Estilo = {texto: 'ola', golpe: 'eco', impacto: 'rombos', sub: 'ola', flecha: 'pendulo'};
 
 // Álvaro hasta "…cómo fue su proceso" (T1), luego el testimonio de Billy (D s) y después el CTA de Álvaro
@@ -166,126 +168,349 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   );
 };
 
-// ---------------- Elementos Lottie ----------------
-// Ráfaga de rayos que salen del centro en un impacto
-const Rafaga: React.FC<{t: number; en: number; x: number; y: number; color?: string; radio?: number}> = ({t, en, x, y, color = C.amarillo, radio = 260}) => {
-  const p = iv(t, [en, en + 12 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
-  if (t < en || p >= 1) return null;
-  return (
-    <svg style={{position: 'absolute', left: x - radio * 1.6, top: y - radio * 1.6, overflow: 'visible'}} width={radio * 3.2} height={radio * 3.2}>
-      {Array.from({length: 12}, (_, i) => {
-        const ang = (i / 12) * Math.PI * 2 + 0.13;
-        const r1 = radio * (0.55 + 0.75 * p);
-        const r2 = radio * (0.75 + 0.85 * p);
-        const c = radio * 1.6;
-        return (
-          <line
-            key={i}
-            x1={c + Math.cos(ang) * r1}
-            y1={c + Math.sin(ang) * r1}
-            x2={c + Math.cos(ang) * r2}
-            y2={c + Math.sin(ang) * r2}
-            stroke={color}
-            strokeWidth={10 * (1 - p) + 1}
-            strokeLinecap="round"
-            opacity={1 - p * 0.9}
-            style={{filter: `drop-shadow(0 0 10px ${color})`}}
-          />
-        );
-      })}
-    </svg>
-  );
-};
-
-// Círculos que se dibujan y se marcan con ✕ o ✓ trazados
-const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: string; tipo: 'x' | 'v'; top: number; desde: number; hasta: number}> = ({
-  t, n, a, paso, color, tipo, top, desde, hasta,
-}) => {
-  const d = n > 5 ? 82 : 130;
-  return (
-    <Ventana suave t={t} a={desde} b={hasta}>
-      <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
-        {Array.from({length: n}, (_, i) => {
-          const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const en = a + i * paso;
-          const m = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const tr = iv(t, [en + 2 * F, en + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const per = Math.PI * (d - 8);
-          return (
-            <svg key={i} width={d} height={d} viewBox={`0 0 ${d} ${d}`} style={{overflow: 'visible', scale: t >= en ? 0.7 + 0.3 * m : 1}}>
-              <circle
-                cx={d / 2} cy={d / 2} r={d / 2 - 4} fill={t >= en ? color : 'rgba(0,0,0,0.25)'} fillOpacity={t >= en ? 0.9 : 1}
-                stroke={t >= en ? color : 'rgba(255,255,255,0.7)'} strokeWidth={4} strokeDasharray={per} strokeDashoffset={per * (1 - dib)}
-                style={{filter: t >= en ? `drop-shadow(0 0 14px ${color})` : 'none'}}
-              />
-              {t >= en &&
-                (tipo === 'x' ? (
-                  <path d={`M ${d * 0.32} ${d * 0.32} L ${d * 0.68} ${d * 0.68} M ${d * 0.68} ${d * 0.32} L ${d * 0.32} ${d * 0.68}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ) : (
-                  <path d={`M ${d * 0.28} ${d * 0.52} L ${d * 0.44} ${d * 0.68} L ${d * 0.72} ${d * 0.34}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ))}
-            </svg>
-          );
-        })}
-      </div>
-    </Ventana>
-  );
-};
+// ---------------- Elementos Lottie (src/lottie.tsx: muelles con sobrepaso, aplastar/estirar, trazos que se dibujan, partículas, reposo vivo) ----------------
+const lim = (x: number) => Math.min(1, Math.max(0, x));
 
 // Las palabras de Billy (testimonio) van en otro color; Álvaro con el estilo normal
 const enIA = (x: number) => x >= T1 - 0.01 && x < T1 + D_TESTIMONIO;
 const estiloIA: React.CSSProperties = {color: '#5EE1FF', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('94,225,255', 0.9)}`};
 
-// ---------------- Ilustraciones propias de este reel ----------------
+// Iconos 24x24 (Material Icons / revisados en PruebaIconos)
 const ICONO = {
-  maletin: 'M10 2h4a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4V4a2 2 0 0 1 2-2zm4 4V4h-4v2h4z',
-  megafono: 'M18 11v2h4v-2h-4zm-2 6.6c1 .7 2.2 1.6 3.2 2.4l.8-1.1c-1-.8-2.2-1.7-3.2-2.4l-.8 1.1zM20 4.4l-.8-1.1c-1 .7-2.2 1.6-3.2 2.4l.8 1.1c1-.8 2.2-1.7 3.2-2.4zM4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.3-.6-2.5-1.5-3.4v6.7c.9-.8 1.5-2 1.5-3.3z',
+  maletin: 'M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z',
+  megafono: ICONOS.megafono,
   chispa: 'M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4L12 2zm7 12l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z',
-  birrete: 'M12 3L1 9l11 6 9-4.9V17h2V9L12 3zM5 13.2v4L12 21l7-3.8v-4L12 17l-7-3.8z',
-  lupa: 'M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9z',
-  personas: 'M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-2.3 0-7 1.2-7 3.5V19h14v-2.5C15 14.2 10.3 13 8 13zm8 0c-.3 0-.6 0-1 .1 1.2.8 2 2 2 3.4V19h6v-2.5c0-2.3-4.7-3.5-7-3.5z',
-  documento: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 13h8v2H8v-2zm0 4h8v2H8v-2z',
-  estrella: 'M12 17.3l6.2 3.7-1.6-7 5.4-4.7-7.1-.6L12 2 9.1 8.7 2 9.3l5.4 4.7-1.6 7z',
+  birrete: 'M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z',
+  lupa: ICONOS.lupa,
+  personas: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
+  documento: 'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  estrella: 'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
+  engranaje: 'M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z',
+  persona: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z',
+  auricular: 'M12 1c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h4v1h-7v2h6c1.66 0 3-1.34 3-3V10c0-4.97-4.03-9-9-9z',
 };
-const Ico: React.FC<{d: string; size: number; color: string}> = ({d, size, color}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" style={{flexShrink: 0}}><path d={d} fill={color} /></svg>
+const ORO = '#ffd34d';
+
+// 0) "yo también haría preguntas": tres interrogaciones grandes que saltan sobre la cabeza
+const Preguntas: React.FC<{t: number}> = ({t}) => (
+  <Ventana suave t={t} a={6.85} b={8.2}>
+    <Lienzo>
+      <Interrogante t={t} en={6.96} x={250} y={250} s={1.2} fase={0} />
+      <Interrogante t={t} en={7.04} x={540} y={140} s={1.55} color={ROJO} fase={1.3} />
+      <Interrogante t={t} en={7.12} x={830} y={250} s={1.2} fase={2.6} />
+    </Lienzo>
+  </Ventana>
 );
 
-// Trayectoria: 2020 → agencias de marketing → servicios de IA → hoy enseñamos el modelo (trazo con hitos que se encienden)
-const TRAYECTO = {a: 16.9, b: 30.0, hitos: [19.41, 21.52, 23.54, 25.28]};
-const Trayectoria: React.FC<{t: number}> = ({t}) => {
-  const {a, b, hitos} = TRAYECTO;
-  const xs = [170, 413, 667, 910];
-  const y = 300;
-  const iconos = [ICONO.maletin, ICONO.megafono, ICONO.chispa, ICONO.birrete];
-  const avance = iv(t, [hitos[0], hitos[1], hitos[2], hitos[3]], [xs[0], xs[1], xs[2], xs[3]], Easing.bezier(0.45, 0, 0.25, 1));
+// 1) "demasiadas promesas y muy pocas explicaciones sobre el trabajo que realmente hay detrás": bocadillos de promesas
+// (destellos) que se amontonan; una explicación pequeña y apagada; al decir "trabajo" aparecen engranajes detrás
+// y en "detrás" los bocadillos revientan uno a uno y dejan ver el trabajo real
+const PROMESAS = {a: 8.75, b: 14.6, promesas: 8.89, explicacion: 10.68, trabajo: 12.06, revienta: 12.96};
+const BOCADILLOS: [number, number, number][] = [[205, 285, -8], [370, 173, 6], [710, 173, -6], [875, 285, 8], [540, 118, 0]];
+const Bocadillo: React.FC<{t: number; en: number; x: number; y: number; giro: number; revienta: number; fase: number}> = ({t, en, x, y, giro, revienta, fase}) => {
+  if (t < en) return null;
+  const k = lim((t - revienta) / 0.16);
+  if (k >= 1) return <Particulas t={t} en={revienta} x={x} y={y} n={9} radio={110} colores={['#ffffff', C.amarillo]} dur={14} />;
+  const ap = aparece(t, en, giro * 2);
+  const fl = flota(t, fase, 5);
+  const latido = 1 + 0.05 * Math.sin(t * 7 + fase);
+  return (
+    <g transform={`translate(${x} ${y + fl.y}) rotate(${giro + ap.rot}) scale(${ap.sx * latido * (1 + 0.5 * k)} ${ap.sy * latido * (1 + 0.5 * k)})`} opacity={1 - k}>
+      <path d="M -74 -46 H 74 A 20 20 0 0 1 94 -26 V 26 A 20 20 0 0 1 74 46 H -10 L -34 72 L -32 46 H -74 A 20 20 0 0 1 -94 26 V -26 A 20 20 0 0 1 -74 -46 Z" fill="#fff" stroke={C.amarillo} strokeWidth={5} strokeLinejoin="round" />
+      <IconoTrazado d={ICONO.chispa} t={t} en={en + 2 * F} color="#e2b100" size={52} x={-60} y={-26} />
+      <IconoTrazado d={ICONO.estrella} t={t} en={en + 4 * F} color="#e2b100" size={44} x={10} y={-22} />
+    </g>
+  );
+};
+const Promesas: React.FC<{t: number}> = ({t}) => {
+  const {a, b, promesas, explicacion, trabajo, revienta} = PROMESAS;
+  const engr = aparece(t, trabajo, 0);
+  const g1 = (t - trabajo) * 80;
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <svg style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: SOMBRA}} width={1080} height={600}>
-        <line x1={xs[0]} y1={y} x2={xs[3]} y2={y} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeDasharray="2 14" strokeLinecap="round" />
-        {t >= hitos[0] && <line x1={xs[0]} y1={y} x2={avance} y2={y} stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))`}} />}
-        {t >= hitos[0] && avance < xs[3] - 1 && <circle cx={avance} cy={y} r={12} fill="#fff" style={{filter: `drop-shadow(0 0 12px rgba(${GLOW_AMARILLO},1))`}} />}
-        {xs.map((x, i) => {
-          const en = hitos[i];
-          const activo = t >= en;
-          const pop = iv(t, [en, en + 10 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const onda = iv(t, [en, en + 14 * F], [0, 1]);
-          const nace = iv(t, [a + i * 0.08, a + i * 0.08 + 9 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          return (
-            <g key={i} transform={`translate(${x} ${y}) scale(${nace * (activo ? 0.8 + 0.2 * pop : 0.72)})`}>
-              {activo && onda < 1 && <circle r={64 + onda * 60} fill="none" stroke={C.amarillo} strokeWidth={5} opacity={1 - onda} />}
-              <circle r={64} fill={activo ? C.amarillo : 'rgba(0,0,0,0.55)'} stroke={activo ? '#fff' : 'rgba(255,255,255,0.7)'} strokeWidth={activo ? 6 : 4}
-                style={{filter: activo ? `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))` : 'none'}} />
-              <g transform={`rotate(${(1 - pop) * -30}) translate(-30 -30) scale(2.5)`}><path d={iconos[i]} fill={activo ? '#111' : '#fff'} opacity={activo ? 1 : 0.6} /></g>
-            </g>
-          );
-        })}
-      </svg>
+      <Lienzo>
+        {/* el trabajo de detrás: dos engranajes que engranan */}
+        {t >= trabajo && (
+          <g transform={`translate(540 230) scale(${engr.sx} ${engr.sy})`}>
+            <circle r={150} fill={OSCURO} stroke="#fff" strokeWidth={5} />
+            <g transform={`translate(-42 18) rotate(${g1}) translate(-66 -66) scale(5.5)`}><path d={ICONO.engranaje} fill={C.amarillo} /></g>
+            <g transform={`translate(62 -46) rotate(${-g1 * 1.6 + 18}) translate(-40 -40) scale(3.33)`}><path d={ICONO.engranaje} fill="#fff" /></g>
+          </g>
+        )}
+        <Particulas t={t} en={trabajo} x={540} y={230} n={12} radio={240} />
+        {/* muy pocas explicaciones: una sola hoja pequeña y apagada */}
+        {t >= explicacion && t < trabajo && (
+          <g transform={`translate(540 300) scale(${aparece(t, explicacion, 0).sx * 0.8})`} opacity={0.75}>
+            <circle r={44} fill="rgba(40,40,46,0.92)" stroke="rgba(255,255,255,0.55)" strokeWidth={4} />
+            <IconoTrazado d={ICONO.documento} t={t} en={explicacion + 2 * F} color="rgba(255,255,255,0.8)" size={50} x={-25} y={-25} />
+          </g>
+        )}
+        {BOCADILLOS.map(([x, y, giro], i) => (
+          <Bocadillo key={i} t={t} en={promesas + i * 0.13} x={x} y={y} giro={giro} revienta={revienta + i * 0.09} fase={i * 1.3} />
+        ))}
+      </Lienzo>
     </Ventana>
   );
 };
 
-// Hay que aprender a: prospectar / reunirse con negocios / presentar propuestas / entregar un buen servicio (cascada que baja peldaño a peldaño)
+// 2) Trayectoria: 2020 → agencias de marketing → servicios de IA → hoy enseñamos el modelo. Los huecos laten, el camino se
+// dibuja con un cometa hasta cada hito y cada hito salta con su icono trazado; al final salen las personas que lo aprenden
+const TRAYECTO = {a: 16.9, b: 30.0, hitos: [19.41, 21.52, 23.54, 25.28], personas: 26.81};
+const Trayectoria: React.FC<{t: number}> = ({t}) => {
+  const {a, b, hitos, personas} = TRAYECTO;
+  const xs = [170, 413, 667, 910];
+  const y = 300;
+  const iconos = [ICONO.maletin, ICONO.megafono, ICONO.chispa, ICONO.birrete];
+  const fl = flota(t, 0.7, 3);
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(0 ${fl.y})`}>
+          <line x1={xs[0]} y1={y} x2={xs[3]} y2={y} stroke="rgba(255,255,255,0.28)" strokeWidth={6} strokeDasharray="2 14" strokeLinecap="round" />
+          {xs.slice(0, 3).map((x, i) => {
+            const en = hitos[i + 1] - 0.55;
+            const p = 1 - Math.pow(1 - lim((t - en) / 0.55), 3);
+            if (p <= 0 || t < hitos[0]) return null;
+            const x2 = x + 66 + (xs[i + 1] - 66 - x - 66) * p;
+            return (
+              <g key={i}>
+                <line x1={x + 66} y1={y} x2={x2} y2={y} stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))`}} />
+                {p < 1 && <circle cx={x2} cy={y} r={12} fill="#fff" style={{filter: `drop-shadow(0 0 12px rgba(${GLOW_AMARILLO},1))`}} />}
+                {p >= 1 && <line x1={x + 66} y1={y} x2={x2} y2={y} stroke="#fff" strokeWidth={9} strokeLinecap="round" strokeDasharray="4 22" strokeDashoffset={-(t - en) * 60} opacity={0.8} />}
+              </g>
+            );
+          })}
+          {xs.map((x, i) => {
+            const en = hitos[i];
+            if (t >= en) return null;
+            const nace = aparece(t, a + i * 0.1, 0);
+            return <circle key={i} cx={x} cy={y} r={(48 + 4 * Math.sin(t * 4 + i)) * nace.sx} fill="rgba(0,0,0,0.45)" stroke="rgba(255,255,255,0.7)" strokeWidth={4} strokeDasharray="10 9" />;
+          })}
+        </g>
+        {xs.map((x, i) => <Chip key={i} t={t} en={hitos[i]} d={iconos[i]} x={x} y={y + fl.y} r={64} fase={i * 1.1} quieto />)}
+        {/* "a personas que quieren crear su propia agencia": salen tres alumnos del último hito */}
+        {[0, 1, 2].map((i) => (
+          <g key={i}>
+            <Conector t={t} en={personas + i * 0.12} d={`M 910 ${y + 66} Q ${910 - 40 + i * 20} ${y + 120} ${780 + i * 85} ${y + 160}`} color="rgba(255,255,255,0.7)" dur={0.3} grosor={4} />
+            <Chip t={t} en={personas + 0.25 + i * 0.12} d={ICONO.persona} x={780 + i * 85} y={y + 190} r={36} fondo="#fff" fase={i * 1.7} />
+          </g>
+        ))}
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 3) "esto no consiste en darle un botón y empezar a cobrar": un botón rojo enorme, el cursor llega y lo pulsa (el botón
+// se aplasta y rebota), sale una moneda… y una ✕ roja lo tacha: no funciona así
+const BOTON = {a: 30.3, b: 33.66, boton: 30.39, cursor: 31.3, pulsa: 32.04, moneda: 32.71, no: 33.0};
+const Boton: React.FC<{t: number}> = ({t}) => {
+  const {a, b, boton, cursor, pulsa, moneda, no} = BOTON;
+  const ap = aparece(t, boton, 0);
+  const k = t - pulsa;
+  const aplasta = k > 0 && k < 0.5 ? Math.exp(-7 * k) * Math.cos(k * 30) * 0.35 : 0;
+  // el cursor llega desde la derecha y baja a pulsar
+  const llega = 1 - Math.pow(1 - lim((t - cursor) / 0.6), 3);
+  const baja = k > -0.12 && k < 0.25 ? Math.sin(lim((k + 0.12) / 0.37) * Math.PI) * 14 : 0;
+  const cx = 860 - (860 - 590) * llega, cy = 120 + (230 - 120) * llega + baja;
+  const mon = aparece(t, moneda, 0);
+  const sube = lim((t - moneda) / 0.5);
+  const tiembla = t > no && t < no + 0.45 ? Math.sin((t - no) * 60) * 7 * (1 - (t - no) / 0.45) : 0;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(${540 + tiembla} 300) scale(${ap.sx} ${ap.sy})`}>
+          <rect x={-150} y={10} width={300} height={70} rx={24} fill={OSCURO} stroke="#fff" strokeWidth={5} />
+          <g transform={`translate(0 14) scale(${1 + aplasta * 0.4} ${1 - aplasta})`}>
+            <path d="M -110 0 A 110 86 0 0 1 110 0 Z" fill={ROJO} stroke="#fff" strokeWidth={5} style={{filter: `drop-shadow(0 0 14px ${ROJO})`}} />
+            <ellipse cx={-40} cy={-46} rx={26} ry={12} fill="rgba(255,255,255,0.45)" />
+          </g>
+          {t >= moneda && (
+            <g transform={`translate(0 ${-60 - 110 * sube}) scale(${mon.sx} ${mon.sy}) rotate(${(t - moneda) * 260})`} opacity={1 - lim((t - no) / 0.3) * 0.7}>
+              <circle r={42} fill={ORO} stroke="#fff" strokeWidth={5} />
+              <text y={18} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={50} fill="#7a5600">€</text>
+            </g>
+          )}
+          {t >= no && <g transform="translate(0 -10)"><Cruz t={t} en={no} s={4.2} color={ROJO} /></g>}
+        </g>
+        <Pulso t={t} en={pulsa} x={540} y={300} r={130} color={ROJO} />
+        {t >= cursor && (
+          <g transform={`translate(${cx} ${cy}) rotate(-12)`}>
+            <path d="M 0 0 L 0 62 L 16 47 L 28 74 L 40 68 L 28 42 L 50 42 Z" fill="#fff" stroke="#1b1b20" strokeWidth={5} strokeLinejoin="round" />
+          </g>
+        )}
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 4) "Y tampoco todo el mundo avanza al mismo ritmo": tres carriles; cada punto corre a su velocidad dejando estela
+// y estalla al llegar a la meta
+const RITMO = {a: 39.9, b: 42.6, sale: 40.02, durs: [1.0, 1.7, 2.45]};
+const Ritmo: React.FC<{t: number}> = ({t}) => {
+  const {a, b, sale, durs} = RITMO;
+  const x0 = 170, x1 = 900;
+  const cols = [C.amarillo, '#ffffff', C.rosa];
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g>
+          <line x1={x1 + 20} y1={90} x2={x1 + 20} y2={330} stroke="#fff" strokeWidth={6} strokeDasharray="12 10" opacity={0.85} />
+          {[0, 1, 2].map((i) => {
+            const y = 130 + i * 90;
+            const dib = lim((t - a - i * 0.08) / 0.3);
+            const p = lim((t - sale) / durs[i]);
+            const e = 1 - Math.pow(1 - p, 2);
+            const x = x0 + (x1 - x0) * e;
+            return (
+              <g key={i}>
+                <line x1={x0} y1={y} x2={x0 + (x1 - x0) * dib} y2={y} stroke="rgba(255,255,255,0.22)" strokeWidth={16} strokeLinecap="round" />
+                {t >= sale && <line x1={x0} y1={y} x2={x} y2={y} stroke={cols[i]} strokeWidth={16} strokeLinecap="round" opacity={0.85} style={{filter: `drop-shadow(0 0 10px ${cols[i]})`}} />}
+                {t >= sale && <circle cx={x} cy={y} r={20 + (p < 1 ? 2 * Math.sin(t * 30) : 0)} fill="#fff" stroke={cols[i]} strokeWidth={6} />}
+                <Pulso t={t} en={sale + durs[i]} x={x1} y={y} r={26} color={cols[i]} />
+                <Particulas t={t} en={sale + durs[i]} x={x1} y={y} n={8} radio={80} colores={[cols[i], '#ffffff']} />
+              </g>
+            );
+          })}
+        </g>
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 5) El caso de Billy (solo lo que él cuenta, sin inventar nada):
+// a) "7 meses en cerrar sus primeros 4 clientes": siete meses que se encienden y cuatro clientes que caen en los últimos
+const MESES = {a: 43.6, b: 46.55, meses: 43.85, clientes: 45.6};
+const Meses: React.FC<{t: number}> = ({t}) => {
+  const {a, b, meses, clientes} = MESES;
+  const xs = Array.from({length: 7}, (_, i) => 210 + i * 110);
+  const y = 290;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <line x1={xs[0]} y1={y} x2={xs[6]} y2={y} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeLinecap="round" />
+        {xs.map((x, i) => {
+          const en = meses + i * 0.07;
+          const on = t >= en;
+          const e = on ? aparece(t, en, 0) : aparece(t, a + i * 0.03, 0);
+          return (
+            <g key={i} transform={`translate(${x} ${y}) scale(${e.sx} ${e.sy})`}>
+              <circle r={30} fill={on ? C.amarillo : 'rgba(0,0,0,0.45)'} stroke="#fff" strokeWidth={4} style={{filter: on ? `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))` : 'none'}} />
+              <circle r={8} fill={on ? '#1b1b20' : 'rgba(255,255,255,0.5)'} />
+            </g>
+          );
+        })}
+        {[3, 4, 5, 6].map((m, i) => {
+          const en = clientes + i * 0.1;
+          if (t < en) return null;
+          const k = t - en;
+          const caida = Math.min(1, (k / 0.28) ** 2);
+          const rebote = k > 0.28 ? Math.exp(-9 * (k - 0.28)) * Math.sin((k - 0.28) * 26) * 10 : 0;
+          const cy = -60 + (y - 110 + 60) * caida - rebote;
+          return (
+            <g key={m}>
+              <line x1={xs[m]} y1={cy + 40} x2={xs[m]} y2={y - 30} stroke="#fff" strokeWidth={4} opacity={caida >= 1 ? 0.7 : 0} />
+              <g transform={`translate(${xs[m]} ${cy})`}>
+                <circle r={42} fill="#fff" stroke={C.amarillo} strokeWidth={5} />
+                <g transform="translate(-24 -24) scale(2)"><path d={ICONO.persona} fill="#1b1b20" /></g>
+              </g>
+              <Particulas t={t} en={en + 0.28} x={xs[m]} y={y - 110} n={7} radio={80} />
+            </g>
+          );
+        })}
+      </Lienzo>
+    </Ventana>
+  );
+};
+// b) "En ese tiempo cobró 9.900 € en instalaciones": las monedas caen y se apilan con un rebote
+const MONEDAS = {a: 47.6, b: 50.2, en: 47.84};
+const Monedas: React.FC<{t: number}> = ({t}) => {
+  const {a, b, en} = MONEDAS;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        {Array.from({length: 6}, (_, i) => {
+          const e0 = en + i * 0.09;
+          if (t < e0) return null;
+          const k = t - e0;
+          const caida = Math.min(1, (k / 0.3) ** 2);
+          const yb = 340 - i * 30;
+          const yy = -80 + (yb + 80) * caida - (k > 0.3 ? Math.exp(-10 * (k - 0.3)) * Math.sin((k - 0.3) * 30) * 8 : 0);
+          const x = 540 + Math.sin(i * 2.1) * 10;
+          return (
+            <g key={i} transform={`translate(${x} ${yy})`}>
+              <ellipse cy={10} rx={96} ry={26} fill="#b98900" stroke="#fff" strokeWidth={4} />
+              <ellipse rx={96} ry={26} fill={ORO} stroke="#fff" strokeWidth={4} />
+              <text y={11} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={30} fill="#7a5600">€</text>
+            </g>
+          );
+        })}
+        <Destello t={t} en={en + 0.6} x={650} y={170} tam={30} color={C.amarillo} />
+        <Particulas t={t} en={en + 0.75} x={540} y={200} n={14} radio={220} colores={[ORO, '#ffffff']} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+// c) "y ahora tiene 500 € al mes de mantenimientos sin tener que volver a vender": una moneda en el centro de un ciclo
+// (flecha circular que se dibuja con la punta en la tangente y gira) y los meses que se van encendiendo uno tras otro
+const CICLO = {a: 50.9, b: 55.4, aparece: 51.28, mes: 52.18};
+const Ciclo: React.FC<{t: number}> = ({t}) => {
+  const {a, b, aparece: en, mes} = CICLO;
+  const cx = 540, cy = 230, R = 130;
+  const ap = aparece(t, en, 0);
+  const dib = 1 - Math.pow(1 - lim((t - en - 0.1) / 0.7), 3);
+  const g0 = -90, barrido = 300 * dib;
+  const g1 = g0 + barrido;
+  const p = (g: number) => [cx + Math.cos((g * Math.PI) / 180) * R, cy + Math.sin((g * Math.PI) / 180) * R];
+  const [x0, y0] = p(g0), [x1, y1] = p(g1);
+  const giro = t > en + 0.8 ? (t - en - 0.8) * 40 : 0;
+  const fin = ((g1 + 90) * Math.PI) / 180; // tangente en el final (sentido horario)
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`rotate(${giro} ${cx} ${cy})`}>
+          {dib > 0 && <path d={`M ${x0} ${y0} A ${R} ${R} 0 ${barrido > 180 ? 1 : 0} 1 ${x1} ${y1}`} fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" style={{filter: `drop-shadow(0 0 10px rgba(${GLOW_AMARILLO},0.9))`}} />}
+          {dib >= 1 && <path d={puntaFlecha(x1, y1, fin, 34, 24)} fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" strokeLinejoin="round" />}
+          {/* doce meses alrededor: se encienden uno detrás de otro, en bucle */}
+          {Array.from({length: 12}, (_, i) => {
+            const g = (-90 + i * 30) * (Math.PI / 180);
+            const on = t >= mes && Math.floor((t - mes) * 8) % 12 === i;
+            return <circle key={i} cx={cx + Math.cos(g) * (R + 34)} cy={cy + Math.sin(g) * (R + 34)} r={on ? 11 : 6} fill={on ? '#fff' : 'rgba(255,255,255,0.4)'} opacity={lim((t - en - i * 0.03) / 0.2)} />;
+          })}
+        </g>
+        <g transform={`translate(${cx} ${cy}) scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+          <circle r={80} fill={ORO} stroke="#fff" strokeWidth={6} style={{filter: `drop-shadow(0 0 18px ${ORO})`}} />
+          <circle r={62} fill="none" stroke="#b98900" strokeWidth={4} />
+          <text y={30} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={84} fill="#7a5600">€</text>
+        </g>
+        <Pulso t={t} en={mes} x={cx} y={cy} r={90} color={ORO} />
+        <Particulas t={t} en={en} x={cx} y={cy} n={14} radio={230} colores={[ORO, '#ffffff']} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 6) "me gustaría que escucharas directamente su historia": unos auriculares de los que salen ondas de sonido
+const ESCUCHA = {a: 61.3, b: 65.16, en: 61.47, historia: 63.18};
+const Escucha: React.FC<{t: number}> = ({t}) => {
+  const {a, b, en, historia} = ESCUCHA;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        {t >= en + 0.2 && [-1, 1].map((l) =>
+          [0, 1, 2].map((i) => {
+            const k = ((t - en) * 1.3 + i / 3) % 1;
+            const r = 90 + k * 110;
+            return <path key={`${l}${i}`} d={`M ${540 + l * r * 0.62} ${250 - r * 0.78} A ${r} ${r} 0 0 ${l > 0 ? 1 : 0} ${540 + l * r * 0.62} ${250 + r * 0.78}`} fill="none" stroke={t >= historia ? C.amarillo : '#fff'} strokeWidth={8} strokeLinecap="round" opacity={(1 - k) * 0.9} />;
+          }),
+        )}
+        <Chip t={t} en={en} d={ICONO.auricular} x={540} y={250} r={80} fase={0.5} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 7) Hay que aprender a: prospectar / reunirse con negocios / presentar propuestas / entregar un buen servicio
+// (cascada que baja peldaño a peldaño: cada ficha salta con su icono trazado y un conector con flujo lleva a la siguiente)
 const PELDANOS: [string, number, string][] = [
   ['prospectar', 34.61, ICONO.lupa],
   ['reunirse con\nnegocios', 35.45, ICONO.personas],
@@ -293,37 +518,44 @@ const PELDANOS: [string, number, string][] = [
   ['entregar un\nbuen servicio', 38.42, ICONO.estrella],
 ];
 const Cascada: React.FC<{t: number}> = ({t}) => {
-  const tops = [880, 990, 1130, 1270];
+  const tops = [1030, 1140, 1270, 1400];
   const lefts = [110, 170, 230, 290];
   const sale = iv(t, [LISTA[1], LISTA[1] + SALIDA], [0, 1]);
   return (
     <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
-      <div style={{position: 'absolute', left: -60, right: -60, top: 720, height: 760, background: VELO}} />
-      <div style={{position: 'absolute', left: 0, right: 0, top: 770, display: 'flex', justifyContent: 'center', ...H, fontSize: 62, filter: SOMBRA, opacity: 1 - sale}}>
+      <div style={{position: 'absolute', left: -60, right: -60, top: 860, height: 760, background: VELO, opacity: 1 - sale}} />
+      <div style={{position: 'absolute', left: 0, right: 0, top: 920, display: 'flex', justifyContent: 'center', ...H, fontSize: 62, filter: SOMBRA, opacity: 1 - sale}}>
         {([['hay', 33.7], ['que', 33.77], ['aprender', 33.98], ['a', 34.54]] as [string, number][]).map(([w, en], i) => (
           <span key={i} style={{marginRight: '0.24em'}}><Entra estilo={ESTILO.texto} t={t} en={en}>{w}</Entra></span>
         ))}
       </div>
-      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: SOMBRA}}>
+      <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: SOMBRA, opacity: 1 - sale}}>
         {PELDANOS.slice(1).map(([, en], i) => {
-          const p = iv(t, [en - 8 * F, en], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const x = lefts[i] + 46, y1 = tops[i] + 92, y2 = tops[i + 1] + 46, x2 = lefts[i + 1];
-          return p <= 0 ? null : (
-            <path key={i} d={`M ${x} ${y1} V ${y2} H ${x2}`} fill="none" stroke={C.amarillo} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" pathLength={1}
-              strokeDasharray="1 1" strokeDashoffset={1 - p} opacity={1 - sale} style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.9))`}} />
+          const x = lefts[i] + 46, y1 = tops[i] + 92, y2 = tops[i + 1] + 46, x2 = lefts[i + 1] - 8;
+          return <Conector key={i} t={t} en={en - 0.32} d={`M ${x} ${y1} V ${y2 - 16} Q ${x} ${y2} ${x + 16} ${y2} H ${x2}`} color={C.amarillo} dur={0.3} flujo grosor={6} punta={[x2, y2, 0]} />;
+        })}
+        {PELDANOS.map(([, en, ico], i) => {
+          if (t < en) return null;
+          const ap = aparece(t, en, -10);
+          return (
+            <g key={i} transform={`translate(${lefts[i] + 46} ${tops[i] + 46})`}>
+              <Pulso t={t} en={en} x={0} y={0} r={50} color={C.amarillo} />
+              <g transform={`scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+                <rect x={-46} y={-46} width={92} height={92} rx={26} fill={C.amarillo} stroke="#fff" strokeWidth={4} style={{filter: `drop-shadow(0 0 16px rgba(${GLOW_AMARILLO},0.8))`}} />
+                <IconoTrazado d={ico} t={t} en={en + 2 * F} color="#1b1b20" size={54} x={-27} y={-27} />
+              </g>
+              <Particulas t={t} en={en} x={0} y={0} n={7} radio={90} />
+            </g>
           );
         })}
       </svg>
-      {PELDANOS.map(([txt, en, ico], i) => {
+      {PELDANOS.map(([txt, en], i) => {
         if (t < en) return null;
-        const p = iv(t, [en, en + 10 * F], [0, 1], Easing.bezier(0.34, 1.4, 0.64, 1));
-        const ic = iv(t, [en + 3 * F, en + 12 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+        const m = muelle(t, en + 0.05, 2.4, 7);
         return (
-          <div key={i} style={{position: 'absolute', left: lefts[i], top: tops[i], display: 'flex', alignItems: 'center', gap: 22, filter: SOMBRA,
-            translate: `${(1 - p) * -60}px ${-20 * sale}px`, opacity: Math.min(1, p * 2) * (1 - sale)}}>
-            <div style={{width: 92, height: 92, borderRadius: 26, background: C.amarillo, display: 'flex', alignItems: 'center', justifyContent: 'center', scale: `${ic}`,
-              boxShadow: `0 0 20px rgba(${GLOW_AMARILLO},0.8)`}}><Ico d={ico} size={52} color="#1b1b20" /></div>
-            <span style={{...H, fontSize: 54, lineHeight: 1.0, whiteSpace: 'pre'}}>{txt}</span>
+          <div key={i} style={{position: 'absolute', left: lefts[i] + 114, top: tops[i] + 46, translate: `${(1 - m) * -50}px calc(-50% + ${-20 * sale}px)`,
+            opacity: lim((t - en) / 0.15) * (1 - sale), filter: SOMBRA, ...H, fontSize: 54, lineHeight: 1.0, whiteSpace: 'pre'}}>
+            {txt}
           </div>
         );
       })}
@@ -583,11 +815,16 @@ export const ReelA5: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Impacto estilo={ESTILO.impacto} t={t} en={3.44} x={540} y={1180} color={C.rosa} radio={230} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={47.84} x={540} y={1250} radio={250} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={51.28} x={540} y={1230} radio={250} />
+      <Preguntas t={t} />
+      <Promesas t={t} />
       <Trayectoria t={t} />
+      <Boton t={t} />
       <Cascada t={t} />
+      <Ritmo t={t} />
+      <Meses t={t} />
+      <Monedas t={t} />
+      <Ciclo t={t} />
+      <Escucha t={t} />
 
       <Subtitulos t={t} />
 
@@ -605,7 +842,7 @@ export const ReelA5: React.FC = () => {
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="swoosh2" en={c} db={-6} />
+        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 87.45, 87.76, 88.14, 88.36].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
@@ -615,6 +852,10 @@ export const ReelA5: React.FC = () => {
         ['burbuja', 19.41, -8], ['burbuja', 21.52, -8], ['burbuja', 23.54, -8], ['burbuja', 25.28, -8],
         ['snappy', 34.61, -7], ['snappy', 35.45, -7], ['snappy', 36.96, -7], ['snappy', 38.42, -7],
         ['thud', 43.85, -4], ['pop', 45.6, -5], ['cineboom', 47.84, -3], ['boom', 51.28, -3], ['exito', 51.4, -8],
+        ['pop', 7.12, -8], ['burbuja2', 8.89, -9], ['burbuja2', 9.15, -9], ['burbuja2', 9.41, -9], ['loading', 12.06, -12], ['snap', 12.96, -9], ['snap', 13.14, -9],
+        ['pop', 30.39, -7], ['click', 32.04, -4], ['tings', 32.71, -9], ['negativo', 33.0, -7],
+        ['swish', 40.02, -11], ['tap', 41.02, -9], ['tap', 41.72, -9], ['tapcorto', 43.85, -10], ['tapcorto', 44.1, -10], ['thud', 45.88, -10], ['thud', 46.08, -10],
+        ['tings', 48.1, -9], ['loading', 52.18, -13], ['pop', 61.47, -7],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />
       ))}
