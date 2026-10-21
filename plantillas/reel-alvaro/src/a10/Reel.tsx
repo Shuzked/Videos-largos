@@ -247,72 +247,184 @@ const Interrogante: React.FC<{t: number; en: number; x: number; y: number; s?: n
   );
 };
 
-// 1) "¿qué pasa cuando tienes un problema y no sabes resolverlo?": sale un bocadillo, dentro se dibuja un lío
-// (el problema) y al decir "resolverlo" salta una interrogación roja y el bocadillo tiembla
-const ENREDO = {a: 5.2, b: 7.84, burbuja: 5.36, lio: 6.0, duda: 7.12};
-const LIO = 'M -130 34 C -110 -70, -10 -64, -40 6 S 40 82, 62 2 S 6 -82, 28 -48 S 140 -24, 104 40 S -6 74, -58 -18 S 18 -76, 124 -58';
+// Utilidades de trazado: curvas cúbicas como listas de puntos, para transformar una forma en otra (morph)
+// y para mover algo a lo largo de un camino a velocidad constante
+type Pt = [number, number];
+type Cub = [Pt, Pt, Pt]; // control 1, control 2, punto final
+const trazado = (p0: Pt, segs: Cub[]) => `M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} ` + segs.map(([a, b, c]) => `C ${a[0].toFixed(1)} ${a[1].toFixed(1)}, ${b[0].toFixed(1)} ${b[1].toFixed(1)}, ${c[0].toFixed(1)} ${c[1].toFixed(1)}`).join(' ');
+const mezcla = (a: Pt, b: Pt, k: number): Pt => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+const enCubica = (p0: Pt, [c1, c2, p]: Cub, u: number): Pt => {
+  const w = 1 - u;
+  return [w * w * w * p0[0] + 3 * w * w * u * c1[0] + 3 * w * u * u * c2[0] + u * u * u * p[0], w * w * w * p0[1] + 3 * w * w * u * c1[1] + 3 * w * u * u * c2[1] + u * u * u * p[1]];
+};
+// muestrea el camino y devuelve una función distancia → punto (y la longitud total)
+const recorrido = (p0: Pt, segs: Cub[]) => {
+  const pts: Pt[] = [p0];
+  let ini = p0;
+  for (const s of segs) {
+    for (let i = 1; i <= 40; i++) pts.push(enCubica(ini, s, i / 40));
+    ini = s[2];
+  }
+  const acum = [0];
+  for (let i = 1; i < pts.length; i++) acum.push(acum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  const total = acum[acum.length - 1];
+  const en = (d: number): Pt => {
+    const x = Math.min(total, Math.max(0, d));
+    let i = 1;
+    while (i < acum.length - 1 && acum[i] < x) i++;
+    const k = (x - acum[i - 1]) / Math.max(1e-6, acum[i] - acum[i - 1]);
+    return mezcla(pts[i - 1], pts[i], k);
+  };
+  return {en, total};
+};
+
+// 1) "¿qué pasa cuando tienes un problema y no sabes resolverlo?": sale un bocadillo y dentro se dibuja un lío (el problema);
+// al decir "resolverlo" el propio lío se desenreda y se transforma en una interrogación (morph del trazo, con sobrepaso),
+// el punto cae con un bote y el bocadillo tiembla
+const ENREDO = {a: 5.2, b: 7.84, burbuja: 5.36, lio: 6.0, morph: 6.98, duda: 7.12};
+// el lío en seis cúbicas (las mismas que tenía con S, ya desplegadas) y la interrogación con el mismo número de cúbicas
+const LIO0: Pt = [-130, 34];
+const LIO_SEGS: Cub[] = [
+  [[-110, -70], [-10, -64], [-40, 6]],
+  [[-70, 76], [40, 82], [62, 2]],
+  [[84, -78], [6, -82], [28, -48]],
+  [[50, -14], [140, -24], [104, 40]],
+  [[68, 104], [-6, 74], [-58, -18]],
+  [[-110, -110], [18, -76], [124, -58]],
+];
+const DUDA0: Pt = [-46, -38];
+const DUDA_SEGS: Cub[] = [
+  [[-46, -76], [-24, -98], [0, -98]],
+  [[26, -98], [48, -80], [48, -52]],
+  [[48, -28], [30, -18], [16, -8]],
+  [[6, -1], [0, 8], [0, 18]],
+  [[0, 24], [0, 28], [0, 32]],
+  [[0, 36], [0, 38], [0, 40]],
+];
 const Enredo: React.FC<{t: number}> = ({t}) => {
-  const {a, b, burbuja, lio, duda} = ENREDO;
+  const {a, b, burbuja, lio, morph, duda} = ENREDO;
   const ap = aparece(t, burbuja, -8);
   const fl = flota(t, 0, 5);
   const traza = 1 - Math.pow(1 - lim((t - lio) / 0.95), 2);
+  // el morph usa un muelle: se pasa un poco de la forma final y se asienta
+  const k = t < morph ? 0 : muelle(t, morph, 2.4, 7);
+  const p0 = mezcla(LIO0, DUDA0, k);
+  const segs = LIO_SEGS.map((s, i) => s.map((p, j) => mezcla(p, DUDA_SEGS[i][j], k)) as Cub);
+  const d = trazado(p0, segs);
+  const enDuda = t >= morph;
+  const punto = muelle(t, duda + 0.06, 3, 7.5);
   const tiembla = t > duda && t < duda + 0.5 ? Math.sin((t - duda) * 60) * 7 * (1 - (t - duda) / 0.5) : 0;
+  const color = enDuda ? (k > 0.5 ? '#fff' : C.amarillo) : C.amarillo;
   if (t < burbuja) return null;
   return (
     <Ventana suave t={t} a={a} b={b}>
       <Lienzo>
         <g transform={`translate(${540 + tiembla} ${205 + fl.y})`}>
-          <g transform={`scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+          <g transform={`scale(${ap.sx} ${ap.sy}) rotate(${ap.rot + (enDuda ? Math.sin(t * 3.4) * 4 * lim((t - duda) / 0.4) : 0)})`}>
             <path d="M -150 -112 H 150 A 26 26 0 0 1 176 -86 V 66 A 26 26 0 0 1 150 92 H 34 L -6 136 L -12 92 H -150 A 26 26 0 0 1 -176 66 V -86 A 26 26 0 0 1 -150 -112 Z"
-              fill={OSCURO} stroke="#fff" strokeWidth={6} strokeLinejoin="round" />
-            <path d={LIO} fill="none" stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza}
-              style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.7))`}} />
+              fill={OSCURO} stroke={t >= duda ? ROJO : '#fff'} strokeWidth={6} strokeLinejoin="round" style={{filter: t >= duda ? `drop-shadow(0 0 12px ${ROJO})` : 'none'}} />
+            <path d={d} fill="none" stroke={color} strokeWidth={enDuda ? 9 + 7 * Math.min(1, k) : 9} strokeLinecap="round" strokeLinejoin="round"
+              {...(enDuda ? {} : {pathLength: 1, strokeDasharray: '1 1', strokeDashoffset: 1 - traza})}
+              style={{filter: `drop-shadow(0 0 ${enDuda ? 12 : 8}px rgba(${enDuda ? '255,255,255' : GLOW_AMARILLO},0.7))`}} />
+            {punto > 0 && (
+              <g transform={`translate(0 ${66 - (1 - punto) * 40}) scale(${Math.max(0, punto)})`}>
+                <circle r={12} fill={ROJO} stroke="#fff" strokeWidth={3} />
+              </g>
+            )}
+            <Particulas t={t} en={duda + 0.1} x={0} y={66} n={10} radio={110} colores={[ROJO, '#ffffff', C.amarillo]} />
           </g>
-          <Interrogante t={t} en={duda} x={176} y={-96} s={1.15} color={ROJO} />
+          <Pulso t={t} en={duda} x={0} y={-10} r={150} color={ROJO} dur={16} />
         </g>
       </Lienzo>
     </Ventana>
   );
 };
 
-// 2) "las mejores clases del mundo... pero al ponerlo en práctica aparecen dudas": una tarjeta de vídeo con estrellas,
-// que al decir "práctica" se da la vuelta (portátil: el trabajo real) y al decir "dudas" le saltan interrogaciones alrededor
-const CLASES = {a: 8.6, b: 14.1, tarjeta: 8.72, estrellas: 9.04, mundo: 9.56, practica: 11.76, dudas: [12.24, 12.96, 13.08]};
+// 2) "las mejores clases del mundo... pero cuando empiezas a ponerlo en práctica aparecen dudas":
+// la tarjeta de vídeo con estrellas se encoge hasta convertirse en un puntito (el alumno) al principio de un camino;
+// el camino se dibuja y el alumno avanza dando saltitos ("ponerlo en práctica"), pero al decir "aparecen" el camino se
+// levanta y se enrosca formando una interrogación gigante; el alumno sube por ella y al decir "dudas" se cae y se
+// convierte en el punto de la interrogación. De ella salen interrogaciones más pequeñas que suben y se desvanecen.
+const CLASES = {a: 8.6, b: 14.1, tarjeta: 8.72, estrellas: 9.04, mundo: 9.56, encoge: 10.52, camino: 10.62, sube: 11.86, cae: 12.96, ecos: [13.08, 13.24]};
+const SUELO_Y = 300;
+const CAMINO0: Pt = [130, SUELO_Y];
+const CAMINO_SEGS: Cub[] = [
+  [[220, SUELO_Y], [310, SUELO_Y], [400, SUELO_Y]], // el suelo (recto)
+];
+// la interrogación queda justo encima de la cabeza de Álvaro (la duda "sobre él")
+const PREGUNTA0: Pt = [400, SUELO_Y];
+const PREGUNTA_SEGS: Cub[] = [
+  [[462, SUELO_Y], [480, 240], [480, 170]], // el camino se levanta
+  [[480, 50], [660, 50], [660, 170]], // gancho por arriba
+  [[660, 240], [570, 228], [570, 278]], // baja hacia el centro
+];
+const SUELO = recorrido(CAMINO0, CAMINO_SEGS);
+const PREGUNTA = recorrido(PREGUNTA0, PREGUNTA_SEGS);
+const D_CAMINO = trazado(CAMINO0, CAMINO_SEGS);
+const D_PREGUNTA = trazado(PREGUNTA0, PREGUNTA_SEGS);
+const PUNTO: Pt = [570, 326];
 const ClasesDudas: React.FC<{t: number}> = ({t}) => {
-  const {a, b, tarjeta, estrellas, mundo, practica, dudas} = CLASES;
+  const {a, b, tarjeta, estrellas, mundo, encoge, camino, sube, cae, ecos} = CLASES;
   const ap = aparece(t, tarjeta, 6);
   const fl = flota(t, 1, 4);
-  const giro = lim((t - practica) / 0.42);
-  const cx = Math.cos(Math.PI * Easing.bezier(0.65, 0, 0.35, 1)(giro));
-  const detras = cx < 0;
-  const tiembla = t > dudas[1] && t < dudas[1] + 0.5 ? Math.sin((t - dudas[1]) * 64) * 6 * (1 - (t - dudas[1]) / 0.5) : 0;
   const barra = ((t - tarjeta) / 2.2) % 1;
-  const apagaEstrellas = 1 - lim((t - practica) / 0.3);
+  // la tarjeta se encoge y viaja hasta el principio del camino (acelera al final)
+  const kE = lim((t - encoge) / 0.34);
+  const eE = kE * kE * kE;
+  const cx = 540 + (CAMINO0[0] - 540) * eE, cy = 190 + fl.y * (1 - eE) + (CAMINO0[1] - 190) * eE;
+  const escalaTarjeta = 1 - eE;
+  // dibujo del suelo y de la interrogación (el trazo va un poco por delante del alumno)
+  const pSuelo = 1 - Math.pow(1 - lim((t - camino) / 0.7), 2);
+  const pPreg = lim((t - sube) / 0.95);
+  const ePreg = pPreg < 0.5 ? 2 * pPreg * pPreg : 1 - Math.pow(-2 * pPreg + 2, 2) / 2;
+  // el alumno: aparece al acabar de encogerse la tarjeta, recorre el suelo con saltitos y sube por la interrogación detrás del trazo
+  const alumnoEn = encoge + 0.34;
+  let ax = CAMINO0[0], ay = CAMINO0[1], salto = 0;
+  if (t < sube) {
+    const dist = SUELO.total * lim((t - alumnoEn - 0.15) / (sube - alumnoEn - 0.15));
+    [ax, ay] = SUELO.en(dist);
+    salto = -Math.abs(Math.sin(dist / 22)) * 16;
+  } else {
+    [ax, ay] = PREGUNTA.en(Math.max(0, PREGUNTA.total * ePreg - 24));
+  }
+  // al decir "dudas" el alumno se cae desde el final del trazo y se queda como el punto de la interrogación (con bote)
+  let r = 16, colorAlumno = C.amarillo, sx = 1, sy = 1;
+  if (t >= cae) {
+    const k = t - cae;
+    const caida = lim(k / 0.2);
+    const fin = PREGUNTA.en(PREGUNTA.total);
+    const rebote = k > 0.2 ? Math.exp(-7 * (k - 0.2)) * Math.abs(Math.sin((k - 0.2) * 16)) * 26 : 0;
+    ax = fin[0] + (PUNTO[0] - fin[0]) * caida;
+    ay = fin[1] + (PUNTO[1] - fin[1]) * caida * caida - rebote;
+    const aplasta = k > 0.18 && k < 0.36 ? Math.sin(((k - 0.18) / 0.18) * Math.PI) : 0;
+    sx = 1 + 0.35 * aplasta;
+    sy = 1 - 0.3 * aplasta;
+    r = 16 + 5 * lim(k / 0.3);
+    colorAlumno = ROJO;
+    salto = 0;
+  }
+  const esPregunta = t >= cae;
+  const tiembla = t > cae && t < cae + 0.5 ? Math.sin((t - cae) * 64) * 5 * (1 - (t - cae) / 0.5) : 0;
   return (
     <Ventana suave t={t} a={a} b={b}>
       <Lienzo>
-        <g transform={`translate(${540 + tiembla} ${190 + fl.y})`}>
-          <g transform={`scale(${ap.sx * Math.max(0.02, Math.abs(cx))} ${ap.sy}) rotate(${ap.rot})`}>
-            <rect x={-160} y={-95} width={320} height={190} rx={26} fill={OSCURO} stroke={detras ? C.amarillo : '#fff'} strokeWidth={6} />
-            {!detras ? (
-              <g>
-                <circle r={46} fill={C.amarillo} />
-                <IconoTrazado d={ICONO.play} t={t} en={tarjeta + 3 * F} color="#1b1b20" size={56} x={-25} y={-28} />
-                <rect x={-128} y={64} width={256} height={9} rx={4.5} fill="rgba(255,255,255,0.22)" />
-                <rect x={-128} y={64} width={256 * barra} height={9} rx={4.5} fill={C.amarillo} />
-              </g>
-            ) : (
-              <g transform="scale(-1 1)">
-                <IconoTrazado d={ICONOS.portatil} t={t} en={practica + 0.21} color="#fff" size={124} x={-62} y={-66} />
-              </g>
-            )}
+        {/* tarjeta de clases */}
+        {escalaTarjeta > 0.01 && (
+          <g transform={`translate(${cx} ${cy}) scale(${ap.sx * escalaTarjeta} ${ap.sy * escalaTarjeta}) rotate(${ap.rot + eE * -25})`}>
+            <rect x={-160} y={-95} width={320} height={190} rx={26} fill={OSCURO} stroke="#fff" strokeWidth={6} />
+            <circle r={46} fill={C.amarillo} />
+            <IconoTrazado d={ICONO.play} t={t} en={tarjeta + 3 * F} color="#1b1b20" size={56} x={-25} y={-28} />
+            <rect x={-128} y={64} width={256} height={9} rx={4.5} fill="rgba(255,255,255,0.22)" />
+            <rect x={-128} y={64} width={256 * barra} height={9} rx={4.5} fill={C.amarillo} />
           </g>
+        )}
+        <g transform={`translate(540 ${190 + fl.y})`} opacity={1 - lim((t - encoge) / 0.2)}>
           {Array.from({length: 5}, (_, i) => {
             const en = estrellas + i * 0.09;
             if (t < en) return null;
             const e = aparece(t, en, 25);
             return (
-              <g key={i} transform={`translate(${(i - 2) * 58} 136) scale(${e.sx} ${e.sy}) rotate(${e.rot})`} opacity={apagaEstrellas}>
+              <g key={i} transform={`translate(${(i - 2) * 58} 136) scale(${e.sx} ${e.sy}) rotate(${e.rot})`}>
                 <path d={estrella(22)} fill={C.amarillo} stroke="#fff" strokeWidth={3} strokeLinejoin="round" />
               </g>
             );
@@ -320,9 +432,45 @@ const ClasesDudas: React.FC<{t: number}> = ({t}) => {
           <Destello t={t} en={mundo} x={-150} y={128} tam={22} color={C.amarillo} />
           <Destello t={t} en={mundo + 0.08} x={150} y={128} tam={18} />
         </g>
-        {([[290, 175, 1.25, '#fff'], [800, 160, 1.6, ROJO], [840, 355, 1.0, '#fff']] as [number, number, number, string][]).map(([x, y, e, col], i) => (
-          <Interrogante key={i} t={t} en={dudas[i]} x={x} y={y} s={e} color={col} fase={i * 1.7} />
-        ))}
+        <Particulas t={t} en={alumnoEn} x={CAMINO0[0]} y={CAMINO0[1]} n={8} radio={70} />
+        {/* camino y la interrogación en que se convierte */}
+        <g transform={`translate(${tiembla} 0)`}>
+          {t >= camino && (
+            <path d={D_CAMINO} fill="none" stroke={C.amarillo} strokeWidth={14} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - pSuelo}
+              opacity={esPregunta ? 0.35 : 1} style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.7))`}} />
+          )}
+          {t >= sube && (
+            <g style={{filter: esPregunta ? `drop-shadow(0 0 14px ${ROJO})` : `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.7))`}}>
+              <path d={D_PREGUNTA} fill="none" stroke="rgba(10,10,14,0.85)" strokeWidth={esPregunta ? 40 : 24} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - ePreg} />
+              <path d={D_PREGUNTA} fill="none" stroke={esPregunta ? '#fff' : C.amarillo} strokeWidth={esPregunta ? 27 : 14} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - ePreg} />
+            </g>
+          )}
+          {/* el alumno (luego el punto) */}
+          {t >= alumnoEn && (
+            <g transform={`translate(${ax} ${ay + salto}) scale(${sx * Math.min(1, muelle(t, alumnoEn, 3, 8))} ${sy * Math.min(1.2, muelle(t, alumnoEn, 3, 8))})`}>
+              <circle r={r + 5} fill="rgba(10,10,14,0.85)" />
+              <circle r={r} fill={colorAlumno} style={{filter: `drop-shadow(0 0 10px ${colorAlumno})`}} />
+            </g>
+          )}
+          <Pulso t={t} en={cae + 0.2} x={PUNTO[0]} y={PUNTO[1]} r={30} color={ROJO} />
+          <Particulas t={t} en={cae + 0.2} x={PUNTO[0]} y={PUNTO[1]} n={12} radio={120} colores={[ROJO, '#ffffff', C.amarillo]} />
+        </g>
+        {/* las dudas se multiplican: interrogaciones pequeñas que salen de la grande, suben balanceándose y se desvanecen */}
+        {ecos.map((en, i) => {
+          const k = (t - en) / 0.95;
+          if (k <= 0 || k >= 1) return null;
+          const lado = i === 0 ? -1 : 1;
+          const x = 570 + lado * (150 + 90 * k), y = 170 - 110 * k;
+          const e = aparece(t, en, lado * 20);
+          return (
+            <g key={i} transform={`translate(${x} ${y}) scale(${0.55 * e.sx} ${0.55 * e.sy}) rotate(${Math.sin(k * 9) * 14})`} opacity={1 - k * k}>
+              <path d={GANCHO} fill="none" stroke="rgba(10,10,14,0.8)" strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" />
+              <path d={GANCHO} fill="none" stroke={i === 0 ? '#fff' : C.amarillo} strokeWidth={18} strokeLinecap="round" strokeLinejoin="round" />
+              <circle cy={46} r={14} fill="rgba(10,10,14,0.8)" />
+              <circle cy={46} r={10} fill={i === 0 ? '#fff' : C.amarillo} />
+            </g>
+          );
+        })}
       </Lienzo>
     </Ventana>
   );
@@ -1082,8 +1230,8 @@ export const ReelA10: React.FC = () => {
       ))}
       {([
         ['hit', 0.04, -2], ['pop', 0.48, -5], ['boom', 3.2, -3], ['cineboom', 4.24, -4],
-        ['burbuja', 5.36, -7], ['risercorto', 6.0, -9], ['alerta', 7.12, -8],
-        ['pop', 8.72, -6], ['twinkle', 9.04, -9], ['snap', 11.76, -7], ['pop', 12.24, -6], ['negativo', 12.96, -6], ['pop', 13.12, -7],
+        ['burbuja', 5.36, -7], ['risercorto', 6.0, -9], ['swish', 6.98, -10], ['alerta', 7.12, -8], ['bloop', 7.2, -9],
+        ['pop', 8.72, -6], ['twinkle', 9.04, -9], ['suck', 10.52, -9], ['pop', 10.86, -8], ['tapcorto', 11.2, -12], ['tapcorto', 11.5, -12], ['risercorto', 11.86, -10], ['thud', 13.16, -5], ['negativo', 13.0, -7], ['bloop', 13.08, -9], ['bloop', 13.24, -10],
         ['pop', 14.44, -6], ['pop', 16.16, -6], ['pop', 18.76, -6], ['pop', 21.4, -6], ['cineboom', 23.52, -5], ['exito', 25.36, -7],
         ['datos', 27.52, -10], ['reveal', 30.56, -8], ['ding', 31.84, -9],
         ['datos', 32.7, -10], ['pop', 33.96, -6], ['notif', 34.36, -8], ['tap', 34.8, -7], ['beep', 35.32, -12], ['tapcorto', 36.08, -8], ['tapcorto', 36.44, -8], ['boom', 36.6, -4],
