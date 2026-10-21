@@ -439,7 +439,7 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 const GRANDES: Grande[] = [
   // HOOK (detrás de Álvaro)
   {a: 0.04, b: 1.5, top: 80, lineas: [{ws: [['trabajar', 0.04]], size: 80}, {ws: [['diez horas', 0.6, amarillo]], size: 160, golpe: true}, {ws: [['al', 1.16], ['día', 1.32]], size: 90, abajo: true}]},
-  {a: 6.84, b: 7.95, top: 130, lineas: [{ws: [['no', 6.84], ['va', 7.2], ['a', 7.4]], size: 80}, {ws: [['cambiar', 7.52, rosaFuerte]], size: 160, golpe: true}]},
+  {a: 6.84, b: 7.95, top: 130, lineas: [{ws: [['no', 6.84], ['va', 7.2], ['a', 7.4]], size: 80}, {ws: [['cambiar', 7.52, rosaFuerte]], size: 140, golpe: true}]},
   // Trabajar duro (B-roll)
   {a: 9.24, b: 11.25, top: 260, lineas: [{ws: [['trabajar', 9.24]], size: 90}, {ws: [['duro', 9.76]], size: 180, golpe: true}, {ws: [['es', 10.24], ['importante', 10.44, amarillo]], size: 90}]},
   {a: 11.32, b: 12.15, top: 1050, lineas: [{ws: [['muchísimo', 11.32, amarillo]], size: 170, golpe: true}]},
