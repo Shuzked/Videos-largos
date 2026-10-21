@@ -16,7 +16,7 @@
 | A7 Evergreen | 4520 universidad, 48714 negocios (dueña de tienda), 5537 captación (reunión cenital), 4844 entrega (portátil) |
 | A8 Evergreen | 46610 agencia (equipo en mesa), 23112 contrata (firma), 12918 magia (cartas), 47413 suscripción (pago con tarjeta), 8813 identificar (notas adhesivas), 9069 ofrecer (rotafolio), 42629 organizar (tableta) |
 | A9 Evergreen | 30010 cliente, 5731 trabajo (portátil), 23073 llamada, 5601 agotado, 23016 expertos (sala de pantallas) |
-| A10 Evergreen | 46752 expertos (mentor guiando en el portátil), 8840 alumno (portátil en terraza). Descartado 41642: marcas ASUS/SAMSUNG/CORSAIR |
+| A10 Evergreen | 46752 expertos (mentor guiando en el portátil), 8858 alumno (portátil en terraza). Descartado 41642: marcas ASUS/SAMSUNG/CORSAIR |
 
 ## Música (Mixkit) — una pista distinta por reel
 

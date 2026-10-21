@@ -122,10 +122,10 @@ const camara = (t: number) => {
 // ---------------- B-roll a pantalla completa, encuadrado en su sujeto ----------------
 type B = {src: string; a: number; b: number; desde?: number; foco: number; vertical?: boolean};
 const BROLL: B[] = [
-  // "incluso puedes apoyarte en expertos para implementar determinadas soluciones" (encuadre fijo: se ven el experto y el alumno)
-  {src: 'expertos', a: 45.6, b: 49.92, desde: 0.5, foco: 0.66},
+  // "incluso puedes apoyarte en expertos para implementar determinadas soluciones" (encuadre fijo en el experto que explica)
+  {src: 'expertos', a: 45.6, b: 49.92, desde: 0.5, foco: 0.6},
   // "que el alumno tenga herramientas y ayuda para hacer el trabajo que necesita hacer"
-  {src: 'alumno', a: 52.0, b: 57.32, desde: 1, foco: 0.41},
+  {src: 'alumno', a: 52.0, b: 57.32, desde: 1, foco: 0.6},
 ];
 // Recorrido por la plataforma a pantalla completa (maqueta genérica, sin datos reales), con la misma transición que el B-roll
 const PLAT = {a: 32.24, b: 37.24, modulos: 32.7, clases: 33.96, llamadas: 34.36, soporte: 34.8, directo: 35.32, semana: 36.08};
@@ -147,13 +147,13 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   return (
     <Ventana t={t} a={b.a} b={b.b}>
       <AbsoluteFill style={{background: '#000', overflow: 'hidden'}}>
-        <div style={{position: 'absolute', inset: 0, transformOrigin: '50% 45%', scale: iv(t, [b.a, b.b], [1.0, 1.07])}}>
+        <div style={{position: 'absolute', inset: 0, transformOrigin: '50% 25%', scale: iv(t, [b.a, b.b], [1.0, 1.06])}}>
           <Sequence from={fr(b.a)} durationInFrames={fr(b.b - b.a)} layout="none">
             <Video src={staticFile(`a10/broll/${b.src}.mp4`)} muted trimBefore={fr(b.desde ?? 0)} style={{position: 'absolute', top: 0, left, width: ancho, height: 1920}} />
           </Sequence>
         </div>
         {/* sombra arriba y abajo solo para que se lean los textos */}
-        <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 58%, rgba(0,0,0,0.62) 100%)'}} />
+        <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 58%, rgba(0,0,0,0.62) 100%)'}} />
       </AbsoluteFill>
     </Ventana>
   );
@@ -236,7 +236,7 @@ const Enredo: React.FC<{t: number}> = ({t}) => {
             <path d={LIO} fill="none" stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza}
               style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.7))`}} />
           </g>
-          <Chip t={t} en={duda} d={ICONO.pregunta} x={168} y={-104} r={46} fondo={ROJO} color="#fff" quieto />
+          <Chip t={t} en={duda} d={ICONO.pregunta} x={168} y={-104} r={52} fondo={ROJO} color="#fff" quieto />
         </g>
       </Lienzo>
     </Ventana>
@@ -288,7 +288,7 @@ const ClasesDudas: React.FC<{t: number}> = ({t}) => {
           <Destello t={t} en={mundo} x={-150} y={128} tam={22} color={C.amarillo} />
           <Destello t={t} en={mundo + 0.08} x={150} y={128} tam={18} />
         </g>
-        {[[300, 150], [790, 128], [552, 34]].map(([x, y], i) => (
+        {[[285, 150], [800, 118], [820, 318]].map(([x, y], i) => (
           <Chip key={i} t={t} en={dudas[i]} d={ICONO.pregunta} x={x} y={y} r={i === 1 ? 50 : 42} fondo={i === 1 ? ROJO : '#fff'} color={i === 1 ? '#fff' : '#1b1b20'} fase={i * 1.7} />
         ))}
       </Lienzo>
@@ -379,7 +379,7 @@ const Programa: React.FC<{t: number}> = ({t}) => {
   return (
     <Ventana suave t={t} a={a} b={b}>
       <Lienzo>
-        <g transform={`translate(540 ${212 + fl.y}) scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+        <g transform={`translate(540 ${236 + fl.y}) scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
           <circle r={R + 28} fill={OSCURO} stroke="#fff" strokeWidth={5} />
           {Array.from({length: 18}, (_, i) => {
             const g0 = -90 + i * 20 + 2.5, g1 = -90 + (i + 1) * 20 - 2.5;
@@ -403,7 +403,7 @@ const Programa: React.FC<{t: number}> = ({t}) => {
           )}
           <Particulas t={t} en={fin} x={0} y={0} n={14} radio={200} />
         </g>
-        <Chip t={t} en={ia} d={ICONO.ia} x={540 + 108} y={212 - 108} r={40} fase={1} />
+        <Chip t={t} en={ia} d={ICONO.ia} x={540 + 108} y={236 - 108} r={40} fase={1} />
       </Lienzo>
     </Ventana>
   );
@@ -811,7 +811,7 @@ type Linea = {ws: Pal[]; size: number; golpe?: boolean; abajo?: boolean; estilo?
 type Grande = {a: number; b: number; top: number; lineas: Linea[]};
 // Solo frases CORTAS en grande, alternando con frases en subtítulo (el hook va entero en grande, en tres tarjetas)
 const GRANDES: Grande[] = [
-  // HOOK (detrás de Álvaro): hay una pregunta que deberías hacerte
+  // HOOK (encima de la cabeza de Álvaro): hay una pregunta que deberías hacerte
   {a: 0.04, b: 1.84, top: 60, lineas: [{ws: [['hay', 0.04], ['una', 0.28]], size: 84}, {ws: [['pregunta', 0.48, amarillo]], size: 150, golpe: true},
     {ws: [['que', 0.92], ['deberías', 1.04], ['hacerte', 1.48]], size: 80, abajo: true}]},
   // antes de entrar en cualquier mentoría
@@ -976,7 +976,7 @@ const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> 
 );
 
 // Tramos con letras detrás de la persona: solo mientras hay titular detrás
-const DETRAS: [number, number][] = [[0, 2.12]];
+const DETRAS: [number, number][] = []; // el hook va por encima de la cabeza: no hace falta recorte
 
 export const ReelA10: React.FC = () => {
   const frame = useCurrentFrame();
