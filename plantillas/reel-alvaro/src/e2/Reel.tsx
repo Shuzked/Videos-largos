@@ -2,15 +2,17 @@ import React from 'react';
 import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
-import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
+import {F, Son, Sube, iv, Ventana} from '../anim';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
-import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+import {Entra, golpeV, flechaV, Estilo} from '../variantes';
+import {Check, Chip, Conector, Cruz, Destello, IconoTrazado, Lienzo, OSCURO, Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
+// Sin ráfagas ni trazos sobre los títulos (el cliente no quiere líneas encima del texto)
 const ESTILO: Estilo = {texto: 'giro', golpe: 'zoom', impacto: 'circulos', sub: 'giro', flecha: 'cae'};
 
 export const DURACION_E2 = 70.12;
@@ -148,153 +150,386 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   );
 };
 
-// ---------------- Elementos Lottie ----------------
-// Ráfaga de rayos que salen del centro en un impacto
-const Rafaga: React.FC<{t: number; en: number; x: number; y: number; color?: string; radio?: number}> = ({t, en, x, y, color = C.amarillo, radio = 260}) => {
-  const p = iv(t, [en, en + 12 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
-  if (t < en || p >= 1) return null;
-  return (
-    <svg style={{position: 'absolute', left: x - radio * 1.6, top: y - radio * 1.6, overflow: 'visible'}} width={radio * 3.2} height={radio * 3.2}>
-      {Array.from({length: 12}, (_, i) => {
-        const ang = (i / 12) * Math.PI * 2 + 0.13;
-        const r1 = radio * (0.55 + 0.75 * p);
-        const r2 = radio * (0.75 + 0.85 * p);
-        const c = radio * 1.6;
-        return (
-          <line
-            key={i}
-            x1={c + Math.cos(ang) * r1}
-            y1={c + Math.sin(ang) * r1}
-            x2={c + Math.cos(ang) * r2}
-            y2={c + Math.sin(ang) * r2}
-            stroke={color}
-            strokeWidth={10 * (1 - p) + 1}
-            strokeLinecap="round"
-            opacity={1 - p * 0.9}
-            style={{filter: `drop-shadow(0 0 10px ${color})`}}
-          />
-        );
-      })}
-    </svg>
-  );
+// ---------------- Elementos Lottie (src/lottie.tsx: muelles con sobrepaso, aplastar/estirar, trazos que se dibujan, partículas, reposo vivo) ----------------
+const lim = (x: number) => Math.min(1, Math.max(0, x));
+const ICONO = {
+  persona: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z',
+  codigo: 'M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z',
+  // Material "extension": piezas que encajan (herramientas existentes)
+  pieza: 'M20.5 11H19V7c0-1.1-.9-2-2-2h-4V3.5C13 2.12 11.88 1 10.5 1S8 2.12 8 3.5V5H4c-1.1 0-1.99.9-1.99 2v3.8H3.5c1.49 0 2.7 1.21 2.7 2.7s-1.21 2.7-2.7 2.7H2V20c0 1.1.9 2 2 2h3.8v-1.5c0-1.49 1.21-2.7 2.7-2.7 1.49 0 2.7 1.21 2.7 2.7V22H17c1.1 0 2-.9 2-2v-4h1.5c1.38 0 2.5-1.12 2.5-2.5S21.88 11 20.5 11z',
+  // Material "store": el negocio
+  tienda: 'M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z',
+  chat: 'M4 4h16v12H7l-3 3V4z',
+  ia: 'M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25L19 9zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5zM19 15l-1.25 2.75L15 19l2.75 1.25L19 23l1.25-2.75L23 19l-2.75-1.25L19 15z',
+  engranaje: 'M19.4 13a7.5 7.5 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.5 7.5 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1c.5.4 1.1.7 1.7 1l.4 2.6h4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1 2-3.5-2.1-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z',
 };
-
-// Círculos que se dibujan y se marcan con ✕ o ✓ trazados
-const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: string; tipo: 'x' | 'v'; top: number; desde: number; hasta: number}> = ({
-  t, n, a, paso, color, tipo, top, desde, hasta,
-}) => {
-  const d = n > 5 ? 82 : 130;
-  return (
-    <Ventana suave t={t} a={desde} b={hasta}>
-      <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
-        {Array.from({length: n}, (_, i) => {
-          const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const en = a + i * paso;
-          const m = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const tr = iv(t, [en + 2 * F, en + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const per = Math.PI * (d - 8);
-          return (
-            <svg key={i} width={d} height={d} viewBox={`0 0 ${d} ${d}`} style={{overflow: 'visible', scale: t >= en ? 0.7 + 0.3 * m : 1}}>
-              <circle
-                cx={d / 2} cy={d / 2} r={d / 2 - 4} fill={t >= en ? color : 'rgba(0,0,0,0.25)'} fillOpacity={t >= en ? 0.9 : 1}
-                stroke={t >= en ? color : 'rgba(255,255,255,0.7)'} strokeWidth={4} strokeDasharray={per} strokeDashoffset={per * (1 - dib)}
-                style={{filter: t >= en ? `drop-shadow(0 0 14px ${color})` : 'none'}}
-              />
-              {t >= en &&
-                (tipo === 'x' ? (
-                  <path d={`M ${d * 0.32} ${d * 0.32} L ${d * 0.68} ${d * 0.68} M ${d * 0.68} ${d * 0.32} L ${d * 0.32} ${d * 0.68}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ) : (
-                  <path d={`M ${d * 0.28} ${d * 0.52} L ${d * 0.44} ${d * 0.68} L ${d * 0.72} ${d * 0.34}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ))}
-            </svg>
-          );
-        })}
-      </div>
-    </Ventana>
-  );
-};
+const VERDE_CHAT = '#25c76a';
 
 const enIA = (_x: number) => false;
 const estiloIA: React.CSSProperties = {};
 
-// DESARROLLAR IA frente a VENDER SOLUCIONES DE IA (lo pide el guion): dos tarjetas; la primera se tacha
-const Comparacion: React.FC<{t: number}> = ({t}) => {
-  const tarjeta = (x: number, txt: React.ReactNode, en: number, icono: string, tachado?: number) => {
-    const p = iv(t, [en, en + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-    const tr = tachado ? iv(t, [tachado, tachado + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1)) : 0;
-    const on = t >= en && tr < 1;
-    return (
-      <div style={{position: 'absolute', left: x, top: 200, width: 410, height: 340, borderRadius: 40, scale: 0.6 + 0.4 * p, opacity: t < en ? 0 : 1 - 0.45 * tr,
-        background: on && !tachado ? 'rgba(255,214,10,0.16)' : 'rgba(10,10,14,0.72)', border: `4px solid ${on && !tachado ? C.amarillo : 'rgba(255,255,255,0.35)'}`,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, filter: SOMBRA,
-        boxShadow: on && !tachado ? `0 0 40px rgba(${GLOW_AMARILLO},0.45)` : 'none'}}>
-        <svg width={110} height={110} viewBox="0 0 24 24"><path fill={on && !tachado ? C.amarillo : '#fff'} d={icono} /></svg>
-        <div style={{...H, fontSize: 58, lineHeight: 1.0, textAlign: 'center', color: '#fff'}}>{txt}</div>
-        {tachado && (
-          <svg style={{position: 'absolute', inset: 0}} width={410} height={340}>
-            <path d="M 40 40 L 370 300 M 370 40 L 40 300" stroke="#ff3b55" strokeWidth={14} strokeLinecap="round" strokeDasharray={420} strokeDashoffset={420 * (1 - tr)} />
-          </svg>
-        )}
-      </div>
-    );
-  };
+// 0) "cuando la gente escucha inteligencia artificial, automáticamente piensa en…": un bocadillo de pensamiento sale de la cabeza
+// (las burbujitas suben una a una), dentro se dibuja la chispa de la IA y al decir "piensa" los puntos laten (está pensando)
+const PIENSA = {a: 6.9, b: 9.6, burbuja: 7.24, ia: 7.5, piensa: 9.2};
+const Pensamiento: React.FC<{t: number}> = ({t}) => {
+  const {a, b, burbuja, ia, piensa} = PIENSA;
+  const ap = aparece(t, burbuja, -6);
+  const fl = flota(t, 0.4, 5);
+  const nube = 'M -150 30 C -190 30, -196 -36, -150 -44 C -150 -96, -70 -112, -36 -80 C -6 -124, 80 -118, 92 -70 C 150 -84, 190 -24, 150 14 C 176 54, 120 86, 80 64 C 50 100, -40 100, -64 66 C -110 92, -170 70, -150 30 Z';
   return (
-    <Ventana suave t={t} a={15.56} b={26.3}>
-      {tarjeta(90, <>desarrollar<br />ia</>, 15.56, 'M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0 4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z', 22.68)}
-      {tarjeta(580, <>vender<br /><span style={amarillo}>soluciones</span><br />de ia</>, 20.76, 'M12 2 1 7l11 5 9-4.1V17h2V7L12 2zM5 13.2v4L12 21l7-3.8v-4L12 17l-7-3.8z')}
-      <div style={{position: 'absolute', left: 480, top: 330, width: 120, textAlign: 'center', ...H, fontSize: 50, opacity: iv(t, [20.76, 21.0], [0, 1])}}>vs</div>
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        {/* burbujitas que suben de la cabeza a la nube */}
+        {[[600, 392, 13, 0], [630, 352, 19, 0.1], [668, 304, 25, 0.2]].map(([x, y, r, d], i) => {
+          const e = aparece(t, a + d, 0);
+          if (t < a + d) return null;
+          return <circle key={i} cx={x} cy={y + fl.y * 0.5} r={r * e.sx} fill={OSCURO} stroke="#fff" strokeWidth={4} />;
+        })}
+        <g transform={`translate(560 ${190 + fl.y})`}>
+          <g transform={`scale(${ap.sx} ${ap.sy}) rotate(${ap.rot})`}>
+            {t >= burbuja && <path d={nube} fill={OSCURO} stroke="#fff" strokeWidth={6} strokeLinejoin="round" />}
+            <g transform={`translate(${-40} ${-28 + Math.sin(t * 3) * 3})`}>
+              <IconoTrazado d={ICONO.ia} t={t} en={ia} color={C.amarillo} size={80} x={-40} y={-40} />
+            </g>
+            {[0, 1, 2].map((i) => {
+              const late = t > piensa ? Math.abs(Math.sin((t - piensa) * 9 - i * 0.8)) : 0;
+              return t >= ia + 0.3 + i * 0.08 ? <circle key={i} cx={46 + i * 30} cy={-14 - late * 12} r={9} fill="#fff" /> : null;
+            })}
+          </g>
+        </g>
+        <Destello t={t} en={ia + 0.35} x={480} y={128} tam={20} color={C.amarillo} />
+      </Lienzo>
     </Ventana>
   );
 };
 
-// Mensajes de clientes sin responder: pila de notificaciones tipo móvil (icono de chat, avatar, líneas de mensaje)
-// que entran desde arriba y empujan a las anteriores hacia atrás, con contador de no leídos
-const AVATARES = ['#f4a261', '#8ecae6', '#e76f51', '#90be6d', '#cdb4db'];
-const Burbujas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
-  const N = 5;
-  const llegadas = Array.from({length: N}, (_, k) => a + 0.1 + k * 0.62);
-  const visibles = llegadas.filter((en) => t >= en).length;
-  const salida = iv(t, [b - 0.3, b], [0, 1], Easing.bezier(0.55, 0, 1, 0.45));
+// 1) DESARROLLAR IA frente a VENDER SOLUCIONES DE IA (lo pide el guion): dos tarjetas que caen con muelle.
+// La de la izquierda escribe código desde cero; al decir "herramientas existentes" pierde (se encoge, se apaga y le sale un ✕ rojo,
+// sin tachar el texto) y a la derecha llegan volando tres herramientas que encajan en la pieza; al decir "negocio" sale el ✓ verde
+const COMPARA = {a: 15.4, b: 26.3, izq: 15.56, cero: 18.44, der: 20.76, existentes: 22.68, negocio: 25.6};
+const Tarjeta: React.FC<{t: number; en: number; left: number; activa: boolean; pierde: number; children: React.ReactNode}> = ({t, en, left, activa, pierde, children}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, left < 540 ? -8 : 8);
+  const fl = flota(t, left / 300, 4);
+  const respira = 0.8 + 0.2 * Math.sin(t * 4);
+  return (
+    <div style={{position: 'absolute', left, top: 96 + fl.y, width: 390, height: 300, borderRadius: 36, transformOrigin: '50% 100%',
+      transform: `scale(${ap.sx * (1 - 0.1 * pierde)}, ${ap.sy * (1 - 0.1 * pierde)}) rotate(${ap.rot - 4 * pierde}deg)`, opacity: Math.min(1, ap.op * 2) * (1 - 0.45 * pierde),
+      background: activa ? 'rgba(254,255,188,0.13)' : 'rgba(12,12,16,0.82)', border: `5px solid ${activa ? C.amarillo : 'rgba(255,255,255,0.4)'}`,
+      boxShadow: activa ? `0 0 ${44 * respira}px rgba(${GLOW_AMARILLO},0.5)` : '0 14px 40px rgba(0,0,0,0.5)', filter: pierde > 0 ? `saturate(${1 - pierde})` : undefined}}>
+      {children}
+    </div>
+  );
+};
+const Comparacion: React.FC<{t: number}> = ({t}) => {
+  const {a, b, izq, cero, der, existentes, negocio} = COMPARA;
+  const pierde = lim((t - existentes) / 0.45);
+  const vs = aparece(t, der + 0.15, 20);
+  // código que se escribe solo en la tarjeta izquierda: líneas que crecen una a una con cursor que parpadea
+  const lineas = [120, 200, 150, 230, 90];
+  const escritas = lim((t - (izq + 0.6)) / (cero - izq)) * lineas.length;
+  const herramientas = [ICONO.ia, ICONO.chat, ICONO.engranaje];
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <div style={{position: 'absolute', left: 110, right: 110, top: 190, height: 460, opacity: 1 - salida, filter: SOMBRA}}>
-        {llegadas.map((en, k) => {
-          if (t < en) return null;
-          const p = iv(t, [en, en + 9 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
-          const fondo = visibles - 1 - k; // 0 = la más nueva (delante)
-          const y = (1 - p) * -160 + fondo * 46;
-          const esc = 1 - fondo * 0.05;
-          return (
-            <div key={k} style={{position: 'absolute', left: 0, right: 0, top: 0, translate: `0px ${y}px`, scale: esc, opacity: p * (fondo > 3 ? 0 : 1 - fondo * 0.18), zIndex: 10 - fondo,
-              height: 190, borderRadius: 40, background: 'rgba(250,250,252,0.95)', boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
-              display: 'flex', alignItems: 'center', gap: 24, padding: '0 30px'}}>
-              <div style={{position: 'relative', width: 116, height: 116, flexShrink: 0}}>
-                <div style={{width: 116, height: 116, borderRadius: '50%', background: AVATARES[k % AVATARES.length], display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden'}}>
-                  <svg width={90} height={90} viewBox="0 0 24 24"><path fill="rgba(255,255,255,0.9)" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0 2c-4.4 0-9 2.2-9 5v3h18v-3c0-2.8-4.6-5-9-5z" /></svg>
-                </div>
-                <div style={{position: 'absolute', right: -6, bottom: -6, width: 50, height: 50, borderRadius: 15, background: '#25d366', border: '3px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                  <svg width={30} height={30} viewBox="0 0 24 24"><path fill="#fff" d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2z" /></svg>
-                </div>
-              </div>
-              <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 14}}>
-                <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
-                  <div style={{height: 26, width: 190 + (k % 3) * 50, borderRadius: 13, background: '#2b2d31'}} />
-                  <div style={{marginLeft: 'auto', height: 20, width: 80, borderRadius: 10, background: '#b9bcc4'}} />
-                </div>
-                <div style={{height: 20, width: `${90 - (k % 3) * 14}%`, borderRadius: 10, background: '#9a9ea8'}} />
-                <div style={{height: 20, width: `${60 - (k % 2) * 16}%`, borderRadius: 10, background: '#c3c6cd'}} />
-              </div>
-            </div>
-          );
-        })}
-        {visibles > 0 && (
-          <div style={{position: 'absolute', right: -26, top: -30, zIndex: 20, minWidth: 82, height: 82, padding: '0 18px', borderRadius: 41, background: '#ff3b30', color: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', ...H, fontSize: 46, textShadow: 'none', boxShadow: '0 8px 24px rgba(255,59,48,0.5)',
-            scale: iv(t, [llegadas[visibles - 1], llegadas[visibles - 1] + 5 * F], [1.35, 1], Easing.bezier(0.34, 1.56, 0.64, 1))}}>
-            {visibles * 3 - 1}
-          </div>
+      <Tarjeta t={t} en={izq} left={100} activa={t < der} pierde={pierde}>
+        <svg width={390} height={300} style={{position: 'absolute', left: -5, top: -5, overflow: 'visible'}}>
+          <IconoTrazado d={ICONO.codigo} t={t} en={izq + 2 * F} color={t < der ? C.amarillo : '#fff'} size={84} x={153} y={18} />
+          {lineas.map((w, i) => {
+            const k = lim(escritas - i);
+            return k > 0 ? <rect key={i} x={70 + (i % 2) * 26} y={228 + i * 13} width={w * k * 0.85} height={8} rx={4} fill={i % 3 === 1 ? C.amarillo : 'rgba(255,255,255,0.55)'} /> : null;
+          })}
+          {escritas < lineas.length && Math.floor(t * 4) % 2 === 0 && <rect x={70 + (Math.floor(escritas) % 2) * 26 + lineas[Math.min(4, Math.floor(escritas))] * lim(escritas % 1) * 0.85 + 6} y={226 + Math.min(4, Math.floor(escritas)) * 13} width={5} height={12} fill={C.amarillo} />}
+        </svg>
+        <div style={{position: 'absolute', left: 0, right: 0, top: 112, textAlign: 'center', ...H, fontSize: 46, lineHeight: 1.0}}>desarrollar<br />ia</div>
+      </Tarjeta>
+      <Tarjeta t={t} en={der} left={590} activa={t >= der} pierde={0}>
+        <svg width={390} height={300} style={{position: 'absolute', left: -5, top: -5, overflow: 'visible'}}>
+          <g transform={`translate(195 62) rotate(${t > existentes + 0.5 && t < existentes + 0.9 ? Math.sin((t - existentes - 0.5) * 40) * 6 : 0})`}>
+            <IconoTrazado d={ICONO.pieza} t={t} en={der + 2 * F} color={C.amarillo} size={84} x={-42} y={-42} />
+          </g>
+          {/* tres herramientas que ya existen llegan volando en arco y encajan en la pieza */}
+          {herramientas.map((d, i) => {
+            const en = existentes + i * 0.12;
+            if (t < en) return null;
+            const k = lim((t - en) / 0.45);
+            const e = k * k * (3 - 2 * k);
+            const x0 = [-70, 195, 460][i], y0 = [80, -60, 80][i];
+            const x = x0 + (195 - x0) * e, y = y0 + (62 - y0) * e - Math.sin(e * Math.PI) * 90;
+            return (
+              <g key={i} transform={`translate(${x} ${y}) scale(${1 - 0.7 * e}) rotate(${(1 - e) * 200})`} opacity={1 - lim((k - 0.9) / 0.1)}>
+                <circle r={34} fill={C.amarillo} stroke="#fff" strokeWidth={4} />
+                <g transform="translate(-18 -18) scale(1.5)"><path d={d} fill="#1b1b20" /></g>
+              </g>
+            );
+          })}
+          <Particulas t={t} en={existentes + 0.6} x={195} y={62} n={12} radio={120} />
+        </svg>
+        <div style={{position: 'absolute', left: 0, right: 0, top: 112, textAlign: 'center', ...H, fontSize: 46, lineHeight: 1.0}}>vender<br /><span style={amarillo}>soluciones</span><br />de ia</div>
+      </Tarjeta>
+      <Lienzo>
+        {t >= der + 0.15 && (
+          <g transform={`translate(540 ${246}) scale(${vs.sx} ${vs.sy}) rotate(${vs.rot})`}>
+            <circle r={48} fill={OSCURO} stroke="#fff" strokeWidth={5} />
+            <text x={0} y={16} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill="#fff">VS</text>
+          </g>
         )}
-      </div>
+        {/* la de la izquierda pierde: ✕ rojo en su esquina (no tacha el texto) */}
+        {t >= existentes + 0.1 && (
+          <g transform={`translate(478 110)`}>
+            <Pulso t={t} en={existentes + 0.1} x={0} y={0} r={42} color={ROJO} />
+            <g transform={`scale(${aparece(t, existentes + 0.1, 12).sx} ${aparece(t, existentes + 0.1, 12).sy})`}>
+              <circle r={42} fill={ROJO} stroke="#fff" strokeWidth={5} />
+              <Cruz t={t} en={existentes + 0.16} s={0.95} />
+            </g>
+          </g>
+        )}
+        {/* y la de la derecha gana: ✓ verde al decir "negocio" */}
+        {t >= negocio && (
+          <g transform={`translate(968 110)`}>
+            <Pulso t={t} en={negocio} x={0} y={0} r={46} color={VERDE} />
+            <g transform={`scale(${aparece(t, negocio, -12).sx} ${aparece(t, negocio, -12).sy})`}>
+              <circle r={46} fill={VERDE} stroke="#fff" strokeWidth={5} style={{filter: `drop-shadow(0 0 14px ${VERDE})`}} />
+              <Check t={t} en={negocio + 2 * F} s={1} />
+            </g>
+            <Particulas t={t} en={negocio} x={0} y={0} n={12} radio={130} colores={[VERDE, '#ffffff', C.amarillo]} />
+          </g>
+        )}
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 2) Mensajes de clientes sin responder (sobre la peluquería): las notificaciones caen con muelle, aplastan al llegar y empujan
+// a las anteriores hacia atrás; el contador rojo salta con cada una (pulso) y la pila tiembla
+const AVATARES = ['#f4a261', '#8ecae6', '#e76f51', '#90be6d', '#cdb4db'];
+const MENSAJES = {a: 28.6, b: 32.56};
+const Mensajes: React.FC<{t: number}> = ({t}) => {
+  const {a, b} = MENSAJES;
+  const N = 5;
+  const llegadas = Array.from({length: N}, (_, k) => a + 0.18 + k * 0.62);
+  const visibles = llegadas.filter((en) => t >= en).length;
+  const ultima = visibles > 0 ? llegadas[visibles - 1] : 0;
+  const tiembla = visibles > 0 && t - ultima < 0.35 ? Math.sin((t - ultima) * 60) * 5 * (1 - (t - ultima) / 0.35) : 0;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(${tiembla} 0)`}>
+          {llegadas.map((en, k) => {
+            if (t < en) return null;
+            const m = muelle(t, en, 2.4, 7);
+            const ap = aparece(t, en, 0);
+            const fondo = visibles - 1 - k; // 0 = la más nueva (delante)
+            if (fondo > 3) return null;
+            const y = 210 + (1 - m) * -170 + fondo * 46;
+            const esc = 1 - fondo * 0.05;
+            return (
+              <g key={k} transform={`translate(540 ${y + 85}) scale(${esc * (fondo === 0 ? ap.sx : 1)} ${esc * (fondo === 0 ? ap.sy : 1)}) translate(-430 -85)`} opacity={(1 - fondo * 0.2) * lim((t - en) / 0.1)}>
+                <rect width={860} height={170} rx={38} fill="rgba(250,250,252,0.97)" />
+                <circle cx={95} cy={85} r={56} fill={AVATARES[k % AVATARES.length]} />
+                <IconoTrazado d={ICONO.persona} t={t} en={en + 0.05} color="rgba(255,255,255,0.95)" size={84} x={53} y={41} />
+                <g transform="translate(140 128)">
+                  <rect x={-24} y={-24} width={48} height={48} rx={14} fill={VERDE_CHAT} stroke="#fff" strokeWidth={3} />
+                  <g transform="translate(-14 -14) scale(1.17)"><path d={ICONO.chat} fill="#fff" /></g>
+                </g>
+                <rect x={180} y={38} width={190 + (k % 3) * 50} height={24} rx={12} fill="#2b2d31" />
+                <rect x={700} y={40} width={110} height={18} rx={9} fill="#b9bcc4" />
+                <rect x={180} y={80} width={560 - (k % 3) * 80} height={18} rx={9} fill="#9a9ea8" />
+                <rect x={180} y={114} width={380 - (k % 2) * 90} height={18} rx={9} fill="#c3c6cd" />
+              </g>
+            );
+          })}
+          {visibles > 0 && (
+            <g transform="translate(948 196)">
+              <Pulso t={t} en={ultima} x={0} y={0} r={46} color={ROJO} />
+              <g transform={`scale(${aparece(t, ultima, 0).sx} ${aparece(t, ultima, 0).sy})`}>
+                <circle r={46} fill={ROJO} stroke="#fff" strokeWidth={4} style={{filter: `drop-shadow(0 0 12px ${ROJO})`}} />
+                <text x={0} y={16} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill="#fff">{visibles * 3 - 1}</text>
+              </g>
+            </g>
+          )}
+        </g>
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 3) "soluciones de IA que pueden ayudar a automatizar parte de esas respuestas": llega el mensaje de un cliente, aparece la IA,
+// escribe (tres puntos) y contesta sola; llega otro y vuelve a contestar (doble ✓)
+const AUTO = {a: 32.6, b: 37.3, msg1: 32.7, ia: 33.76, escribe: 34.5, resp1: 35.0, msg2: 35.72, resp2: 36.48};
+const Bocadillo: React.FC<{t: number; en: number; x: number; y: number; w: number; lado: number; fondo: string; barras: number[]; claro: boolean}> = ({t, en, x, y, w, lado, fondo, barras, claro}) => {
+  if (t < en) return null;
+  const e = aparece(t, en, lado * 6);
+  const h = 30 + barras.length * 20;
+  const ox = lado < 0 ? x : x + w;
+  return (
+    <g transform={`translate(${ox} ${y + h}) scale(${e.sx} ${e.sy}) rotate(${e.rot}) translate(${-ox} ${-(y + h)})`}>
+      <rect x={x} y={y} width={w} height={h} rx={22} fill={fondo} />
+      <path d={lado < 0 ? `M ${x + 4} ${y + h - 22} L ${x - 14} ${y + h + 4} L ${x + 28} ${y + h - 4} Z` : `M ${x + w - 4} ${y + h - 22} L ${x + w + 14} ${y + h + 4} L ${x + w - 28} ${y + h - 4} Z`} fill={fondo} />
+      {barras.map((bw, i) => <rect key={i} x={x + 22} y={y + 16 + i * 20} width={bw} height={10} rx={5} fill={claro ? 'rgba(0,0,0,0.28)' : 'rgba(255,255,255,0.85)'} />)}
+    </g>
+  );
+};
+const Automatiza: React.FC<{t: number}> = ({t}) => {
+  const {a, b, msg1, ia, escribe, resp1, msg2, resp2} = AUTO;
+  const fl = flota(t, 0.9, 3);
+  const doble = (en: number, x: number, y: number) =>
+    t >= en + 0.2 ? (
+      <path d={`M ${x - 16} ${y - 6} L ${x - 10} ${y} L ${x} ${y - 12} M ${x - 6} ${y - 6} L ${x} ${y} L ${x + 10} ${y - 12}`} stroke="#bff7ff" strokeWidth={3.5} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={lim((t - en - 0.2) / 0.15)} />
+    ) : null;
+  const escribiendo = (desde: number, hasta: number, x: number, y: number) =>
+    t >= desde && t < hasta ? (
+      <g transform={`translate(${x} ${y})`}>
+        <rect x={-54} y={-26} width={108} height={52} rx={26} fill={C.amarillo} />
+        {[0, 1, 2].map((i) => <circle key={i} cx={-24 + i * 24} cy={-Math.abs(Math.sin(t * 12 - i * 0.9)) * 7} r={7} fill="#1b1b20" />)}
+      </g>
+    ) : null;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(0 ${fl.y})`}>
+          <Bocadillo t={t} en={msg1} x={130} y={84} w={380} lado={-1} fondo="rgba(255,255,255,0.95)" barras={[300, 190]} claro />
+          {escribiendo(escribe, resp1, 760, 200)}
+          <Bocadillo t={t} en={resp1} x={470} y={168} w={340} lado={1} fondo={C.amarillo} barras={[260, 170]} claro />
+          {doble(resp1, 790, 230)}
+          <Bocadillo t={t} en={msg2} x={130} y={246} w={300} lado={-1} fondo="rgba(255,255,255,0.95)" barras={[220]} claro />
+          {escribiendo(msg2 + 0.25, resp2, 760, 322)}
+          <Bocadillo t={t} en={resp2} x={530} y={300} w={280} lado={1} fondo={C.amarillo} barras={[200]} claro />
+          {doble(resp2, 790, 342)}
+        </g>
+        {/* la IA: contesta ella (late cada vez que responde) */}
+        <Chip t={t} en={ia} d={ICONO.ia} x={920} y={196} r={50} fondo={OSCURO} color={C.amarillo} fase={0.5} />
+        <Pulso t={t} en={resp1} x={920} y={196} r={50} color={C.amarillo} />
+        <Pulso t={t} en={resp2} x={920} y={196} r={50} color={C.amarillo} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 4) "el negocio no tiene por qué saber cómo se programa todo eso; quiere una solución que funcione": aparece el negocio,
+// el código cae dentro de una caja que se cierra (no tiene que verlo), la caja le entrega la solución con una flecha y al decir
+// "funcione" el negocio se pone en verde con un ✓
+const CAJA = {a: 37.3, b: 43.2, negocio: 37.56, codigo: 39.8, cierra: 40.28, entrega: 41.32, funciona: 42.48};
+const Caja: React.FC<{t: number}> = ({t}) => {
+  const {a, b, negocio, codigo, cierra, entrega, funciona} = CAJA;
+  const fl = flota(t, 1.6, 3);
+  const tapa = t < cierra ? -118 : -118 * (1 - muelle(t, cierra, 2.8, 8));
+  const cae = lim((t - (cierra - 0.12)) / 0.2);
+  const golpeCaja = t > cierra + 0.12 && t < cierra + 0.5 ? Math.sin((t - cierra - 0.12) * 50) * 4 * (1 - (t - cierra - 0.12) / 0.38) : 0;
+  const cajaAp = aparece(t, codigo - 0.25, 0);
+  const ok = t >= funciona;
+  const apOk = aparece(t, funciona, 0);
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(0 ${fl.y})`}>
+          {/* el negocio */}
+          <g transform="translate(250 230)">
+            {ok && <Pulso t={t} en={funciona} x={0} y={0} r={76} color={VERDE} />}
+            <g transform={`scale(${ok ? apOk.sx : 1} ${ok ? apOk.sy : 1})`}>
+              <Chip t={t} en={negocio} d={ICONO.tienda} x={0} y={0} r={76} fondo={ok ? VERDE : '#fff'} color={ok ? '#fff' : '#1b1b20'} quieto />
+            </g>
+            {ok && (
+              <g transform="translate(58 -58)">
+                <circle r={26 * apOk.sx} fill={VERDE} stroke="#fff" strokeWidth={4} />
+                <Check t={t} en={funciona + 2 * F} s={0.5} />
+              </g>
+            )}
+            <Particulas t={t} en={funciona} x={0} y={0} n={12} radio={140} colores={[VERDE, '#ffffff', C.amarillo]} />
+          </g>
+          {/* la caja donde cae el código */}
+          {t >= codigo - 0.25 && (
+            <g transform={`translate(${780 + golpeCaja} 240) scale(${1.3 * cajaAp.sx} ${1.3 * cajaAp.sy})`}>
+              {t < cierra + 0.1 && (
+                <g transform={`translate(0 ${-70 + cae * 70}) scale(${1 - 0.6 * cae})`}>
+                  <Chip t={t} en={codigo} d={ICONO.codigo} x={0} y={0} r={48} fondo="#fff" quieto sinRafaga />
+                </g>
+              )}
+              <rect x={-84} y={-20} width={168} height={104} rx={14} fill={OSCURO} stroke="#fff" strokeWidth={6} />
+              <rect x={-30} y={18} width={60} height={12} rx={6} fill="rgba(255,255,255,0.35)" />
+              <g transform={`translate(-90 -20) rotate(${tapa})`}>
+                <rect x={0} y={-22} width={180} height={24} rx={10} fill={C.amarillo} stroke="#fff" strokeWidth={5} />
+              </g>
+              <Particulas t={t} en={cierra + 0.1} x={0} y={-20} n={8} radio={110} colores={['#ffffff', C.amarillo]} />
+            </g>
+          )}
+          {/* la solución llega al negocio */}
+          <Conector t={t} en={entrega} d="M 660 210 C 560 110, 440 110, 350 196" color={C.amarillo} dur={0.4} flujo punta={[350, 196, Math.atan2(196 - 110, 350 - 440)]} />
+        </g>
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 5) "un curso introductorio de 14 clases": catorce píldoras que se encienden una a una (dos filas de siete) y después las recorre un brillo
+const CLASES14 = {a: 56.3, b: 59.86, enciende: 56.44, fin: 57.1};
+const Clases: React.FC<{t: number}> = ({t}) => {
+  const {a, b, enciende, fin} = CLASES14;
+  const fl = flota(t, 2.2, 3);
+  const brillo = ((t - fin) * 0.8) % 1.4;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(0 ${fl.y})`}>
+          {Array.from({length: 14}, (_, i) => {
+            const fila = Math.floor(i / 7), col = i % 7;
+            const x = 540 + (col - 3) * 112, y = 170 + fila * 80;
+            const en = enciende + (i * (fin - enciende)) / 13;
+            const on = t >= en;
+            const e = aparece(t, a + i * 0.015, 0);
+            const g = on ? aparece(t, en, 0) : {sx: 1, sy: 1};
+            const luz = t > fin ? Math.max(0, 1 - Math.abs(brillo * 7 - col - fila * 0.5) / 1.2) : 0;
+            return (
+              <g key={i} transform={`translate(${x} ${y}) scale(${e.sx * g.sx} ${e.sy * g.sy})`}>
+                <rect x={-46} y={-26} width={92} height={52} rx={26} fill={on ? C.amarillo : 'rgba(16,16,20,0.75)'} stroke="#fff" strokeWidth={4}
+                  style={{filter: on ? `drop-shadow(0 0 ${8 + 14 * luz}px rgba(${GLOW_AMARILLO},${0.6 + 0.4 * luz}))` : 'none'}} />
+                {on && <path d="M -8 -12 L 12 0 L -8 12 Z" fill="#1b1b20" />}
+              </g>
+            );
+          })}
+          <Particulas t={t} en={fin} x={540 + 3 * 112} y={250} n={12} radio={140} />
+        </g>
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 6) "empieza a aprender cómo se construye este tipo de negocio": tres bloques caen, aplastan al tocar y se apilan; arriba sale la agencia
+const CONSTRUYE = {a: 64.0, b: 67.2, bloques: [64.68, 65.52, 65.9], tejado: 66.3};
+const Construye: React.FC<{t: number}> = ({t}) => {
+  const {a, b, bloques, tejado} = CONSTRUYE;
+  const fl = flota(t, 0.2, 3);
+  const pos: [number, number, string][] = [[460, 330, '#fff'], [620, 330, '#fff'], [540, 238, C.amarillo]];
+  const techo = aparece(t, tejado, 0);
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(0 ${fl.y})`}>
+          <line x1={360} y1={384} x2={720} y2={384} stroke="rgba(255,255,255,0.45)" strokeWidth={5} strokeLinecap="round" opacity={lim((t - a) / 0.3)} />
+          {pos.map(([x, y, col], i) => {
+            const en = bloques[i];
+            if (t < en - 0.3) return null;
+            const k = lim((t - (en - 0.3)) / 0.3);
+            const caida = (1 - k * k) * -260;
+            const toca = t >= en;
+            const ap = toca ? aparece(t, en, 0) : {sx: 0.9, sy: 1.12, rot: 0};
+            return (
+              <g key={i} transform={`translate(${x} ${y + caida}) scale(${toca ? ap.sx : 0.92} ${toca ? ap.sy : 1.1})`} opacity={lim(k * 3)}>
+                <rect x={-76} y={-46} width={152} height={92} rx={14} fill={col === '#fff' ? OSCURO : C.amarillo} stroke="#fff" strokeWidth={6} />
+                <rect x={-50} y={-14} width={100} height={10} rx={5} fill={col === '#fff' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'} />
+                <rect x={-50} y={6} width={64} height={10} rx={5} fill={col === '#fff' ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)'} />
+              </g>
+            );
+          })}
+          {bloques.map((en, i) => <Particulas key={i} t={t} en={en} x={pos[i][0]} y={pos[i][1] + 46} n={7} radio={90} colores={['#ffffff', C.amarillo]} dur={14} />)}
+          {t >= tejado && (
+            <g transform={`translate(540 150) scale(${techo.sx} ${techo.sy}) rotate(${techo.rot})`}>
+              <path d="M -100 30 L 0 -40 L 100 30 Z" fill={C.amarillo} stroke="#fff" strokeWidth={6} strokeLinejoin="round" />
+            </g>
+          )}
+          <Destello t={t} en={tejado + 0.1} x={540} y={92} tam={30} color={C.amarillo} />
+          <Destello t={t} en={tejado + 0.2} x={660} y={150} tam={20} />
+        </g>
+      </Lienzo>
     </Ventana>
   );
 };
@@ -520,16 +755,18 @@ export const ReelE2: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
+      <Pensamiento t={t} />
       <Comparacion t={t} />
-      <Burbujas t={t} a={28.68} b={32.56} />
+      <Mensajes t={t} />
+      <Automatiza t={t} />
+      <Caja t={t} />
+      <Clases t={t} />
+      <Construye t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Impacto estilo={ESTILO.impacto} t={t} en={1.04} x={540} y={330} color={C.rosa} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={56.44} x={540} y={1180} radio={220} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={61.48} x={540} y={1250} radio={240} />
 
       {/* Lista: qué necesita el negocio / cómo presentarle tu propuesta / cómo implementar correctamente el servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
@@ -540,8 +777,12 @@ export const ReelE2: React.FC = () => {
               return (
                 <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
                   <svg width={84} height={84} viewBox="0 0 84 84" style={{overflow: 'visible', flexShrink: 0}}>
-                    <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} />
-                    <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
+                    <Pulso t={t} en={en + 3 * F} x={42} y={42} r={40} color={C.amarillo} />
+                    <g transform={`translate(42 42) scale(${tr >= 1 ? aparece(t, en + 6 * F, 0).sx : 1} ${tr >= 1 ? aparece(t, en + 6 * F, 0).sy : 1}) translate(-42 -42)`}>
+                      <circle cx={42} cy={42} r={37} fill={tr >= 1 ? C.amarillo : 'none'} stroke={C.amarillo} strokeWidth={6} strokeDasharray={233} strokeDashoffset={233 * (1 - tr)} transform="rotate(-90 42 42)" />
+                      <text x={42} y={58} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={44} fill={tr >= 1 ? '#111' : C.amarillo}>{i + 1}</text>
+                    </g>
+                    <Particulas t={t} en={en + 6 * F} x={42} y={42} n={8} radio={80} />
                   </svg>
                   <span style={{...H, fontSize: 56, lineHeight: 1.0, whiteSpace: 'pre'}}>{txt}</span>
                 </div>
@@ -578,6 +819,10 @@ export const ReelE2: React.FC = () => {
         ['popup', 15.56, -4], ['popup', 20.76, -4], ['snap', 22.68, -4], ['popup', 28.78, -7], ['popup', 29.4, -7], ['popup', 30.02, -7], ['popup', 30.64, -7], ['popup', 31.26, -7],
         ['pop', 35.0, -3], ['ding', 41.56, -5], ['click', 45.56], ['click', 46.92], ['click', 48.96], ['pop', 55.64, -3], ['boom', 56.44, -3],
         ['riser', 61.48, -3], ['boom', 61.48, -2], ['twinkle', 61.7, -6], ['thud', 68.76, -3],
+        ['burbuja', 7.24, -8], ['twinkle', 7.6, -10], ['tapcorto', 18.44, -10], ['suck', 22.78, -9], ['confirmar', 25.6, -8],
+        ['mensaje', 32.7, -8], ['notif', 33.76, -9], ['typing', 34.5, -13], ['mensaje', 35.0, -8], ['mensaje', 35.72, -9], ['mensaje', 36.48, -9],
+        ['pop', 37.56, -6], ['pop', 39.8, -7], ['thud', 40.3, -6], ['swish', 41.32, -10], ['confirmar', 42.48, -8],
+        ['datos', 56.5, -12], ['thud', 64.68, -8], ['thud', 65.52, -8], ['thud', 65.9, -8], ['twinkle', 66.4, -9],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />
       ))}

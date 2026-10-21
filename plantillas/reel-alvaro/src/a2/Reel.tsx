@@ -2,14 +2,16 @@ import React from 'react';
 import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
-import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
+import {F, Son, Sube, iv, Ventana} from '../anim';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
-import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+import {Entra, golpeV, flechaV, Estilo} from '../variantes';
+import {ICONOS, Check, Chip, Conector, IconoTrazado, Lienzo, OSCURO, Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle, puntaFlecha} from '../lottie';
+import {ICONO10} from '../a10/iconos';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 const ESTILO: Estilo = {texto: 'pop', golpe: 'sello', impacto: 'onda', sub: 'pop', flecha: 'pulso'};
 
@@ -143,110 +145,217 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   );
 };
 
-// ---------------- Elementos Lottie ----------------
-// Ráfaga de rayos que salen del centro en un impacto
-const Rafaga: React.FC<{t: number; en: number; x: number; y: number; color?: string; radio?: number}> = ({t, en, x, y, color = C.amarillo, radio = 260}) => {
-  const p = iv(t, [en, en + 12 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
-  if (t < en || p >= 1) return null;
-  return (
-    <svg style={{position: 'absolute', left: x - radio * 1.6, top: y - radio * 1.6, overflow: 'visible'}} width={radio * 3.2} height={radio * 3.2}>
-      {Array.from({length: 12}, (_, i) => {
-        const ang = (i / 12) * Math.PI * 2 + 0.13;
-        const r1 = radio * (0.55 + 0.75 * p);
-        const r2 = radio * (0.75 + 0.85 * p);
-        const c = radio * 1.6;
-        return (
-          <line
-            key={i}
-            x1={c + Math.cos(ang) * r1}
-            y1={c + Math.sin(ang) * r1}
-            x2={c + Math.cos(ang) * r2}
-            y2={c + Math.sin(ang) * r2}
-            stroke={color}
-            strokeWidth={10 * (1 - p) + 1}
-            strokeLinecap="round"
-            opacity={1 - p * 0.9}
-            style={{filter: `drop-shadow(0 0 10px ${color})`}}
-          />
-        );
-      })}
-    </svg>
-  );
+// ---------------- Elementos Lottie (src/lottie.tsx: muelles con sobrepaso, aplastar/estirar, trazos que se dibujan, partículas, reposo vivo) ----------------
+// Sin ráfagas, rayas ni subrayados sobre los títulos: el texto grande entra limpio
+const lim = (x: number) => Math.min(1, Math.max(0, x));
+const ICONO = {
+  bandera: 'M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z',
+  calendario: 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 7h14v10H5V9z',
+  edificio: ICONO10.edificio,
+  herramienta: ICONO10.herramienta,
+  bombilla: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z',
+  etiqueta: ICONO10.etiqueta,
+  lupa: ICONOS.lupa,
+  caja: ICONO10.caja,
+  llamadaPerdida: 'M6.5 5.5L12 11l7-7-1-1-6 6-4.5-4.5H11V3H5v6h1.5V5.5zm17.21 11.17C20.66 13.78 16.54 12 12 12 7.46 12 3.34 13.78.29 16.67c-.18.18-.29.43-.29.71s.11.53.29.71l2.48 2.48c.18.18.43.29.71.29.27 0 .52-.11.7-.28.79-.74 1.69-1.36 2.66-1.85.33-.16.56-.5.56-.9v-3.1c1.45-.48 3-.73 4.6-.73 1.6 0 3.15.25 4.6.72v3.1c0 .39.23.74.56.9.98.49 1.87 1.12 2.67 1.85.18.18.43.28.7.28.28 0 .53-.11.71-.29l2.48-2.48c.18-.18.29-.43.29-.71s-.12-.52-.3-.7z',
 };
 
-// Círculos que se dibujan y se marcan con ✕ o ✓ trazados
-const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: string; tipo: 'x' | 'v'; top: number; desde: number; hasta: number}> = ({
-  t, n, a, paso, color, tipo, top, desde, hasta,
-}) => {
-  const d = n > 5 ? 82 : 130;
-  return (
-    <Ventana suave t={t} a={desde} b={hasta}>
-      <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
-        {Array.from({length: n}, (_, i) => {
-          const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const en = a + i * paso;
-          const m = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const tr = iv(t, [en + 2 * F, en + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const per = Math.PI * (d - 8);
-          return (
-            <svg key={i} width={d} height={d} viewBox={`0 0 ${d} ${d}`} style={{overflow: 'visible', scale: t >= en ? 0.7 + 0.3 * m : 1}}>
-              <circle
-                cx={d / 2} cy={d / 2} r={d / 2 - 4} fill={t >= en ? color : 'rgba(0,0,0,0.25)'} fillOpacity={t >= en ? 0.9 : 1}
-                stroke={t >= en ? color : 'rgba(255,255,255,0.7)'} strokeWidth={4} strokeDasharray={per} strokeDashoffset={per * (1 - dib)}
-                style={{filter: t >= en ? `drop-shadow(0 0 14px ${color})` : 'none'}}
-              />
-              {t >= en &&
-                (tipo === 'x' ? (
-                  <path d={`M ${d * 0.32} ${d * 0.32} L ${d * 0.68} ${d * 0.68} M ${d * 0.68} ${d * 0.32} L ${d * 0.32} ${d * 0.68}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ) : (
-                  <path d={`M ${d * 0.28} ${d * 0.52} L ${d * 0.44} ${d * 0.68} L ${d * 0.72} ${d * 0.34}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ))}
-            </svg>
-          );
-        })}
-      </div>
-    </Ventana>
-  );
-};
-
-// Clínica que pierde llamadas: contador circular rojo que se va llenando con las llamadas perdidas
-const LlamadasPerdidas: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
-  const p = iv(t, [a + 0.15, b - 0.35], [0, 1], Easing.bezier(0.33, 0, 0.2, 1));
-  const n = Math.round(p * 12);
-  const R = 120;
-  const per = 2 * Math.PI * R;
+// 1) "esforzarte para conseguir algo y esforzarte únicamente para llegar a final de mes": a la izquierda una flecha que
+// sube hasta una bandera (conseguir algo); a la derecha una flecha que da vueltas sin parar alrededor del calendario (fin de mes)
+const ESFUERZO = {a: 13.2, b: 17.8, sube: 14.04, bandera: 14.24, rueda: 15.28, mes: 17.16};
+const Esfuerzo: React.FC<{t: number}> = ({t}) => {
+  const {a, b, sube, bandera, rueda, mes} = ESFUERZO;
+  // subida en escalones hacia la bandera
+  const dSube = 'M 150 350 L 230 350 L 230 290 L 310 290 L 310 230 L 380 230 L 380 175';
+  const pSube = lim((t - sube) / 0.45);
+  const giro = (t - rueda) * 260;
+  const R = 92;
+  const ap = aparece(t, rueda, 0);
+  const vuelta = 1 - Math.pow(1 - lim((t - rueda) / 0.45), 3);
+  const g1 = ((giro - 90) * Math.PI) / 180;
+  const ex = 760 + Math.cos(g1) * R, ey = 240 + Math.sin(g1) * R;
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <svg style={{position: 'absolute', left: 540 - 170, top: 210, overflow: 'visible', filter: SOMBRA}} width={340} height={340}>
-        <circle cx={170} cy={170} r={R + 34} fill="rgba(12,12,16,0.72)" />
-        <circle cx={170} cy={170} r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={22} />
-        <circle cx={170} cy={170} r={R} fill="none" stroke="#ff3b4e" strokeWidth={22} strokeLinecap="round" strokeDasharray={per} strokeDashoffset={per * (1 - p)}
-          transform="rotate(-90 170 170)" style={{filter: 'drop-shadow(0 0 14px rgba(255,59,78,0.8))'}} />
-        <g transform="translate(170 128) scale(1.6) translate(-12 -12)">
-          <path fill="#ff3b4e" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z" />
-          <path d="M15 3l6 6M21 3l-6 6" stroke="#ff3b4e" strokeWidth={2.2} strokeLinecap="round" />
-        </g>
-        <text x={170} y={232} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={84} fill="#fff"
-          style={{scale: `${1 + 0.12 * Math.max(0, 1 - ((t - a) * 25 % 3) / 3) * (n > 0 ? 1 : 0)}`, transformOrigin: '170px 205px'}}>{n}</text>
-      </svg>
+      <Lienzo>
+        <path d={dSube} fill="none" stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - (1 - Math.pow(1 - pSube, 3))}
+          style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.8))`}} />
+        {pSube >= 1 && <path d={puntaFlecha(380, 172, -Math.PI / 2, 26, 18)} fill="none" stroke={C.amarillo} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round" />}
+        <Chip t={t} en={bandera} d={ICONO.bandera} x={380} y={120} r={52} fase={0.4} />
+        {t >= rueda && (
+          <g>
+            <g transform={`translate(760 240) scale(${ap.sx} ${ap.sy})`}>
+              <circle r={R} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth={10} />
+              <g transform={`rotate(${giro})`}>
+                <circle r={R} fill="none" stroke={ROJO} strokeWidth={10} strokeLinecap="round" strokeDasharray={`${2 * Math.PI * R * 0.72 * vuelta} ${2 * Math.PI * R}`} transform="rotate(-90)"
+                  style={{filter: `drop-shadow(0 0 8px ${ROJO})`}} />
+              </g>
+            </g>
+            {vuelta >= 1 && <path d={puntaFlecha(ex, ey, g1 + Math.PI / 2 + (giro > 0 ? 0 : Math.PI), 24, 17)} fill="none" stroke={ROJO} strokeWidth={10} strokeLinecap="round" strokeLinejoin="round"
+              transform={`rotate(${0.72 * 360 - 360} 760 240)`} />}
+          </g>
+        )}
+        <Chip t={t} en={rueda + 0.1} d={ICONO.calendario} x={760} y={240} r={54} fondo="#fff" quieto />
+        <Pulso t={t} en={mes} x={760} y={240} r={60} color={ROJO} />
+      </Lienzo>
     </Ventana>
   );
 };
 
-// Restaurante que tarda horas en responder: ventana de chat tipo móvil (lado del cliente) con mensajes que suben,
-// doble check gris (sin leer) y un reloj que cuenta el tiempo sin respuesta
+// 2) "parece que no te queda tiempo para nada": un reloj de arena cae con muelle, la arena se vacía a toda prisa
+// y al decir "nada" queda vacío, se pone en rojo y tiembla
+const ARENA = {a: 20.3, b: 22.15, sale: 20.6, vacia: 21.8};
+const RelojArena: React.FC<{t: number}> = ({t}) => {
+  const {a, b, sale, vacia} = ARENA;
+  const ap = aparece(t, sale, -14);
+  const fl = flota(t, 1, 4);
+  const q = lim((t - sale - 0.1) / (vacia - sale - 0.1));
+  const rojo = t >= vacia;
+  const tiembla = rojo && t < vacia + 0.4 ? Math.sin((t - vacia) * 70) * 7 * (1 - (t - vacia) / 0.4) : 0;
+  const col = rojo ? ROJO : C.amarillo;
+  // arena de arriba (se vacía) y de abajo (se llena); hilo que cae
+  const arriba = 1 - q, abajo = q;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(${540 + tiembla} ${230 + fl.y}) scale(${ap.sx} ${ap.sy}) rotate(${ap.rot + tiembla * 0.6})`}>
+          <rect x={-86} y={-128} width={172} height={22} rx={11} fill="#fff" />
+          <rect x={-86} y={106} width={172} height={22} rx={11} fill="#fff" />
+          <path d="M -66 -106 L 66 -106 C 66 -40, 12 -18, 12 0 C 12 18, 66 40, 66 106 L -66 106 C -66 40, -12 18, -12 0 C -12 -18, -66 -40, -66 -106 Z" fill={OSCURO} stroke="#fff" strokeWidth={6} />
+          <clipPath id="arenaArriba"><path d="M -60 -100 L 60 -100 C 60 -40, 8 -18, 8 0 L -8 0 C -8 -18, -60 -40, -60 -100 Z" /></clipPath>
+          <clipPath id="arenaAbajo"><path d="M -8 0 C -8 18, -60 40, -60 100 L 60 100 C 60 40, 8 18, 8 0 Z" /></clipPath>
+          <rect x={-70} y={-100 + 100 * (1 - arriba)} width={140} height={100} fill={col} clipPath="url(#arenaArriba)" style={{filter: `drop-shadow(0 0 6px ${col})`}} />
+          <rect x={-70} y={100 - 100 * abajo} width={140} height={100} fill={col} clipPath="url(#arenaAbajo)" />
+          {q > 0 && q < 1 && <rect x={-3} y={-4} width={6} height={100 - 100 * abajo + 4} fill={col} />}
+        </g>
+        <Particulas t={t} en={vacia} x={540} y={230} n={10} radio={150} colores={[ROJO, '#ffffff']} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 3) "hay empresas que necesitan ayuda": tres empresas caen arriba y al decir "ayuda" les salta una alerta;
+// después ("contratar servicios que les ayuden a resolver esos problemas") baja la ficha del servicio,
+// se conecta con las tres y las alertas se convierten en ✓
+const XS_EMP = [250, 540, 830];
+const YS_EMP = [180, 125, 180];
+const EMPRESAS = {a: 26.2, b: 29.5, salen: 26.44, ayuda: 27.6};
+const RESOLVER = {a: 39.4, b: 45.3, salen: 39.72, servicio: 41.04, lineas: 41.4, resuelve: 42.68};
+const Empresa: React.FC<{t: number; i: number; en: number; alerta: number; resuelta?: number}> = ({t, i, en, alerta, resuelta = 999}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, i % 2 ? 12 : -12);
+  const fl = flota(t, i * 1.2, 4);
+  const ok = t >= resuelta;
+  const b2 = aparece(t, ok ? resuelta : alerta, 0);
+  const sacude = t > alerta && t < alerta + 0.4 && !ok ? Math.sin((t - alerta) * 60) * 5 * (1 - (t - alerta) / 0.4) : 0;
+  return (
+    <g transform={`translate(${XS_EMP[i] + sacude} ${YS_EMP[i]}) translate(0 ${fl.y})`}>
+      <Pulso t={t} en={en} x={0} y={0} r={60} color="#fff" />
+      <g transform={`scale(${ap.sx * fl.s} ${ap.sy * fl.s}) rotate(${ap.rot})`}>
+        <circle r={60} fill="#fff" stroke="#fff" strokeWidth={5} />
+        <IconoTrazado d={ICONO.edificio} t={t} en={en + 2 * F} color="#1b1b20" size={66} x={-33} y={-34} />
+      </g>
+      {t >= alerta && (
+        <g transform={`translate(46 -46) scale(${b2.sx} ${b2.sy})`}>
+          <circle r={25} fill={ok ? VERDE : ROJO} stroke="#fff" strokeWidth={4} style={{filter: `drop-shadow(0 0 10px ${ok ? VERDE : ROJO})`}} />
+          {ok ? <Check t={t} en={resuelta + F} s={0.62} /> : (
+            <g>
+              <rect x={-3.5} y={-14} width={7} height={17} rx={3.5} fill="#fff" />
+              <circle cy={9} r={4} fill="#fff" />
+            </g>
+          )}
+        </g>
+      )}
+      <Particulas t={t} en={resuelta} x={0} y={0} n={9} radio={110} colores={[VERDE, '#ffffff']} />
+    </g>
+  );
+};
+const EmpresasAyuda: React.FC<{t: number}> = ({t}) => (
+  <Ventana suave t={t} a={EMPRESAS.a} b={EMPRESAS.b}>
+    <Lienzo>
+      {XS_EMP.map((_, i) => <Empresa key={i} t={t} i={i} en={EMPRESAS.salen + i * 0.1} alerta={EMPRESAS.ayuda + i * 0.08} />)}
+    </Lienzo>
+  </Ventana>
+);
+const Resolver: React.FC<{t: number}> = ({t}) => {
+  const {a, b, salen, servicio, lineas, resuelve} = RESOLVER;
+  const cae = muelle(t, servicio, 2.2, 6.5);
+  // la ficha del servicio cae desde arriba con muelle y se queda debajo de las empresas (sin tocar la cabeza)
+  const sy = 300 - (1 - cae) * 60;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        {[0, 2].map((i, k) => (
+          <Conector key={i} t={t} en={lineas + k * 0.1} d={`M ${540 + (i === 0 ? -50 : 50)} 300 Q ${i === 0 ? 380 : 700} 300 ${XS_EMP[i] + (i === 0 ? 30 : -30)} ${YS_EMP[i] + 52}`} color={C.amarillo} dur={0.35} flujo grosor={6} />
+        ))}
+        <Conector t={t} en={lineas + 0.05} d={`M 540 ${300 - 56} L 540 ${YS_EMP[1] + 64}`} color={C.amarillo} dur={0.3} flujo grosor={6} />
+        {XS_EMP.map((_, i) => <Empresa key={i} t={t} i={i} en={salen + i * 0.1} alerta={salen + 0.2 + i * 0.1} resuelta={resuelve + i * 0.14} />)}
+        <Chip t={t} en={servicio} d={ICONO.herramienta} x={540} y={sy} r={52} fase={0.8} />
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 4) "una clínica que pierde llamadas": el anillo se llena de rojo llamada a llamada, el contador salta con cada una
+// y de cada llamada perdida sale disparada una ficha roja (abajo, para no tapar la cara del B-roll)
+const PERDIDAS = {a: 29.52, b: 31.16, n: 12};
+const LlamadasPerdidas: React.FC<{t: number}> = ({t}) => {
+  const {a, b, n: N} = PERDIDAS;
+  const t0 = a + 0.15, dur = b - a - 0.5;
+  const p = lim((t - t0) / dur);
+  const n = Math.min(N, Math.floor(p * N + 1e-6));
+  const R = 96;
+  const per = 2 * Math.PI * R;
+  const cx = 540, cy = 1650;
+  const ap = aparece(t, a, 0);
+  const tn = t0 + (n / N) * dur;
+  const salto = n > 0 ? Math.exp(-9 * (t - tn)) * Math.sin((t - tn) * 30) * 0.18 : 0;
+  return (
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <g transform={`translate(${cx} ${cy}) scale(${ap.sx} ${ap.sy})`}>
+          <circle r={R + 30} fill={OSCURO} stroke="#fff" strokeWidth={5} />
+          <circle r={R} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={18} />
+          <circle r={R} fill="none" stroke={ROJO} strokeWidth={18} strokeLinecap="round" strokeDasharray={per} strokeDashoffset={per * (1 - p)} transform="rotate(-90)"
+            style={{filter: `drop-shadow(0 0 12px ${ROJO})`}} />
+          <g transform="translate(-24 -66) scale(2)"><path d={ICONO.llamadaPerdida} fill={ROJO} /></g>
+          <text y={50} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={76} fill="#fff" transform={`scale(${1 + salto})`}>{n}</text>
+        </g>
+        {Array.from({length: N}, (_, k) => {
+          const tk = t0 + ((k + 1) / N) * dur;
+          const u = (t - tk) / 0.6;
+          if (u < 0 || u > 1) return null;
+          const ang = -Math.PI / 2 + ((k + 1) / N) * Math.PI * 2;
+          const e = 1 - Math.pow(1 - u, 3);
+          const x = cx + Math.cos(ang) * (R + 30 + 90 * e), y = cy + Math.sin(ang) * (R + 30 + 90 * e);
+          return (
+            <g key={k} transform={`translate(${x} ${y}) scale(${0.6 + 0.4 * Math.sin(u * Math.PI)})`} opacity={1 - u}>
+              <circle r={18} fill={ROJO} stroke="#fff" strokeWidth={3} />
+              <g transform="translate(-10 -10) scale(0.84)"><path d={ICONO.llamadaPerdida} fill="#fff" /></g>
+            </g>
+          );
+        })}
+      </Lienzo>
+    </Ventana>
+  );
+};
+
+// 5) "un restaurante que tarda horas en responder mensajes": chat del lado del cliente; los mensajes saltan con muelle,
+// el doble check se traza en gris (sin leer) y el reloj de espera corre y se sacude al pasar de hora
 const ChatSinResponder: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
   const llegadas = [a + 0.15, a + 0.55, a + 0.95];
   const anchos = [0.78, 0.62, 0.7];
   const minutos = Math.round(iv(t, [a + 0.3, b - 0.25], [12, 167], Easing.bezier(0.33, 0, 0.2, 1)));
   const reloj = minutos < 60 ? `${minutos} min` : `${Math.floor(minutos / 60)} h ${String(minutos % 60).padStart(2, '0')} min`;
+  const v = muelle(t, a, 2, 6.5);
+  const pill = aparece(t, a + 0.3, 0);
+  const tiembla = Math.sin(t * 40) * 3 * Math.max(0, Math.sin((t - a) * 2.5));
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <div style={{position: 'absolute', left: 140, right: 140, top: 190, borderRadius: 44, background: 'rgba(248,248,250,0.96)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', overflow: 'hidden'}}>
+      <div style={{position: 'absolute', left: 140, right: 140, top: 190, borderRadius: 44, background: 'rgba(248,248,250,0.96)', boxShadow: '0 24px 60px rgba(0,0,0,0.45)', overflow: 'hidden',
+        translate: `0px ${(1 - v) * 120}px`, scale: `${0.88 + 0.12 * v}`, transformOrigin: '50% 100%'}}>
         <div style={{display: 'flex', alignItems: 'center', gap: 20, padding: '24px 30px', background: '#fff', borderBottom: '2px solid #ececf0'}}>
           <div style={{position: 'relative', width: 78, height: 78, borderRadius: '50%', background: '#f4a261', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0}}>
             <svg width={44} height={44} viewBox="0 0 24 24"><path fill="#fff" d="M8.1 13.3l2.8-2.8L4 3.6a4 4 0 0 0 0 5.6l4.1 4.1zm6.8-1.8c1.5.7 3.7.2 5.3-1.4 1.9-1.9 2.3-4.7.8-6.2-1.5-1.5-4.3-1.1-6.2.8-1.6 1.6-2.1 3.8-1.4 5.3L3.7 19.8l1.4 1.4 6.9-6.9 6.9 6.9 1.4-1.4-6.9-6.9 1.5-1.4z" /></svg>
-            <div style={{position: 'absolute', right: 0, top: 2, width: 22, height: 22, borderRadius: '50%', background: '#ff3b30', border: '3px solid #fff'}} />
           </div>
           <div style={{display: 'flex', flexDirection: 'column', gap: 12, flex: 1}}>
             <div style={{height: 22, width: 230, borderRadius: 11, background: '#2b2d31'}} />
@@ -255,22 +364,24 @@ const ChatSinResponder: React.FC<{t: number; a: number; b: number}> = ({t, a, b}
         </div>
         <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 16, padding: '26px 30px 22px', minHeight: 300}}>
           {llegadas.map((en, k) => {
-            const p = iv(t, [en, en + 9 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+            const e = aparece(t, en, 4);
+            const tick = lim((t - en - 0.2) / 0.25);
             return (
-              <div key={k} style={{width: `${anchos[k] * 100}%`, opacity: t < en ? 0 : Math.min(1, p * 2), scale: 0.6 + 0.4 * p, translate: `0px ${(1 - p) * 40}px`, transformOrigin: '100% 100%',
+              <div key={k} style={{width: `${anchos[k] * 100}%`, opacity: t < en ? 0 : e.op, scale: `${e.sx} ${e.sy}`, rotate: `${e.rot}deg`, transformOrigin: '100% 100%',
                 background: '#3478f6', borderRadius: '30px 30px 8px 30px', padding: '20px 24px', display: 'flex', alignItems: 'flex-end', gap: 14}}>
                 <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: 10}}>
                   <div style={{height: 16, width: '92%', borderRadius: 8, background: 'rgba(255,255,255,0.85)'}} />
                   {k !== 1 && <div style={{height: 16, width: '55%', borderRadius: 8, background: 'rgba(255,255,255,0.6)'}} />}
                 </div>
-                <svg width={34} height={20} viewBox="0 0 34 20"><path d="M2 11l5 5L18 4M14 14l2 2L28 4" stroke="rgba(255,255,255,0.6)" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width={34} height={20} viewBox="0 0 34 20"><path d="M2 11l5 5L18 4M14 14l2 2L28 4" stroke="rgba(255,255,255,0.6)" strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round"
+                  pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - tick} /></svg>
               </div>
             );
           })}
         </div>
         <div style={{display: 'flex', justifyContent: 'center', paddingBottom: 26}}>
           <div style={{display: 'flex', alignItems: 'center', gap: 14, padding: '12px 26px', borderRadius: 999, background: '#ffe9e8', color: '#d62d20', ...H, fontSize: 40, textShadow: 'none',
-            opacity: iv(t, [a + 0.25, a + 0.45], [0, 1])}}>
+            opacity: t < a + 0.3 ? 0 : 1, scale: `${pill.sx} ${pill.sy}`, translate: `${tiembla}px 0px`}}>
             <svg width={38} height={38} viewBox="0 0 24 24"><circle cx={12} cy={12} r={9.5} fill="none" stroke="#d62d20" strokeWidth={2.4} />
               <line x1={12} y1={12} x2={12 + 6 * Math.sin((t - a) * 8)} y2={12 - 6 * Math.cos((t - a) * 8)} stroke="#d62d20" strokeWidth={2.4} strokeLinecap="round" />
               <line x1={12} y1={12} x2={12 + 4 * Math.sin((t - a) * 0.7)} y2={12 - 4 * Math.cos((t - a) * 0.7)} stroke="#d62d20" strokeWidth={2.4} strokeLinecap="round" /></svg>
@@ -282,33 +393,35 @@ const ChatSinResponder: React.FC<{t: number; a: number; b: number}> = ({t, a, b}
   );
 };
 
-// "Entender el modelo / adquirir habilidades / aprender a vender": camino de 3 pasos que se va completando
+// 6) "entender el modelo, adquirir habilidades y aprender a vender": tres fichas (bombilla, herramienta, etiqueta)
+// unidas por conectores que se dibujan con flujo de puntos; cada una salta al decirse
 const PASOS = [56.2, 57.36, 59.48];
+const ICON_PASOS = [ICONO.bombilla, ICONO.herramienta, ICONO.etiqueta];
 const Pasos: React.FC<{t: number}> = ({t}) => {
-  const x0 = 270;
-  const x1 = 810;
+  const xs = [270, 540, 810];
+  const y = 230;
   return (
-    <Ventana suave t={t} a={55.04} b={60.76}>
-      <svg style={{position: 'absolute', left: 0, top: 260, overflow: 'visible', filter: SOMBRA}} width={1080} height={120}>
-        <line x1={x0} y1={60} x2={x1} y2={60} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeLinecap="round" />
-        {PASOS.map((en, i) => {
-          const x = x0 + ((x1 - x0) * i) / 2;
-          const lin = i < 2 ? iv(t, [PASOS[i + 1] - 6 * F, PASOS[i + 1]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1)) : 0;
-          const on = t >= en;
-          const pop = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          return (
-            <g key={i}>
-              {i < 2 && <line x1={x} y1={60} x2={x + ((x1 - x0) / 2) * lin} y2={60} stroke={C.amarillo} strokeWidth={6} strokeLinecap="round" />}
-              <circle cx={x} cy={60} r={on ? 40 + 6 * pop : 34} fill={on ? C.amarillo : 'rgba(0,0,0,0.45)'} stroke={on ? C.amarillo : 'rgba(255,255,255,0.7)'} strokeWidth={5}
-                style={{filter: on ? `drop-shadow(0 0 16px rgba(${GLOW_AMARILLO},1))` : 'none'}} />
-              <text x={x} y={77} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={46} fill={on ? '#111' : '#fff'}>{i + 1}</text>
-            </g>
-          );
-        })}
-      </svg>
+    <Ventana suave t={t} a={55.6} b={60.76}>
+      <Lienzo>
+        {[0, 1].map((i) => (
+          <Conector key={i} t={t} en={PASOS[i + 1] - 0.3} d={`M ${xs[i] + 66} ${y} L ${xs[i + 1] - 66} ${y}`} color={C.amarillo} dur={0.3} flujo grosor={7}
+            punta={[xs[i + 1] - 66, y, 0]} />
+        ))}
+        {PASOS.map((en, i) => (
+          t < en ? <circle key={i} cx={xs[i]} cy={y} r={18 + 3 * Math.sin(t * 4 + i)} fill="rgba(255,255,255,0.35)" /> :
+            <Chip key={i} t={t} en={en} d={ICON_PASOS[i]} x={xs[i]} y={y} r={i === PASOS.filter((p) => t >= p).length - 1 ? 64 : 54} fondo={i === PASOS.filter((p) => t >= p).length - 1 ? C.amarillo : '#fff'} fase={i} />
+        ))}
+      </Lienzo>
     </Ventana>
   );
 };
+
+// Viñeta de la lista (detectar un problema / ofrecer una solución / prestar un servicio): ficha con icono que salta con muelle
+const Vineta: React.FC<{t: number; en: number; d: string}> = ({t, en, d}) => (
+  <svg width={84} height={84} style={{overflow: 'visible', flexShrink: 0}}>
+    <Chip t={t} en={en} d={d} x={42} y={42} r={36} fase={en} sinRafaga />
+  </svg>
+);
 
 // ---------------- Texto: frase entera en grande o entera en subtítulo ----------------
 type W = [string, number, number, boolean];
@@ -326,7 +439,7 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 const GRANDES: Grande[] = [
   // HOOK (detrás de Álvaro)
   {a: 0.04, b: 1.5, top: 80, lineas: [{ws: [['trabajar', 0.04]], size: 80}, {ws: [['diez horas', 0.6, amarillo]], size: 160, golpe: true}, {ws: [['al', 1.16], ['día', 1.32]], size: 90, abajo: true}]},
-  {a: 6.84, b: 7.95, top: 130, lineas: [{ws: [['no', 6.84], ['va', 7.2], ['a', 7.4]], size: 80}, {ws: [['cambiar', 7.52, rosaFuerte]], size: 180, golpe: true}]},
+  {a: 6.84, b: 7.95, top: 130, lineas: [{ws: [['no', 6.84], ['va', 7.2], ['a', 7.4]], size: 80}, {ws: [['cambiar', 7.52, rosaFuerte]], size: 160, golpe: true}]},
   // Trabajar duro (B-roll)
   {a: 9.24, b: 11.25, top: 260, lineas: [{ws: [['trabajar', 9.24]], size: 90}, {ws: [['duro', 9.76]], size: 180, golpe: true}, {ws: [['es', 10.24], ['importante', 10.44, amarillo]], size: 90}]},
   {a: 11.32, b: 12.15, top: 1050, lineas: [{ws: [['muchísimo', 11.32, amarillo]], size: 170, golpe: true}]},
@@ -530,34 +643,33 @@ export const ReelA2: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
-      <LlamadasPerdidas t={t} a={29.52} b={31.16} />
+      <Esfuerzo t={t} />
+      <RelojArena t={t} />
+      <EmpresasAyuda t={t} />
+      <LlamadasPerdidas t={t} />
       <ChatSinResponder t={t} a={31.9} b={34.28} />
+      <Resolver t={t} />
       <Pasos t={t} />
 
       {/* Resto de frases en grande (delante) */}
       {GRANDES.slice(2).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Impacto estilo={ESTILO.impacto} t={t} en={11.32} x={540} y={1120} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={38.6} x={540} y={1180} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={54.08} x={540} y={1150} color={C.rosa} />
 
       {/* Lista: aprender a detectar un problema / ofrecer una solución / prestar un servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
-        <div style={{position: 'absolute', left: -60, right: -60, top: 880, padding: '60px 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, background: VELO, filter: SOMBRA}}>
+        <div style={{position: 'absolute', left: -60, right: -60, top: 880, padding: '60px 120px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, background: VELO, filter: SOMBRA}}>
           <div style={{display: 'flex', gap: '0.24em', ...H, fontSize: 66, marginBottom: 6}}>
             <Entra estilo={ESTILO.texto} t={t} en={47.44} sale={LISTA[1]}>aprender</Entra>
             <Entra estilo={ESTILO.texto} t={t} en={48.0} sale={LISTA[1]}>a</Entra>
           </div>
-          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10}}>
-            {([['detectar un problema', 48.04], ['ofrecer una solución', 49.12], ['prestar un servicio', 50.48]] as [string, number][]).map(([txt, en]) => (
-              <div key={txt} style={{...H, fontSize: 62, lineHeight: 1.05, whiteSpace: 'nowrap', ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>{txt}</div>
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10}}>
+            {([['detectar un problema', 48.04, ICONO.lupa], ['ofrecer una solución', 49.12, ICONO.bombilla], ['prestar un servicio', 50.48, ICONO.caja]] as [string, number, string][]).map(([txt, en, d]) => (
+              <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 20, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>
+                <Vineta t={t} en={en} d={d} />
+                <div style={{...H, fontSize: 60, lineHeight: 1.05, whiteSpace: 'nowrap'}}>{txt}</div>
+              </div>
             ))}
-            <div style={{position: 'relative', width: 700, height: 26, marginTop: 22, borderRadius: 13, background: 'rgba(255,255,255,0.18)', overflow: 'hidden'}}>
-              <div style={{position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 13, background: C.amarillo, boxShadow: `0 0 18px rgba(${GLOW_AMARILLO},0.9)`,
-                width: `${100 * Math.max(...[48.04, 49.12, 50.48].map((en, i) => iv(t, [en, en + 9 * F], [i / 3, (i + 1) / 3], Easing.bezier(0.16, 1, 0.3, 1)) * (t >= en ? 1 : 0)))}%`}} />
-              {[1, 2].map((k) => <div key={k} style={{position: 'absolute', left: `${(100 * k) / 3}%`, top: 0, bottom: 0, width: 4, background: 'rgba(0,0,0,0.35)'}} />)}
-            </div>
           </div>
         </div>
       </Ventana>
@@ -578,7 +690,7 @@ export const ReelA2: React.FC = () => {
 
       {/* Efectos (banco del cliente): transiciones, impactos y TIC por palabra de subtítulo */}
       {CORTES.map((c) => (
-        <Son key={`w${c}`} s="swoosh2" en={c} db={-5} />
+        <Son key={`w${c}`} s="whoosh" en={c} db={-5} />
       ))}
       {[...PALABRAS_VISIBLES, 63.48, 63.8, 64.16, 64.44].map((a, i) => (
         <Son key={`t${i}`} s="ticw" en={a} db={-3} />
@@ -589,6 +701,9 @@ export const ReelA2: React.FC = () => {
         ['mensaje', 32.05, -7], ['mensaje', 32.45, -7], ['mensaje', 32.85, -7], ['pop', 36.56, -3], ['riser', 38.6, -3], ['hit', 38.6], ['riserm', 39.32, -4],
         ['pop', 45.96, -3], ['pop', 46.56, -3], ['click', 48.04], ['click', 49.12], ['click', 50.48], ['twinkle', 51.28, -6],
         ['thud', 54.08, -3], ['pop', 54.48, -4], ['ding', 56.2, -6], ['ding', 57.36, -6], ['ding', 59.48, -6],
+        // gráficos Lottie
+        ['swish', 14.04, -10], ['pop', 14.24, -6], ['loading', 15.28, -11], ['negativo', 17.16, -8], ['pop', 20.6, -6], ['alerta', 21.8, -9],
+        ['pop', 26.44, -7], ['alerta', 27.6, -9], ['pop', 39.72, -7], ['pop', 41.04, -5], ['exito', 42.68, -8],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />
       ))}

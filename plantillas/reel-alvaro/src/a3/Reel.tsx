@@ -2,14 +2,16 @@ import React from 'react';
 import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFrame} from 'remotion';
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
-import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
+import {F, Son, Sube, iv, Ventana} from '../anim';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
 import CARA from './cara.json';
 import ENCUADRE from './encuadre.json';
 
-import {Entra, golpeV, Impacto, flechaV, Estilo} from '../variantes';
+import {Entra, golpeV, flechaV, Estilo} from '../variantes';
+import {Check, Chip, Conector, Destello, IconoTrazado, Lienzo, Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie';
+import {ICONO10} from '../a10/iconos';
 // Animaciones propias de este reel (no se repiten en otros vídeos). Los subtítulos y el CTA usan SIEMPRE <Sube> (la animación original)
 const ESTILO: Estilo = {texto: 'enfoque', golpe: 'destello', impacto: 'chispas', sub: 'enfoque', flecha: 'desliza'};
 
@@ -150,156 +152,144 @@ const Broll: React.FC<{t: number; b: B}> = ({t, b}) => {
   );
 };
 
-// ---------------- Elementos Lottie ----------------
-// Ráfaga de rayos que salen del centro en un impacto
-const Rafaga: React.FC<{t: number; en: number; x: number; y: number; color?: string; radio?: number}> = ({t, en, x, y, color = C.amarillo, radio = 260}) => {
-  const p = iv(t, [en, en + 12 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
-  if (t < en || p >= 1) return null;
-  return (
-    <svg style={{position: 'absolute', left: x - radio * 1.6, top: y - radio * 1.6, overflow: 'visible'}} width={radio * 3.2} height={radio * 3.2}>
-      {Array.from({length: 12}, (_, i) => {
-        const ang = (i / 12) * Math.PI * 2 + 0.13;
-        const r1 = radio * (0.55 + 0.75 * p);
-        const r2 = radio * (0.75 + 0.85 * p);
-        const c = radio * 1.6;
-        return (
-          <line
-            key={i}
-            x1={c + Math.cos(ang) * r1}
-            y1={c + Math.sin(ang) * r1}
-            x2={c + Math.cos(ang) * r2}
-            y2={c + Math.sin(ang) * r2}
-            stroke={color}
-            strokeWidth={10 * (1 - p) + 1}
-            strokeLinecap="round"
-            opacity={1 - p * 0.9}
-            style={{filter: `drop-shadow(0 0 10px ${color})`}}
-          />
-        );
-      })}
-    </svg>
-  );
+// ---------------- Elementos Lottie (src/lottie.tsx: muelles con sobrepaso, aplastar/estirar, trazos que se dibujan, partículas, reposo vivo) ----------------
+// Sin ráfagas, rayas ni subrayados sobre los títulos: el texto grande entra limpio
+const lim = (x: number) => Math.min(1, Math.max(0, x));
+const ICONO = {
+  telefono: 'M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z',
+  ia: ICONO10.ia,
+  pregunta: ICONO10.pregunta,
+  calendario: 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 7h14v10H5V9z',
+  herramienta: ICONO10.herramienta,
+  ciclo: 'M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 0 0 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z',
 };
 
-// Círculos que se dibujan y se marcan con ✕ o ✓ trazados
-const Marcador: React.FC<{t: number; n: number; a: number; paso: number; color: string; tipo: 'x' | 'v'; top: number; desde: number; hasta: number}> = ({
-  t, n, a, paso, color, tipo, top, desde, hasta,
-}) => {
-  const d = n > 5 ? 82 : 130;
-  return (
-    <Ventana suave t={t} a={desde} b={hasta}>
-      <div style={{position: 'absolute', left: 0, right: 0, top, display: 'flex', justifyContent: 'center', gap: 12, opacity: iv(t, [hasta - 5 * F, hasta], [1, 0])}}>
-        {Array.from({length: n}, (_, i) => {
-          const dib = iv(t, [desde + i * 0.04, desde + i * 0.04 + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const en = a + i * paso;
-          const m = iv(t, [en, en + 6 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const tr = iv(t, [en + 2 * F, en + 8 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const per = Math.PI * (d - 8);
-          return (
-            <svg key={i} width={d} height={d} viewBox={`0 0 ${d} ${d}`} style={{overflow: 'visible', scale: t >= en ? 0.7 + 0.3 * m : 1}}>
-              <circle
-                cx={d / 2} cy={d / 2} r={d / 2 - 4} fill={t >= en ? color : 'rgba(0,0,0,0.25)'} fillOpacity={t >= en ? 0.9 : 1}
-                stroke={t >= en ? color : 'rgba(255,255,255,0.7)'} strokeWidth={4} strokeDasharray={per} strokeDashoffset={per * (1 - dib)}
-                style={{filter: t >= en ? `drop-shadow(0 0 14px ${color})` : 'none'}}
-              />
-              {t >= en &&
-                (tipo === 'x' ? (
-                  <path d={`M ${d * 0.32} ${d * 0.32} L ${d * 0.68} ${d * 0.68} M ${d * 0.68} ${d * 0.32} L ${d * 0.32} ${d * 0.68}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ) : (
-                  <path d={`M ${d * 0.28} ${d * 0.52} L ${d * 0.44} ${d * 0.68} L ${d * 0.72} ${d * 0.34}`} stroke="#fff" strokeWidth={d * 0.09} strokeLinecap="round" strokeLinejoin="round" fill="none" strokeDasharray={d} strokeDashoffset={d * (1 - tr)} />
-                ))}
-            </svg>
-          );
-        })}
-      </div>
-    </Ventana>
-  );
-};
-
-// Clínica que pierde llamadas: teléfono que suena con globo rojo de llamadas perdidas que sube
-const Telefono: React.FC<{t: number; a: number; b: number}> = ({t, a, b}) => {
-  const n = Math.max(0, Math.min(9, Math.floor((t - a - 0.2) / 0.16) + 1));
-  const pop = iv(t, [a, a + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-  const vib = t < b - 0.3 ? Math.sin(t * 60) * 7 : 0;
+// 1) "suena el teléfono y algunas de esas llamadas se quedan sin responder": la ficha del teléfono tiembla al sonar
+// con ondas que salen, el contador de llamadas perdidas salta con cada una y, al decir "sin responder", el teléfono
+// se pone en rojo y las llamadas perdidas salen disparadas
+const TEL = {a: 4.6, b: 8.6, suena: 4.68, cuenta: 6.44, paso: 0.16, max: 9, rojo: 7.72};
+const Telefono: React.FC<{t: number}> = ({t}) => {
+  const {a, b, suena, cuenta, paso, max, rojo} = TEL;
+  const x = 540, y = 250, R = 82;
+  const ap = aparece(t, suena, -16);
+  const fl = flota(t, 0.3, 4);
+  const n = t < cuenta ? 0 : Math.min(max, Math.floor((t - cuenta) / paso) + 1);
+  const tn = cuenta + (n - 1) * paso;
+  const salto = n > 0 ? 1 + 0.35 * Math.exp(-10 * (t - tn)) * Math.cos((t - tn) * 30) : 1;
+  const enRojo = t >= rojo;
+  const vibra = t < rojo + 0.4 ? Math.sin(t * 64) * (enRojo ? 4 : 9) : 0;
   return (
     <Ventana suave t={t} a={a} b={b}>
-      <div style={{position: 'absolute', left: 540 - 110, top: 260, width: 220, height: 220, scale: 0.6 + 0.4 * pop, filter: SOMBRA}}>
-        {[0, 1].map((k) => {
-          const p = ((t - a) * 1.6 + k * 0.5) % 1;
-          return <div key={k} style={{position: 'absolute', inset: 0, borderRadius: '50%', border: `6px solid ${C.amarillo}`, scale: 1 + p * 0.7, opacity: 0.8 * (1 - p)}} />;
-        })}
-        <div style={{position: 'absolute', inset: 0, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', rotate: `${vib}deg`}}>
-          <svg width={110} height={110} viewBox="0 0 24 24"><path fill="#111" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z" /></svg>
-        </div>
-        {n > 0 && (
-          <div style={{position: 'absolute', right: -14, top: -14, width: 84, height: 84, borderRadius: '50%', background: '#ff3b30', color: '#fff', ...H, fontSize: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', scale: 0.8 + 0.2 * iv(t, [a + 0.2 + (n - 1) * 0.16, a + 0.2 + (n - 1) * 0.16 + 3 * F], [1.4, 1])}}>
-            {n}
-          </div>
-        )}
-      </div>
+      <Lienzo>
+        <g transform={`translate(${x} ${y + fl.y})`}>
+          {/* ondas del timbre */}
+          {!enRojo && [0, 0.33, 0.66].map((d) => {
+            const p = (((t - suena) * 1.5 + d) % 1 + 1) % 1;
+            return t >= suena ? <circle key={d} r={R + p * 70} fill="none" stroke={C.amarillo} strokeWidth={6 * (1 - p) + 1} opacity={0.85 * (1 - p)} /> : null;
+          })}
+          <Pulso t={t} en={rojo} x={0} y={0} r={R} color={ROJO} dur={16} />
+          <g transform={`scale(${ap.sx * fl.s} ${ap.sy * fl.s}) rotate(${ap.rot + vibra})`}>
+            <circle r={R} fill={enRojo ? ROJO : '#fff'} stroke="#fff" strokeWidth={6} style={{filter: enRojo ? `drop-shadow(0 0 16px ${ROJO})` : 'none'}} />
+            <IconoTrazado d={ICONO.telefono} t={t} en={suena + 2 * F} color={enRojo ? '#fff' : '#1b1b20'} size={96} x={-48} y={-48} />
+          </g>
+          {n > 0 && (
+            <g transform={`translate(${R * 0.72} ${-R * 0.72}) scale(${salto})`}>
+              <circle r={38} fill={ROJO} stroke="#fff" strokeWidth={5} />
+              <text y={16} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={46} fill="#fff">{n}</text>
+            </g>
+          )}
+          {/* las llamadas perdidas salen disparadas a los lados */}
+          {Array.from({length: 6}, (_, k) => {
+            const u = (t - rojo - k * 0.05) / 0.7;
+            if (u < 0 || u > 1) return null;
+            const ang = Math.PI + (k / 5) * Math.PI; // abanico hacia arriba
+            const e = 1 - Math.pow(1 - u, 3);
+            return (
+              <g key={k} transform={`translate(${Math.cos(ang) * (R + 150 * e)} ${Math.sin(ang) * (R + 110 * e) + 40 * u * u}) rotate(${u * 160}) scale(${0.55 + 0.25 * Math.sin(u * Math.PI)})`} opacity={1 - u}>
+                <circle r={22} fill={ROJO} stroke="#fff" strokeWidth={3} />
+                <g transform="translate(-12 -12)"><path d={ICONO.telefono} fill="#fff" /></g>
+              </g>
+            );
+          })}
+        </g>
+      </Lienzo>
     </Ventana>
   );
 };
 
-// Ilustración: llamada entrante → asistente de IA → reserva (iconos, sin datos de reservas reales)
-const NODOS: [number, string][] = [
-  [21.2, 'M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z'],
-  [22.92, 'M12 2a2 2 0 0 1 2 2c0 .7-.4 1.4-1 1.7V7h5a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3h5V5.7A2 2 0 0 1 12 2zM8.5 11.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm7 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z'],
-  [25.96, 'M7 2v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2H7zm-2 7h14v10H5V9zm5.2 7.6L7.7 14l1.4-1.4 1.1 1.1 3.9-3.9 1.4 1.4-5.3 5.4z'],
-];
+// 2) "un asistente de IA capaz de contestar el teléfono, responder las preguntas habituales y ayudar a gestionar
+// reservas": la ficha de la IA arriba lanza un conector con punta hacia cada tarea cuando se nombra; al decir
+// "reservas" el calendario se marca con un ✓
+const FLUJO = {a: 20.56, b: 27.3, ia: 20.62, tareas: [21.2, 22.92, 25.96], reserva: 26.64};
 const Flujo: React.FC<{t: number}> = ({t}) => {
+  const {a, b, ia, tareas, reserva} = FLUJO;
   const xs = [230, 540, 850];
+  const yIA = 118, yT = 300;
+  const icon = [ICONO.telefono, ICONO.pregunta, ICONO.calendario];
+  const ok = aparece(t, reserva, 0);
   return (
-    <Ventana suave t={t} a={20.56} b={27.3}>
-      <svg style={{position: 'absolute', left: 0, top: 250, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
-        {[0, 1].map((i) => {
-          const p = iv(t, [NODOS[i + 1][0] - 8 * F, NODOS[i + 1][0]], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
-          const xa = xs[i] + 95;
-          const xb = xs[i + 1] - 95;
-          return (
-            <g key={i}>
-              <line x1={xa} y1={100} x2={xb} y2={100} stroke="rgba(255,255,255,0.3)" strokeWidth={6} strokeDasharray="4 14" strokeLinecap="round" />
-              <line x1={xa} y1={100} x2={xa + (xb - xa) * p} y2={100} stroke={C.amarillo} strokeWidth={6} strokeLinecap="round" />
-              {p > 0 && <path d={`M ${xa + (xb - xa) * p - 14} 86 L ${xa + (xb - xa) * p} 100 L ${xa + (xb - xa) * p - 14} 114`} stroke={C.amarillo} strokeWidth={6} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
-            </g>
-          );
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        {xs.map((x, i) => {
+          // curva desde la IA hasta la parte de arriba de cada tarea; la punta sigue la tangente del final
+          const x0 = 540 + (i - 1) * 40, y0 = yIA + 50, x1 = x, y1 = yT - 64;
+          // sale en horizontal de la IA y baja en vertical hasta la tarea (la punta entra hacia abajo)
+          const cx = x1, cy = y0 + 6;
+          const ang = Math.atan2(y1 - cy, x1 - cx);
+          return <Conector key={i} t={t} en={tareas[i] - 0.3} d={`M ${x0} ${y0} Q ${cx} ${cy} ${x1} ${y1}`} color={C.amarillo} dur={0.3} flujo grosor={6} punta={[x1, y1, ang]} />;
         })}
-        {NODOS.map(([en, d], i) => {
-          const on = t >= en;
-          const pop = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const entra = iv(t, [20.56 + i * 0.12, 20.56 + i * 0.12 + 8 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-          const anillo = on && i === 0 ? ((t - en) * 1.5) % 1 : 0;
-          return (
-            <g key={i} transform={`translate(${xs[i]} 100) scale(${entra * (on ? 1 + 0.08 * pop : 0.9)})`}>
-              {anillo > 0 && t < NODOS[1][0] && <circle r={80 + anillo * 50} fill="none" stroke={C.amarillo} strokeWidth={5} opacity={1 - anillo} />}
-              <circle r={80} fill={on ? C.amarillo : 'rgba(0,0,0,0.5)'} stroke={on ? C.amarillo : 'rgba(255,255,255,0.75)'} strokeWidth={6}
-                style={{filter: on ? `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))` : 'none'}} />
-              <g transform="translate(-42 -42) scale(3.5)"><path d={d} fill={on ? '#111' : '#fff'} /></g>
-            </g>
-          );
-        })}
-      </svg>
+        {xs.map((x, i) => (
+          t < tareas[i] ? <circle key={i} cx={x} cy={yT} r={18 + 3 * Math.sin(t * 4 + i)} fill="rgba(255,255,255,0.35)" opacity={lim((t - a - 0.2 * i) / 0.25)} /> :
+            <Chip key={i} t={t} en={tareas[i]} d={icon[i]} x={x} y={yT} r={56} fondo="#fff" fase={i * 1.3} />
+        ))}
+        <Chip t={t} en={ia} d={ICONO.ia} x={540} y={yIA} r={62} fase={0.5} />
+        {t >= reserva && (
+          <g transform={`translate(${850 + 42} ${yT - 42}) scale(${ok.sx} ${ok.sy})`}>
+            <circle r={24} fill={VERDE} stroke="#fff" strokeWidth={4} style={{filter: `drop-shadow(0 0 10px ${VERDE})`}} />
+            <Check t={t} en={reserva + F} s={0.6} />
+          </g>
+        )}
+        <Particulas t={t} en={reserva} x={850} y={yT} n={10} radio={120} colores={[VERDE, '#ffffff']} />
+      </Lienzo>
     </Ventana>
   );
 };
 
-// Cobro: instalación inicial (llave) + cuota mensual (flechas en bucle que giran)
+// 3) "una instalación inicial y una cuota mensual por mantenimiento": la llave (instalación) cae con muelle,
+// el "+" se dibuja con dos trazos y la ficha del ciclo (cuota mensual) entra girando y sigue girando sin parar
+const COBRO = {a: 52.52, b: 56.44, instalacion: 52.72, mas: 53.96, cuota: 54.32, mantenimiento: 55.44};
 const Cobro: React.FC<{t: number}> = ({t}) => {
-  const a1 = iv(t, [52.72, 52.72 + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
-  const a2 = iv(t, [54.32, 54.32 + 7 * F], [0, 1], Easing.bezier(0.34, 1.56, 0.64, 1));
+  const {a, b, instalacion, mas, cuota, mantenimiento} = COBRO;
+  const y = 250;
+  const m1 = lim((t - mas) / (4 * F)), m2 = lim((t - mas - 2 * F) / (4 * F));
+  const giro = (t - cuota) * 140;
+  const ap = aparece(t, cuota, 0);
+  const fl = flota(t, 1.6, 4);
   return (
-    <Ventana suave t={t} a={52.52} b={56.44}>
-      <svg style={{position: 'absolute', left: 0, top: 260, overflow: 'visible', filter: SOMBRA}} width={1080} height={200}>
-        <g transform={`translate(360 100) scale(${a1})`}>
-          <circle r={85} fill={C.amarillo} style={{filter: `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))`}} />
-          <g transform="translate(-42 -42) scale(3.5)"><path fill="#111" d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" /></g>
-        </g>
-        <text x={540} y={128} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={90} fill="#fff" opacity={a2}>+</text>
-        <g transform={`translate(720 100) scale(${a2})`}>
-          <circle r={85} fill={C.amarillo} style={{filter: `drop-shadow(0 0 18px rgba(${GLOW_AMARILLO},1))`}} />
-          <g transform={`rotate(${(t - 54.32) * 120}) translate(-42 -42) scale(3.5)`}><path fill="#111" d="M12 4V1L8 5l4 4V6c3.3 0 6 2.7 6 6 0 1-.3 2-.7 2.8l1.5 1.5c.7-1.3 1.2-2.7 1.2-4.3 0-4.4-3.6-8-8-8zm0 14c-3.3 0-6-2.7-6-6 0-1 .3-2 .7-2.8L5.2 7.7C4.5 9 4 10.4 4 12c0 4.4 3.6 8 8 8v3l4-4-4-4v3z" /></g>
-        </g>
-      </svg>
+    <Ventana suave t={t} a={a} b={b}>
+      <Lienzo>
+        <Chip t={t} en={instalacion} d={ICONO.herramienta} x={330} y={y} r={74} fase={0.2} />
+        {t >= mas && (
+          <g stroke="#fff" strokeWidth={14} strokeLinecap="round" style={{filter: `drop-shadow(0 0 8px rgba(255,255,255,0.6))`}}>
+            <path d={`M 540 ${y - 34} L 540 ${y + 34}`} pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - m1} />
+            <path d={`M 506 ${y} L 574 ${y}`} pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - m2} />
+          </g>
+        )}
+        {t >= cuota && (
+          <g transform={`translate(750 ${y + fl.y})`}>
+            <Pulso t={t} en={cuota} x={0} y={0} r={74} color={C.amarillo} />
+            <Pulso t={t} en={mantenimiento} x={0} y={0} r={74} color={C.amarillo} />
+            <g transform={`scale(${ap.sx * fl.s} ${ap.sy * fl.s})`}>
+              <circle r={74} fill={C.amarillo} stroke="#fff" strokeWidth={5} />
+              <g transform={`rotate(${giro})`}>
+                <IconoTrazado d={ICONO.ciclo} t={t} en={cuota + 2 * F} color="#1b1b20" size={88} x={-44} y={-44} />
+              </g>
+            </g>
+            <Particulas t={t} en={cuota} x={0} y={0} n={8} radio={140} />
+            <Destello t={t} en={mantenimiento} x={66} y={-66} tam={26} color="#fff" />
+          </g>
+        )}
+      </Lienzo>
     </Ventana>
   );
 };
@@ -528,7 +518,7 @@ export const ReelA3: React.FC = () => {
       {hook.map((g) => (
         <FraseGrande key={`ab${g.a}`} t={t} g={g} parte="abajo" />
       ))}
-      <Telefono t={t} a={4.68} b={8.6} />
+      <Telefono t={t} />
       <Flujo t={t} />
       <Cobro t={t} />
 
@@ -536,21 +526,23 @@ export const ReelA3: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Impacto estilo={ESTILO.impacto} t={t} en={7.72} x={540} y={1130} color={C.rosa} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={28.8} x={540} y={1250} />
-      <Impacto estilo={ESTILO.impacto} t={t} en={48.12} x={540} y={1180} />
 
       {/* Lista: qué necesita el negocio / cómo presentarle tu propuesta / cómo implementar correctamente el servicio */}
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
         <div style={{position: 'absolute', left: -60, right: -60, top: 860, padding: '60px 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: VELO, filter: SOMBRA}}>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 14, width: 800}}>
             {([['qué necesita el negocio', 39.28], ['cómo presentarle tu propuesta', 40.88], ['cómo implementar correctamente el servicio', 43.2]] as [string, number][]).map(([txt, en], i) => {
-              const p = iv(t, [en, en + 10 * F], [0, 1], Easing.bezier(0.16, 1, 0.3, 1));
+              // la tarjeta entra de lado con un muelle que se pasa y se asienta; el número salta con aplastar/estirar y gira hasta asentarse
+              const p = muelle(t, en, 2.2, 7);
+              const e = 1 - Math.pow(1 - lim((t - en) / (8 * F)), 3);
               const sal = iv(t, [LISTA[1] + i * 0.05, LISTA[1] + i * 0.05 + 7 * F], [0, 1], Easing.bezier(0.7, 0, 0.84, 0));
+              const num = aparece(t, en + 0.12, 20);
+              const fl = flota(t, i * 1.4, 3);
               return (
                 <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 22, padding: '20px 28px', borderRadius: 28, background: 'rgba(255,255,255,0.12)', border: '2px solid rgba(255,255,255,0.28)',
-                  opacity: (t < en ? 0 : Math.min(1, p * 2)) * (1 - sal), translate: `${(1 - p) * 260 - sal * 200}px 0px`, filter: `blur(${(1 - p) * 6}px)`}}>
-                  <div style={{width: 64, height: 64, borderRadius: 18, background: C.amarillo, color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', ...H, fontSize: 40, textShadow: 'none', flexShrink: 0}}>{i + 1}</div>
+                  opacity: (t < en ? 0 : Math.min(1, e * 2)) * (1 - sal), translate: `${(1 - p) * 260 - sal * 200}px ${fl.y * 0.6}px`, filter: `blur(${(1 - e) * 6}px)`}}>
+                  <div style={{width: 64, height: 64, borderRadius: 18, background: C.amarillo, color: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', ...H, fontSize: 40, textShadow: 'none', flexShrink: 0,
+                    scale: `${num.sx} ${num.sy}`, rotate: `${num.rot}deg`, boxShadow: `0 0 ${18 * num.op}px rgba(${GLOW_AMARILLO},0.8)`}}>{i + 1}</div>
                   <span style={{...H, fontSize: 46, lineHeight: 1.08, whiteSpace: 'normal', flex: 1}}>{txt}</span>
                 </div>
               );
@@ -585,6 +577,8 @@ export const ReelA3: React.FC = () => {
         ['pop', 14.16, -3], ['pop', 19.2, -3], ['pop', 19.76, -3], ['confirmar', 21.2, -2], ['confirmar', 22.92, -2], ['confirmar', 25.96, -2],
         ['boom', 28.8, -4], ['riserm', 29.36, -4], ['hit', 30.04, -2], ['thud', 33.36, -3], ['pop', 34.64, -3],
         ['burbuja', 39.28, -2], ['burbuja', 40.88, -2], ['burbuja', 43.2, -2], ['exito', 45.96, -8], ['pop', 48.12, -3], ['ding', 53.24, -5], ['pop', 54.64, -3], ['pop', 60.28, -3],
+        // gráficos Lottie
+        ['alerta', 7.72, -10], ['pop', 20.62, -6], ['exito', 26.64, -9], ['pop', 52.72, -6], ['tap', 53.96, -8], ['swish', 54.32, -10], ['twinkle', 55.44, -10],
       ] as [string, number, number?][]).map(([s, en, db], i) => (
         <Son key={`s${i}`} s={s} en={en} db={db} />
       ))}
