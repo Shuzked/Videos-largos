@@ -44,8 +44,9 @@
 | A7 1E | 389 |
 | A8 1E | 883 (desde el segundo 10) |
 | A9 1E | 460 (hip-hop con beat constante, desde el segundo 6) |
+| A10 1E | 400 (el beat entra en el segundo 13,2: se usa desde ahí) |
 
-Libres (descargadas en `trabajo/musica-hiphop/`, sin usar): 400, 262, 282, 281, 369, 403, 364, 431, 305 (hip-hop de Mixkit). 431 y 400 tienen beat desde el principio; 364 y 281 empiezan flojas.
+Libres (descargadas en `trabajo/musica-hiphop/`, sin usar): 262, 282, 281, 369, 403, 364, 431, 305 (hip-hop de Mixkit). 431 tiene beat de 13,7 a 40 s y otra vez desde 55 s (en medio, 14 s sin percusión); 364 y 281 empiezan flojas.
 
 ## Animaciones (src/variantes.tsx) — combinación propia por reel
 
@@ -70,5 +71,6 @@ Libres (descargadas en `trabajo/musica-hiphop/`, sin usar): 400, 262, 282, 281, 
 | A7 1E | tiza | balanza | — | toctoc | whoosh |
 | A8 1E | engranaje | pulso | — | goteo | whoosh |
 | A9 1E | cremallera | empuje | — | rastro | whoosh |
+| A10 1E | criba | naipe | — | radar | whoosh |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.
