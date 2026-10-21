@@ -17,6 +17,7 @@
 | A8 Evergreen | 46610 agencia (equipo en mesa), 23112 contrata (firma), 12918 magia (cartas), 47413 suscripción (pago con tarjeta), 8813 identificar (notas adhesivas), 9069 ofrecer (rotafolio), 42629 organizar (tableta) |
 | A9 Evergreen | 30010 cliente, 5731 trabajo (portátil), 23073 llamada, 5601 agotado, 23016 expertos (sala de pantallas) |
 | A10 Evergreen | 46752 expertos (mentor guiando en el portátil), 8858 alumno (portátil en terraza). Descartado 41642: marcas ASUS/SAMSUNG/CORSAIR |
+| A6 1E | 14763 empleado en bucle (pantalla partida), 13231 reunión con notas adhesivas |
 
 ## Música (Mixkit) — una pista distinta por reel
 
@@ -37,8 +38,11 @@
 | A8 Evergreen | 768 (desde el segundo 20) |
 | A9 Evergreen | 989 Dirty Thinkin' |
 | A10 Evergreen | 1123 (hip-hop con ritmo desde el segundo 0) |
+| A6 1E | 1158 (desde el segundo 11) |
+| A7 1E | 389 |
+| A8 1E | 883 (desde el segundo 10) |
 
-Libres (descargadas, sin usar): 389, 1158 (entra fuerte en el segundo 11), 883 (sube en el segundo 10).
+Libres (descargadas, sin usar): ninguna; para el siguiente reel hay que bajar pistas nuevas de Mixkit.
 
 ## Animaciones (src/variantes.tsx) — combinación propia por reel
 
@@ -59,5 +63,8 @@ Libres (descargadas, sin usar): 389, 1158 (entra fuerte en el segundo 11), 883 (
 | A8 Evergreen | bisagra | marcador (sin líneas) | — (sin trazos sobre los títulos) | resorte | whoosh |
 | A9 Evergreen | persiana | latigo | — | escalon | whoosh |
 | A10 Evergreen | iman | cartel | — | tiron | whoosh |
+| A6 1E | robot | ensambla | — | piston | whoosh |
+| A7 1E | tiza | balanza | — | toctoc | whoosh |
+| A8 1E | engranaje | pulso | — | goteo | whoosh |
 
 Los subtítulos y el CTA usan SIEMPRE `<Sube>` (la animación original); las variantes solo van en texto grande y elementos Lottie.

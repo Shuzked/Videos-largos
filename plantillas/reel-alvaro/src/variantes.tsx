@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana' | 'iman';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo' | 'cartel';
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana' | 'iman' | 'robot' | 'tiza' | 'engranaje';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo' | 'cartel' | 'ensambla' | 'balanza' | 'pulso';
 export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos' | 'garabato';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon' | 'tiron'};
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon' | 'tiron' | 'piston' | 'toctoc' | 'goteo'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -105,6 +105,24 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       const m = 1 - Math.exp(-7.5 * k) * Math.cos(2 * Math.PI * 2.8 * k);
       anim = {translate: `${(1 - m) * 46}px ${(1 - m) * -58 - s * 26}px`, scale: 1 + (1 - m) * 0.32 - 0.05 * s, filter: `blur(${(1 - e) * 4 + s * 6}px)`,
         opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '0% 100%'};
+      break;
+    }
+    case 'robot': {
+      // movimiento de robot: sube a saltos (4 pasos cuantizados) con un pequeño temblor mecánico al encajar
+      const pasos = Math.min(1, Math.floor(e * 4 + 0.001) / 4);
+      const encaja = p >= 1 ? 0 : (Math.floor((t - en) * 25) % 2) * 1.5;
+      anim = {translate: `${encaja}px ${(1 - pasos) * 46 - s * 30}px`, opacity: (pasos > 0 ? 1 : 0) * (1 - s)};
+      break;
+    }
+    case 'tiza':
+      // se escribe como con tiza en una pizarra: se revela de izquierda a derecha con un leve temblor del trazo
+      mascara = false;
+      anim = {clipPath: `inset(-20% ${(1 - e) * 100}% -20% -5%)`, rotate: `${(1 - e) * -1.5}deg`, translate: `${p < 1 ? Math.sin((t - en) * 60) * 0.8 : 0}px ${-s * 26}px`, opacity: 1 - s};
+      break;
+    case 'engranaje': {
+      // entra girando como un engranaje que encaja: media vuelta con muelle y un clic al encajar
+      const m = 1 - Math.exp(-7 * Math.max(0, t - en)) * Math.cos(2 * Math.PI * 2.2 * Math.max(0, t - en));
+      anim = {rotate: `${(1 - m) * -140}deg`, scale: 0.55 + 0.45 * Math.min(1.1, m) - 0.06 * s, opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '50% 55%'};
       break;
     }
     case 'estela':
@@ -203,6 +221,27 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       const cae = 1 - Math.exp(-8 * k) * Math.cos(2 * Math.PI * 2.4 * k);
       const vaiven = 9 * Math.exp(-3.6 * k) * Math.cos(2 * Math.PI * 1.5 * k);
       return {opacity: op, translate: `0px ${(1 - cae) * -90 - 20 * s}px`, rotate: `${vaiven}deg`, transformOrigin: '50% -80%', scale: 1 - 0.06 * s};
+    }
+    case 'ensambla': {
+      // se ensambla como una pieza: entra aplastada y ancha, se estira en vertical con un muelle y encaja con un pequeño golpe
+      // (nunca se queda como una línea fina: el cliente no quiere líneas sobre los títulos)
+      const q = Math.min(1, Math.max(0, (t - en) / (11 * F)));
+      const m = MUELLE(q);
+      const encaja = q >= 1 ? 0 : Math.sin(q * Math.PI * 3) * (1 - q) * 0.04;
+      return {opacity: op, scale: `${(1.25 - 0.25 * m + encaja) * (1 - 0.06 * s)} ${(0.55 + 0.45 * m - encaja) * (1 - 0.06 * s)}`, transformOrigin: '50% 80%', translate: `0px ${-20 * s}px`};
+    }
+    case 'balanza': {
+      // cae desde arriba inclinada como el plato de una balanza y oscila hasta quedar nivelada
+      const k = Math.max(0, t - en);
+      const cae = 1 - Math.exp(-9 * k) * Math.cos(2 * Math.PI * 2 * k);
+      const osc = 11 * Math.exp(-4.2 * k) * Math.cos(2 * Math.PI * 1.7 * k);
+      return {opacity: op, translate: `0px ${(1 - cae) * -60 - 20 * s}px`, rotate: `${osc}deg`, transformOrigin: '50% 100%', scale: 1 - 0.06 * s};
+    }
+    case 'pulso': {
+      // late como un corazón al entrar (dos latidos que se apagan) con un destello de brillo
+      const k = Math.max(0, t - en);
+      const lat = Math.exp(-5 * k) * Math.max(0, Math.sin(k * Math.PI * 5));
+      return {opacity: op, scale: 0.8 + 0.2 * e + 0.22 * lat - 0.06 * s, filter: `brightness(${1 + 0.8 * lat}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
     }
     case 'tinta':
       // se revela de abajo arriba como tinta que sube, con ligera inclinación que se endereza
@@ -384,6 +423,24 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       // cae y rebota como un muelle que se va calmando; repite cada 1,4 s
       const f = (k / 1.4) % 1;
       return {translate: `0px ${Math.sin(f * Math.PI * 6) * 16 * Math.exp(-f * 5)}px`, scale: `1 ${1 + 0.12 * Math.sin(f * Math.PI * 6) * Math.exp(-f * 5)}`, transformOrigin: '50% 0%'};
+    }
+    case 'toctoc': {
+      // dos golpecitos rápidos hacia abajo (toc-toc) y una pausa; cada 1,3 s
+      const f = (k / 1.3) % 1;
+      const g = (x: number) => (x > 0 && x < 0.1 ? Math.sin((x / 0.1) * Math.PI) : 0);
+      return {translate: `0px ${(g(f) + g(f - 0.14)) * 14}px`};
+    }
+    case 'goteo': {
+      // baja despacio como una gota que se alarga y vuelve arriba de golpe, apareciendo de nuevo
+      const f = (k / 1.4) % 1;
+      return {translate: `0px ${f * 22}px`, scale: `1 ${1 + 0.18 * f}`, opacity: f > 0.85 ? 1 - (f - 0.85) / 0.15 : Math.min(1, f * 8), transformOrigin: '50% 0%'};
+    }
+    case 'piston': {
+      // como un pistón: baja recto y rápido, se para en seco con una vibración corta y sube despacio; cada 1,2 s
+      const f = (k / 1.2) % 1;
+      const baja = f < 0.12 ? f / 0.12 : f < 0.5 ? 1 : 1 - (f - 0.5) / 0.5;
+      const vib = f >= 0.12 && f < 0.24 ? Math.sin((f - 0.12) * 260) * 2.5 * (1 - (f - 0.12) / 0.12) : 0;
+      return {translate: `0px ${baja * 16 + vib}px`};
     }
     case 'tiron': {
       // cada 1,3 s: se recoge un poco hacia arriba (anticipación), baja de un tirón estirándose y vuelve con un muelle
