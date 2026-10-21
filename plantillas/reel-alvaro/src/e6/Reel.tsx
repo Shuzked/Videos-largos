@@ -635,7 +635,7 @@ const GRANDES: Grande[] = [
 ];
 const LISTA: [number, number] = [-10, -10];
 const CTA = 58.8;
-const CTA_FIN = 60.06; // "haz clic aquí abajo"; después sigue la frase en subtítulos y la flecha se queda abajo
+const CTA_FIN = 60.06; // tras "haz clic aquí abajo ↓" sigue la frase en subtítulos (como en los demás 1E)
 const SALIDA = 6 * F;
 // Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
@@ -841,12 +841,7 @@ export const ReelE6: React.FC = () => {
           <Sube t={t} en={59.08}>clic</Sube>
           <Sube t={t} en={59.32}>aquí</Sube>
           <Sube t={t} en={59.54} style={amarillo}>abajo</Sube>
-        </div>
-      </Ventana>
-      {/* la flecha del CTA se queda abajo hasta el final mientras sigue la frase */}
-      <Ventana t={t} a={59.8} b={DURACION_E6}>
-        <div style={{position: 'absolute', left: 0, right: 0, top: 1560, display: 'flex', justifyContent: 'center'}}>
-          <span style={{display: 'inline-block', fontSize: 92, fontWeight: 900, ...amarillo, scale: `${aparece(t, 59.8, 0).sx} ${aparece(t, 59.8, 0).sy}`, ...flechaV(ESTILO.flecha, t, 59.9)}}>↓</span>
+          <span style={{display: 'inline-block', marginLeft: 10, fontSize: 76, fontWeight: 900, ...amarillo, opacity: t < 59.66 ? 0 : 1, ...flechaV(ESTILO.flecha, t, 59.66)}}>↓</span>
         </div>
       </Ventana>
 
