@@ -103,3 +103,143 @@ export const ICONOS = {
   megafono: 'M18 11v2h4v-2h-4zm-2 6.61c.96.71 2.21 1.65 3.2 2.39.4-.53.8-1.07 1.2-1.6-.99-.74-2.24-1.68-3.2-2.4-.4.54-.8 1.08-1.2 1.61zM20.4 5.6c-.4-.53-.8-1.07-1.2-1.6-.99.74-2.24 1.68-3.2 2.4.4.53.8 1.07 1.2 1.6.96-.72 2.21-1.65 3.2-2.4zM4 9c-1.1 0-2 .9-2 2v2c0 1.1.9 2 2 2h1v4h2v-4h1l5 3V6L8 9H4zm11.5 3c0-1.33-.58-2.53-1.5-3.35v6.69c.92-.81 1.5-2.01 1.5-3.34z',
   etiqueta: 'M21.41 11.41l-8.83-8.83c-.37-.37-.88-.58-1.41-.58H4c-1.1 0-2 .9-2 2v7.17c0 .53.21 1.04.59 1.41l8.83 8.83c.78.78 2.05.78 2.83 0l7.17-7.17c.78-.78.78-2.04-.01-2.83zM6.5 8C5.67 8 5 7.33 5 6.5S5.67 5 6.5 5 8 5.67 8 6.5 7.33 8 6.5 8z',
 };
+
+// ---------------- Piezas comunes de los reels nuevos (A9/A10): úsalas en todos los gráficos ----------------
+const C_AMARILLO = '#feffbc';
+export const ROJO = '#ff4d5e';
+export const VERDE = '#2ee59d';
+export const OSCURO = 'rgba(16,16,20,0.9)';
+export const SOMBRA_ICONOS = 'drop-shadow(0 3px 10px rgba(0,0,0,0.75))';
+
+// Lienzo SVG a tamaño del vídeo (coordenadas del fotograma 1080x1920)
+export const Lienzo: React.FC<{children: React.ReactNode}> = ({children}) => (
+  <svg width={1080} height={1920} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible', filter: SOMBRA_ICONOS}}>
+    {children}
+  </svg>
+);
+
+// Ficha redonda con icono: sale con muelle (aplastar/estirar y giro que se asienta), el icono se traza y se rellena,
+// lanza un pulso y una ráfaga de partículas, y después flota
+export const Chip: React.FC<{t: number; en: number; d: string; x: number; y: number; r?: number; color?: string; fondo?: string; fase?: number; quieto?: boolean; sinRafaga?: boolean}> = ({
+  t, en, d, x, y, r = 62, color = '#1b1b20', fondo = C_AMARILLO, fase = 0, quieto, sinRafaga,
+}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, 14);
+  const fl = quieto ? {y: 0, s: 1} : flota(t, fase, 4);
+  return (
+    <g transform={`translate(${x} ${y + fl.y})`}>
+      <Pulso t={t} en={en} x={0} y={0} r={r} color={fondo.startsWith('rgba') ? '#fff' : fondo} />
+      <g transform={`scale(${ap.sx * fl.s} ${ap.sy * fl.s}) rotate(${ap.rot})`}>
+        <circle r={r} fill={fondo} stroke="#fff" strokeWidth={5} />
+        <IconoTrazado d={d} t={t} en={en + 2 * F} color={color} size={r * 1.1} x={-r * 0.55} y={-r * 0.55} />
+      </g>
+      {!sinRafaga && <Particulas t={t} en={en} x={0} y={0} n={8} radio={r * 1.9} colores={[fondo.startsWith('rgba') || fondo === '#fff' ? C_AMARILLO : fondo, '#ffffff']} />}
+    </g>
+  );
+};
+
+// Conector que se dibuja (curva de salida rápida) y, ya dibujado, deja correr puntos por él (flujo).
+// punta = [x, y, ángulo] para rematarlo con una punta de flecha orientada (usa la tangente del final del trazo)
+export const Conector: React.FC<{t: number; en: number; d: string; color?: string; dur?: number; flujo?: boolean; grosor?: number; punta?: [number, number, number]}> = ({
+  t, en, d, color = '#fff', dur = 0.45, flujo, grosor = 7, punta,
+}) => {
+  const p = 1 - Math.pow(1 - lim((t - en) / dur), 3);
+  if (p <= 0) return null;
+  const ap = aparece(t, en + dur, 0);
+  return (
+    <g>
+      <path d={d} fill="none" stroke={color} strokeWidth={grosor} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - p} />
+      {flujo && p >= 1 && <path d={d} fill="none" stroke="#fff" strokeWidth={grosor} strokeLinecap="round" pathLength={1} strokeDasharray="0.03 0.12" strokeDashoffset={-(t - en) * 0.6} opacity={0.9} />}
+      {punta && p >= 1 && (
+        <g transform={`translate(${punta[0]} ${punta[1]}) scale(${ap.sx} ${ap.sy}) translate(${-punta[0]} ${-punta[1]})`}>
+          <path d={puntaFlecha(punta[0], punta[1], punta[2], 26, 18)} fill="none" stroke={color} strokeWidth={grosor} strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      )}
+    </g>
+  );
+};
+
+// ✓ que se traza
+export const Check: React.FC<{t: number; en: number; s?: number; color?: string}> = ({t, en, s = 1, color = '#fff'}) => {
+  const p = lim((t - en) / (6 * F));
+  if (p <= 0) return null;
+  return <path d={`M ${-24 * s} ${2 * s} L ${-7 * s} ${19 * s} L ${26 * s} ${-16 * s}`} stroke={color} strokeWidth={11 * s} strokeLinecap="round" strokeLinejoin="round" fill="none" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - p} />;
+};
+
+// ✕ que se traza (dos trazos seguidos)
+export const Cruz: React.FC<{t: number; en: number; s?: number; color?: string}> = ({t, en, s = 1, color = '#fff'}) => {
+  const p1 = lim((t - en) / (4 * F)), p2 = lim((t - en - 3 * F) / (4 * F));
+  if (p1 <= 0) return null;
+  return (
+    <g stroke={color} strokeWidth={11 * s} strokeLinecap="round" fill="none">
+      <path d={`M ${-18 * s} ${-18 * s} L ${18 * s} ${18 * s}`} pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - p1} />
+      {p2 > 0 && <path d={`M ${18 * s} ${-18 * s} L ${-18 * s} ${18 * s}`} pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - p2} />}
+    </g>
+  );
+};
+
+// Estrella de cinco puntas (path centrado en 0,0)
+export const estrella = (r: number) =>
+  Array.from({length: 10}, (_, i) => {
+    const g = -Math.PI / 2 + (i * Math.PI) / 5;
+    const rr = i % 2 ? r * 0.45 : r;
+    return `${i ? 'L' : 'M'} ${(Math.cos(g) * rr).toFixed(1)} ${(Math.sin(g) * rr).toFixed(1)}`;
+  }).join(' ') + ' Z';
+
+// Interrogación grande y legible (nunca un icono pequeño): el gancho se dibuja con trazo grueso, el punto cae con un muelle,
+// sale con aplastar/estirar y un giro que se asienta, lanza un pulso y se balancea en reposo. Contorno oscuro para leerse sobre cualquier fondo.
+const GANCHO = 'M -27 -34 C -27 -70, 27 -70, 27 -34 C 27 -10, 0 -6, 0 20';
+export const Interrogante: React.FC<{t: number; en: number; x: number; y: number; s?: number; color?: string; fase?: number}> = ({t, en, x, y, s = 1, color = '#fff', fase = 0}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, 18);
+  const traza = 1 - Math.pow(1 - lim((t - en) / (7 * F)), 3);
+  const punto = muelle(t, en + 5 * F, 3, 8);
+  const fl = flota(t, fase, 5);
+  const vaiven = Math.sin(t * 3.1 + fase) * 7;
+  return (
+    <g transform={`translate(${x} ${y + fl.y})`}>
+      <Pulso t={t} en={en} x={0} y={-10 * s} r={50 * s} color={color} />
+      <g transform={`scale(${ap.sx * s * fl.s} ${ap.sy * s * fl.s}) rotate(${ap.rot + vaiven})`}>
+        <g style={{filter: `drop-shadow(0 0 10px ${color})`}}>
+          <path d={GANCHO} fill="none" stroke="rgba(10,10,14,0.85)" strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          <path d={GANCHO} fill="none" stroke={color} strokeWidth={18} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          {punto > 0 && (
+            <g transform={`translate(0 ${46 - (1 - punto) * 26}) scale(${Math.max(0, punto)})`}>
+              <circle r={15} fill="rgba(10,10,14,0.85)" />
+              <circle r={10.5} fill={color} />
+            </g>
+          )}
+        </g>
+      </g>
+      <Particulas t={t} en={en + 5 * F} x={0} y={0} n={8} radio={95 * s} colores={[color, C_AMARILLO]} />
+    </g>
+  );
+};
+
+// Exclamación grande y legible (alerta), mismo lenguaje que Interrogante
+export const Exclamacion: React.FC<{t: number; en: number; x: number; y: number; s?: number; color?: string; fase?: number}> = ({t, en, x, y, s = 1, color = ROJO, fase = 0}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, -14);
+  const traza = 1 - Math.pow(1 - lim((t - en) / (6 * F)), 3);
+  const punto = muelle(t, en + 4 * F, 3, 8);
+  const fl = flota(t, fase, 5);
+  const vaiven = Math.sin(t * 3.4 + fase) * 6;
+  return (
+    <g transform={`translate(${x} ${y + fl.y})`}>
+      <Pulso t={t} en={en} x={0} y={-6 * s} r={46 * s} color={color} />
+      <g transform={`scale(${ap.sx * s * fl.s} ${ap.sy * s * fl.s}) rotate(${ap.rot + vaiven})`}>
+        <g style={{filter: `drop-shadow(0 0 10px ${color})`}}>
+          <path d="M 0 -62 L 0 16" fill="none" stroke="rgba(10,10,14,0.85)" strokeWidth={30} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          <path d="M 0 -62 L 0 16" fill="none" stroke={color} strokeWidth={19} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          {punto > 0 && (
+            <g transform={`translate(0 ${44 - (1 - punto) * 24}) scale(${Math.max(0, punto)})`}>
+              <circle r={15} fill="rgba(10,10,14,0.85)" />
+              <circle r={10.5} fill={color} />
+            </g>
+          )}
+        </g>
+      </g>
+      <Particulas t={t} en={en + 4 * F} x={0} y={0} n={8} radio={90 * s} colores={[color, C_AMARILLO]} />
+    </g>
+  );
+};
