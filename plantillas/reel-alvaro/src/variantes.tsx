@@ -21,10 +21,10 @@ const REBOTE = (x: number) => {
   return n * (x -= 2.625 / d) * x + 0.984375;
 };
 
-export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana' | 'iman' | 'robot' | 'tiza' | 'engranaje';
-export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo' | 'cartel' | 'ensambla' | 'balanza' | 'pulso';
+export type EstiloTexto = 'mascara' | 'pop' | 'enfoque' | 'deslizar' | 'maquina' | 'giro' | 'caida' | 'espaciado' | 'estela' | 'tecla' | 'rodar' | 'ola' | 'bisagra' | 'persiana' | 'iman' | 'robot' | 'tiza' | 'engranaje' | 'cremallera' | 'criba';
+export type EstiloGolpe = 'muelle' | 'sello' | 'destello' | 'barrido' | 'glitch' | 'zoom' | 'rebote' | 'tinta' | 'neon' | 'contorno' | 'cortina' | 'eco' | 'marcador' | 'latigo' | 'cartel' | 'ensambla' | 'balanza' | 'pulso' | 'empuje' | 'naipe';
 export type EstiloImpacto = 'rayos' | 'onda' | 'chispas' | 'rayas' | 'cuadros' | 'circulos' | 'confeti' | 'halo' | 'estrella' | 'serpentinas' | 'polvo' | 'rombos' | 'garabato';
-export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon' | 'tiron' | 'piston' | 'toctoc' | 'goteo'};
+export type Estilo = {texto: EstiloTexto; golpe: EstiloGolpe; impacto: EstiloImpacto; sub: EstiloTexto; flecha: 'bote' | 'pulso' | 'desliza' | 'gira' | 'latido' | 'cae' | 'balanceo' | 'vibra' | 'elastica' | 'voltea' | 'salto' | 'pendulo' | 'resorte' | 'escalon' | 'tiron' | 'piston' | 'toctoc' | 'goteo' | 'rastro' | 'radar'};
 
 // ---------------- Entrada palabra a palabra ----------------
 // Sustituye a <Sube>: misma API (en = segundo en que se dice; sale = segundo en que empieza a irse).
@@ -125,11 +125,38 @@ export const Entra: React.FC<{t: number; en: number; sale?: number; estilo: Esti
       anim = {rotate: `${(1 - m) * -140}deg`, scale: 0.55 + 0.45 * Math.min(1.1, m) - 0.06 * s, opacity: Math.min(1, p * 3) * (1 - s), transformOrigin: '50% 55%'};
       break;
     }
+    case 'criba': {
+      // cae como por un tamiz: baja desde arriba con un vaivén lateral que se va calmando (se criba) y se asienta nítida
+      const k = Math.max(0, t - en);
+      const baja = 1 - Math.exp(-9 * k);
+      const vaiven = 14 * Math.exp(-6 * k) * Math.sin(2 * Math.PI * 3.2 * k);
+      anim = {translate: `${vaiven}px ${(1 - baja) * -50 - s * 26}px`, filter: `blur(${(1 - e) * 3 + s * 5}px)`, opacity: Math.min(1, p * 3) * (1 - s)};
+      break;
+    }
     case 'estela':
       // sube desde abajo dejando un rastro de luz (copias que se desvanecen) y se asienta
       anim = {translate: `0px ${(1 - e) * 46 - s * 30}px`, opacity: Math.min(1, p * 2.2) * (1 - s),
         ...(p < 1 ? {textShadow: `0 ${(1 - e) * 26}px 0 rgba(255,255,255,${0.32 * (1 - e)}), 0 ${(1 - e) * 52}px 2px rgba(255,255,255,${0.14 * (1 - e)})`} : {})};
       break;
+  }
+  if (estilo === 'cremallera') {
+    // se cierra como una cremallera: la mitad de arriba llega desde la izquierda y la de abajo desde la derecha,
+    // se cruzan un poco y encajan con un muelle (dos lados que se unen: freelancer / agencia)
+    const k = Math.max(0, t - en);
+    const m = 1 - Math.exp(-8 * k) * Math.cos(2 * Math.PI * 2.1 * k);
+    const d = (1 - m) * 70;
+    const op = Math.min(1, p * 3) * (1 - s);
+    const sal = `${-s * 26}px`;
+    const mitad = (arriba: boolean): React.CSSProperties => ({
+      display: 'inline-block', opacity: visible ? op : 0, translate: `${arriba ? -d : d}px ${sal}`,
+      clipPath: arriba ? 'inset(-30% -10% 50% -10%)' : 'inset(50% -10% -30% -10%)', filter: `blur(${Math.min(4, Math.abs(1 - m) * 6) + s * 4}px)`, ...style,
+    });
+    return (
+      <span style={{...caja, position: 'relative', padding: '0.18em 0.12em 0.1em', margin: '-0.18em -0.12em -0.1em'}}>
+        <span style={mitad(true)}>{children}</span>
+        <span style={{position: 'absolute', left: '0.12em', top: '0.18em'}}><span style={mitad(false)}>{children}</span></span>
+      </span>
+    );
   }
   return (
     <span style={{...caja, overflow: mascara ? 'hidden' : 'visible', padding: '0.18em 0.12em 0.1em', margin: '-0.18em -0.12em -0.1em'}}>
@@ -242,6 +269,20 @@ export const golpeV = (estilo: EstiloGolpe, t: number, en: number, sale?: number
       const k = Math.max(0, t - en);
       const lat = Math.exp(-5 * k) * Math.max(0, Math.sin(k * Math.PI * 5));
       return {opacity: op, scale: 0.8 + 0.2 * e + 0.22 * lat - 0.06 * s, filter: `brightness(${1 + 0.8 * lat}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
+    }
+    case 'empuje': {
+      // entra empujada de lado (inclinada por la velocidad), se pasa un poco y vuelve con un muelle hasta quedar recta
+      const k = Math.max(0, t - en);
+      const m = 1 - Math.exp(-8 * k) * Math.cos(2 * Math.PI * 2 * k);
+      return {opacity: op, translate: `${(1 - m) * -150}px ${-20 * s}px`, transform: `skewX(${(1 - m) * -16}deg)`,
+        filter: `blur(${Math.min(5, Math.abs(1 - m) * 7) + s * 8}px)`, scale: 1 - 0.06 * s};
+    }
+    case 'naipe': {
+      // se da la vuelta como una carta que se descubre: gira en vertical desde de canto, se pasa un poco y se asienta con un muelle
+      const k = Math.max(0, t - en);
+      const m = 1 - Math.exp(-7.5 * k) * Math.cos(2 * Math.PI * 1.9 * k);
+      return {opacity: op, transform: `perspective(900px) rotateY(${(1 - m) * 95}deg)`, scale: 0.9 + 0.1 * Math.min(1.08, m) - 0.06 * s,
+        filter: `brightness(${1 + 0.5 * Math.max(0, 1 - m)}) blur(${s * 8}px)`, translate: `0px ${-20 * s}px`};
     }
     case 'tinta':
       // se revela de abajo arriba como tinta que sube, con ligera inclinación que se endereza
@@ -449,6 +490,18 @@ export const flechaV = (estilo: Estilo['flecha'], t: number, desde: number): Rea
       const g = f >= 0.18 ? f - 0.18 : 0;
       const baja = f >= 0.18 ? 22 * Math.exp(-6 * g) * Math.cos(2 * Math.PI * 2.2 * g) : 0;
       return {translate: `0px ${-6 * sube + baja}px`, scale: `${1 - 0.008 * baja} ${1 + 0.012 * Math.max(0, baja)}`, transformOrigin: '50% 0%'};
+    }
+    case 'radar': {
+      // cada 1,3 s emite una onda de luz que se expande y se apaga, con un pequeño asentimiento hacia abajo
+      const f = (k / 1.3) % 1;
+      const asiente = f < 0.2 ? Math.sin((f / 0.2) * Math.PI) : 0;
+      return {translate: `0px ${asiente * 7}px`, textShadow: `0 0 ${10 + f * 46}px rgba(255,214,10,${(0.9 * (1 - f)).toFixed(3)}), 0 0 12px rgba(255,214,10,0.55)`};
+    }
+    case 'rastro': {
+      // cada 1,2 s suelta un eco de sí misma que baja y se desvanece, mientras ella da un pequeño empujón hacia abajo
+      const f = (k / 1.2) % 1;
+      const emp = f < 0.25 ? Math.sin((f / 0.25) * Math.PI) : 0;
+      return {translate: `0px ${emp * 8}px`, textShadow: `0 ${8 + f * 34}px 0 rgba(255,214,10,${(0.55 * (1 - f)).toFixed(3)}), 0 0 18px rgba(255,214,10,0.5)`};
     }
     case 'elastica': {
       const f = (k * 1.4) % 1;

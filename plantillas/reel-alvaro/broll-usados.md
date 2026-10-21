@@ -20,6 +20,7 @@
 | A6 1E | 14763 empleado en bucle (pantalla partida), 13231 reunión con notas adhesivas |
 | A7 1E | 15795 local (apretón de manos en oficina vacía), 17675 maquinaria, 46022 contratar (entrevista), 47015 inversión (billetes) |
 | A8 1E | 24060 atención al cliente (teleoperadora), 18727 relación comercial (dos compañeros con una carpeta) |
+| A9 1E | 21390 freelancer en el sofá con portátil (split), 33407 equipo de agencia alrededor de un portátil (split), 21405 el mismo freelancer de frente (split), 46678 planificando en una pizarra («organizar el trabajo») |
 
 ## Música (Mixkit) — una pista distinta por reel
 
