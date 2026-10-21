@@ -215,6 +215,38 @@ const estrella = (r: number) =>
     return `${i ? 'L' : 'M'} ${(Math.cos(g) * rr).toFixed(1)} ${(Math.sin(g) * rr).toFixed(1)}`;
   }).join(' ') + ' Z';
 
+// Interrogación grande y legible (no un icono pequeño): el gancho se dibuja con un trazo grueso, el punto cae con un muelle,
+// toda la interrogación sale con aplastar/estirar y un giro que se asienta, lanza un pulso y después se balancea en reposo.
+// Lleva un contorno oscuro debajo para leerse sobre cualquier fondo.
+const GANCHO = 'M -27 -34 C -27 -70, 27 -70, 27 -34 C 27 -10, 0 -6, 0 20';
+const Interrogante: React.FC<{t: number; en: number; x: number; y: number; s?: number; color?: string; fase?: number}> = ({t, en, x, y, s = 1, color = '#fff', fase = 0}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, 18);
+  const traza = 1 - Math.pow(1 - lim((t - en) / (7 * F)), 3);
+  const punto = muelle(t, en + 5 * F, 3, 8);
+  const fl = flota(t, fase, 5);
+  const vaiven = Math.sin(t * 3.1 + fase) * 7;
+  const halo = color === '#fff' ? '255,255,255' : '255,77,94';
+  return (
+    <g transform={`translate(${x} ${y + fl.y})`}>
+      <Pulso t={t} en={en} x={0} y={-10 * s} r={50 * s} color={color} />
+      <g transform={`scale(${ap.sx * s * fl.s} ${ap.sy * s * fl.s}) rotate(${ap.rot + vaiven})`}>
+        <g style={{filter: `drop-shadow(0 0 10px rgba(${halo},0.75))`}}>
+          <path d={GANCHO} fill="none" stroke="rgba(10,10,14,0.85)" strokeWidth={30} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          <path d={GANCHO} fill="none" stroke={color} strokeWidth={18} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+          {punto > 0 && (
+            <g transform={`translate(0 ${46 - (1 - punto) * 26}) scale(${Math.max(0, punto)})`}>
+              <circle r={15} fill="rgba(10,10,14,0.85)" />
+              <circle r={10.5} fill={color} />
+            </g>
+          )}
+        </g>
+      </g>
+      <Particulas t={t} en={en + 5 * F} x={0} y={0} n={8} radio={95 * s} colores={[color, C.amarillo]} />
+    </g>
+  );
+};
+
 // 1) "¿qué pasa cuando tienes un problema y no sabes resolverlo?": sale un bocadillo, dentro se dibuja un lío
 // (el problema) y al decir "resolverlo" salta una interrogación roja y el bocadillo tiembla
 const ENREDO = {a: 5.2, b: 7.84, burbuja: 5.36, lio: 6.0, duda: 7.12};
@@ -236,7 +268,7 @@ const Enredo: React.FC<{t: number}> = ({t}) => {
             <path d={LIO} fill="none" stroke={C.amarillo} strokeWidth={9} strokeLinecap="round" strokeLinejoin="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza}
               style={{filter: `drop-shadow(0 0 8px rgba(${GLOW_AMARILLO},0.7))`}} />
           </g>
-          <Chip t={t} en={duda} d={ICONO.pregunta} x={168} y={-104} r={52} fondo={ROJO} color="#fff" quieto />
+          <Interrogante t={t} en={duda} x={176} y={-96} s={1.15} color={ROJO} />
         </g>
       </Lienzo>
     </Ventana>
@@ -245,7 +277,7 @@ const Enredo: React.FC<{t: number}> = ({t}) => {
 
 // 2) "las mejores clases del mundo... pero al ponerlo en práctica aparecen dudas": una tarjeta de vídeo con estrellas,
 // que al decir "práctica" se da la vuelta (portátil: el trabajo real) y al decir "dudas" le saltan interrogaciones alrededor
-const CLASES = {a: 8.6, b: 13.44, tarjeta: 8.72, estrellas: 9.04, mundo: 9.56, practica: 11.76, dudas: [12.24, 12.96, 13.12]};
+const CLASES = {a: 8.6, b: 14.1, tarjeta: 8.72, estrellas: 9.04, mundo: 9.56, practica: 11.76, dudas: [12.24, 12.96, 13.08]};
 const ClasesDudas: React.FC<{t: number}> = ({t}) => {
   const {a, b, tarjeta, estrellas, mundo, practica, dudas} = CLASES;
   const ap = aparece(t, tarjeta, 6);
@@ -288,8 +320,8 @@ const ClasesDudas: React.FC<{t: number}> = ({t}) => {
           <Destello t={t} en={mundo} x={-150} y={128} tam={22} color={C.amarillo} />
           <Destello t={t} en={mundo + 0.08} x={150} y={128} tam={18} />
         </g>
-        {[[285, 150], [800, 118], [820, 318]].map(([x, y], i) => (
-          <Chip key={i} t={t} en={dudas[i]} d={ICONO.pregunta} x={x} y={y} r={i === 1 ? 50 : 42} fondo={i === 1 ? ROJO : '#fff'} color={i === 1 ? '#fff' : '#1b1b20'} fase={i * 1.7} />
+        {([[290, 175, 1.25, '#fff'], [800, 160, 1.6, ROJO], [840, 355, 1.0, '#fff']] as [number, number, number, string][]).map(([x, y, e, col], i) => (
+          <Interrogante key={i} t={t} en={dudas[i]} x={x} y={y} s={e} color={col} fase={i * 1.7} />
         ))}
       </Lienzo>
     </Ventana>
@@ -299,7 +331,7 @@ const ClasesDudas: React.FC<{t: number}> = ({t}) => {
 // 3) Las cuatro situaciones (propuesta, prospección, pregunta técnica, entrega) aparecen como fichas con una alerta;
 // al decir "acompañamiento" cae en el centro una ficha amarilla que las aparta, se conecta con todas y al decir
 // "marcar diferencias" las va resolviendo una a una (se ponen en verde con un ✓)
-const OBST = {a: 13.44, b: 26.0, pasos: [14.44, 16.16, 18.76, 21.4], hub: 23.52, lineas: 23.86, bien: 25.36};
+const OBST = {a: 14.1, b: 26.0, pasos: [14.44, 16.16, 18.76, 21.4], hub: 23.52, lineas: 23.86, bien: 25.36};
 const ICON_OBST = [ICONO.documento, ICONO.diana, ICONO.pregunta, ICONO.caja];
 const X0 = [255, 445, 635, 825];
 const X1 = [168, 340, 740, 912];
