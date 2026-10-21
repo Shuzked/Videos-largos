@@ -18,6 +18,7 @@
 | A9 Evergreen | 30010 cliente, 5731 trabajo (portátil), 23073 llamada, 5601 agotado, 23016 expertos (sala de pantallas) |
 | A10 Evergreen | 46752 expertos (mentor guiando en el portátil), 8858 alumno (portátil en terraza). Descartado 41642: marcas ASUS/SAMSUNG/CORSAIR |
 | A6 1E | 14763 empleado en bucle (pantalla partida), 13231 reunión con notas adhesivas |
+| A7 1E | 15795 local (apretón de manos en oficina vacía), 17675 maquinaria, 46022 contratar (entrevista), 47015 inversión (billetes) |
 
 ## Música (Mixkit) — una pista distinta por reel
 
