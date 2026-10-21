@@ -121,7 +121,7 @@ type B = {src: string; a: number; b: number; etiqueta?: React.ReactNode; desde?:
 const BROLL: B[] = [
   {src: 'videos', a: 9.92, b: 10.68, desde: 2, foco: 0.5},
   {src: 'formaciones', a: 10.68, b: 12.04, desde: 1, foco: 0.5},
-  {src: 'herramientas', a: 12.04, b: 13.56, desde: 2, foco: 0.5},
+  {src: 'herramientas', a: 12.04, b: 13.56, desde: 2, foco: 0.42},
   {src: 'cliente', a: 14.88, b: 16.92, desde: 6, foco: 0.5},
 ];
 const CORTES = Array.from(new Set(BROLL.flatMap((b) => [b.a, b.b]))).sort((x, y) => x - y);

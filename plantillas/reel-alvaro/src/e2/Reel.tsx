@@ -772,7 +772,7 @@ export const ReelE2: React.FC = () => {
       <Ventana t={t} a={LISTA[0]} b={LISTA[1] + SALIDA}>
         <div style={{position: 'absolute', left: -60, right: -60, top: 860, padding: '60px 170px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: VELO, filter: SOMBRA}}>
           <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 18}}>
-            {([['entender\nqué necesita', 45.56], ['ofrecerle el\nservicio adecuado', 46.92], ['asegurarte de que se\nentrega correctamente', 48.96]] as [string, number][]).map(([txt, en], i) => {
+            {([['entender\nqué necesita', 45.56], ['ofrecerle el\nservicio adecuado', 46.92], ['asegurarte de que\nse entrega\ncorrectamente', 48.96]] as [string, number][]).map(([txt, en], i) => {
               const tr = iv(t, [en, en + 7 * F], [0, 1], Easing.bezier(0.65, 0, 0.35, 1));
               return (
                 <div key={txt} style={{display: 'flex', alignItems: 'center', gap: 24, ...golpeV(ESTILO.golpe, t, en, LISTA[1])}}>

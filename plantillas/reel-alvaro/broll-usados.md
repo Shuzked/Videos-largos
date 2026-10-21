@@ -9,7 +9,7 @@
 | A1 1E | 49556 peluquería, 12140 dental (radiografía), 4610 empresa (call center), 50742 código (monitores) |
 | A2 1E | 14396 ordenadores, 9757 código, 29981 matemáticas, 41652 estudiando, 43242 barbería (vertical) |
 | A3 1E | 40592 peluquería, 24968 clínica, 4350 restaurante, 4348 barrio, 4437 ciudad, 33952 multinacional, 6424 cercanas (florista), 6161 comercial |
-| A4 1E | 36426 vídeos, 28723 formaciones, 308 herramientas (dashboard), 46677 cliente |
+| A4 1E | 36426 vídeos, 28723 formaciones, 45707 herramientas (manos en una tableta con gráficas; sustituye a 308, que enseñaba «MacBook Pro» y el dock de macOS), 46677 cliente |
 | A5 Evergreen | sin B-roll: testimonio de Billy (videollamada) |
 | A5 1E | 23116 empresas (reunión), 38354 asistentes de voz (llamada), 4915 WhatsApp (escribiendo en el móvil), 21921 chatbots (robot), 47266 automatizaciones (máquina) |
 | A6 Evergreen | 4607 empresa (oficina), 4835 organizando información (papeles), 1737 seguimiento a mano (libreta), 48610 consumen tiempo (cansada) |
