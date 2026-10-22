@@ -218,7 +218,7 @@ const PantallaPartida: React.FC<{t: number; p: Partida}> = ({t, p}) => {
           <>
             {/* etiquetas dentro de la zona segura de Instagram (arriba la cabecera, abajo el botón del anuncio y la columna de botones) */}
             <Pildora t={t} en={p.a + 0.3} x={110} y={260} txt="FREELANCER" ancla="start" activa={false} check={p.a + 0.6} />
-            <Pildora t={t} en={p.a + 0.55} x={920} y={1440} txt="AGENCIA" ancla="end" activa />
+            <Pildora t={t} en={p.a + 0.55} x={920} y={1090} txt="AGENCIA" ancla="end" activa />
           </>
         )}
       </Lienzo>

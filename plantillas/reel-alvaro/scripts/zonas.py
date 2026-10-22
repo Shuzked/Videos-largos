@@ -4,8 +4,8 @@
 #   python3 zonas.py out/lottie_a6.mp4 src/a6/zonas.json
 # Una escena = tramo seguido con algún elemento en pantalla. De cada escena se mide la caja de lo que brilla (sin chispas
 # sueltas ni los fotogramas extremos de las animaciones) y, si se sale de la zona segura (x 100-980, y 220-1500), se calcula
-# la escala y el desplazamiento mínimos: se encoge anclado abajo (lo de arriba baja sin tapar más la cara), y si hiciera
-# falta encoger más de un 20 % se desplaza en lugar de encoger.
+# la escala y el desplazamiento mínimos: se encoge anclado abajo (hasta un 60 %) para que lo de arriba
+# casi no baje y nunca tape la cara.
 import json, subprocess, sys, numpy as np
 X0, X1, Y0, Y1 = 100, 980, 220, 1500
 src, out = sys.argv[1], sys.argv[2]
@@ -40,8 +40,9 @@ for i, j in escenas:
     X1 = 930 if B > 1330 else 980                          # abajo a la derecha está la columna de botones de Instagram
     W, H = R - L, B - T
     s = min(1.0, (X1 - X0) / W, (Y1 - Y0) / H)
-    if T < Y0: s = min(s, max(0.8, (B - Y0) / H))
-    if T < Y0: ny = max(Y0, B - s * H)                      # anclado abajo; si no basta, baja
+    # lo de arriba se encoge anclado abajo (hasta un 60 %) y casi no baja: así nunca se mete en la cabeza ni tapa la cara
+    if T < Y0: s = min(s, max(0.6, (B + 30 - Y0) / H))
+    if T < Y0: ny = max(Y0, B + 30 - s * H)
     elif B > Y1: ny = max(Y0, min(T, Y1 - s * H))
     else: ny = T + (1 - s) * H / 2
     nx = (L + R) / 2 - s * W / 2
