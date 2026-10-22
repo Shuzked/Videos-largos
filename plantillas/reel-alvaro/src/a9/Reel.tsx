@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, SinZona, ZonaSegura} from '../zona';
+import {CAPA, SIN_TEXTO, SinZona, Zona, ZonaSegura, hueco} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -553,7 +553,7 @@ const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((
 
 // Subtítulos: solo las palabras que no están en grande. Primero se separa por frases (punto, coma, interrogación,
 // pausa o titular) y cada frase se reparte en bloques equilibrados de 2-4 palabras que caben en UNA línea.
-const MAX_CAR = 20; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
+const MAX_CAR = 18; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
 const textoBloque = (ws: W[]) => ws.map((x) => limpiar(x[0])).join(' ').length;
 const repartir = (f: W[]): W[][] => {
   // programación dinámica: menos bloques, sin bloques de 1 palabra si se puede, y largos parecidos
@@ -617,8 +617,10 @@ const FondoSub: React.FC<{opacidad: number}> = ({opacidad}) => (
   />
 );
 
+// un bloque largo (p. ej. una palabra muy larga) baja un poco de tamaño para no pasar de ~760 px: no llega a la columna de botones
+const tamSub = (ws: W[]) => Math.min(70, 760 / (Math.max(1, ws.map((w) => limpiar(w[0])).join(' ').length) * 0.6));
 const Subtitulos: React.FC<{t: number}> = ({t}) => {
-  if (CAPA === 'lottie') return null;
+  if (SIN_TEXTO) return null;
   const hay = (x: number) => BLOQUES.some((bq) => x >= bq.a && x < bq.b);
   const op = Math.max(...[-4, -2, 0, 2, 4].map((d) => (hay(t + d * F) ? 1 - Math.abs(d) / 6 : 0)));
   const bl = BLOQUES.find((x) => t >= x.a && t < x.b);
@@ -626,7 +628,7 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
     <>
       {op > 0 && <FondoSub opacidad={op} />}
       {bl && (
-        <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: 70, fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
+        <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: tamSub(bl.ws), fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
             <Sube key={`${bl.a}-${i}`} t={t} en={a} style={enIA(a) ? estiloIA : CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
@@ -668,13 +670,16 @@ const ARRIBA = 230;
 const ABAJO = 1480;
 const ANCHO_GOLPE = 740;
 const tamLinea = (l: Linea, baja: boolean) => Math.min(l.size * (baja ? 0.9 : 1), (l.golpe ? ANCHO_GOLPE : ANCHO) / (Math.max(1, l.ws.map((w) => w[0]).join(' ').length) * FACTOR));
-const topSeguro = (top: number, lineas: Linea[], baja: boolean) =>
-  Math.max(ARRIBA, Math.min(Math.max(top, ARRIBA), ABAJO - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
+const topSeguro = (top: number, lineas: Linea[], baja: boolean, a = -1, b = -1) => {
+  // además, sin pisar los elementos animados que estén en pantalla a la vez (arriba o abajo)
+  const [arriba, abajo] = hueco(ZONAS as Zona[], a, b, ARRIBA, ABAJO);
+  return Math.max(arriba, Math.min(Math.max(top, arriba), abajo - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
+};
 const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> = ({t, g, parte = 'arriba'}) =>
   // sin líneas en esta parte no se pinta nada (ni el velo)
-  CAPA === 'lottie' || !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
+  SIN_TEXTO || !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
   <Ventana t={t} a={g.a} b={g.b + SALIDA}>
-    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(parte === 'abajo' ? 1180 : g.top, g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo), g.top < ARRIBA && parte !== 'abajo') - 60, padding: '60px 90px', background: VELO}}>
+    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(parte === 'abajo' ? 1180 : g.top, g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo), g.top < ARRIBA && parte !== 'abajo', g.a, g.b + SALIDA) - 60, padding: '60px 90px', background: VELO}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, filter: SOMBRA, ...H}}>
         {g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo).flatMap(partir).map((l, li) => {
           const chars = l.ws.map((w) => w[0]).join(' ').length;
@@ -749,7 +754,7 @@ export const ReelA9: React.FC = () => {
       <Subtitulos t={t} />
 
       {/* CTA en estilo subtítulo con flecha */}
-      <Ventana t={t} a={CAPA === 'lottie' ? 1e9 : CTA} b={CTA_FIN}>
+      <Ventana t={t} a={SIN_TEXTO ? 1e9 : CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           <Sube t={t} en={68.52}>haz</Sube>

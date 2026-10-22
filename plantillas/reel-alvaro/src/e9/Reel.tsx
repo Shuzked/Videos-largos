@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, SinZona, ZonaSegura} from '../zona';
+import {CAPA, SIN_TEXTO, SinZona, Zona, ZonaSegura, hueco} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -675,7 +675,7 @@ const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || (x >= SPLIT1.a
 
 // Subtítulos: solo las palabras que no están en grande. Primero se separa por frases (punto, coma, interrogación,
 // pausa o titular) y cada frase se reparte en bloques equilibrados de 2-4 palabras que caben en UNA línea.
-const MAX_CAR = 20; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
+const MAX_CAR = 18; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
 const MAX_LARGO = 25; // solo si así se evita un bloque de una palabra (el subtítulo se ajusta para caber en una línea)
 // cortes de frase por sentido: "…con servicios / de IA", "…cada herramienta / para dirigir…", "…14 clases / en las que explico…"
 const CORTE_FRASE = new Set([48.88, 54.8, 68.0, 32.72, 35.56]);
@@ -744,7 +744,7 @@ const FondoSub: React.FC<{opacidad: number}> = ({opacidad}) => (
 );
 
 const Subtitulos: React.FC<{t: number}> = ({t}) => {
-  if (CAPA === 'lottie') return null;
+  if (SIN_TEXTO) return null;
   const hay = (x: number) => BLOQUES.some((bq) => x >= bq.a && x < bq.b);
   const op = Math.max(...[-4, -2, 0, 2, 4].map((d) => (hay(t + d * F) ? 1 - Math.abs(d) / 6 : 0)));
   const bl = BLOQUES.find((x) => t >= x.a && t < x.b);
@@ -752,7 +752,7 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
     <>
       {op > 0 && <FondoSub opacidad={op} />}
       {bl && (
-        <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: Math.min(70, Math.floor(880 / (textoBloque(bl.ws) * 0.56))), fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
+        <div style={{position: 'absolute', left: 100, right: 100, top: 1390, display: 'flex', justifyContent: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: '0 0.28em', ...MIN, fontSize: Math.min(70, Math.floor(760 / (textoBloque(bl.ws) * 0.6))), fontWeight: 700, textAlign: 'center', textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {bl.ws.map(([w, a], i) => (
             <Sube key={`${bl.a}-${i}`} t={t} en={a} style={CLAVE.has(limpiar(w)) ? amarillo : undefined}>
               {limpiar(w)}
@@ -793,11 +793,14 @@ const ARRIBA = 230;
 const ABAJO = 1480;
 const ANCHO_GOLPE = 740;
 const tamLinea = (l: Linea, baja: boolean) => Math.min(l.size * (baja ? 0.9 : 1), (l.golpe ? ANCHO_GOLPE : ANCHO) / (Math.max(1, l.ws.map((w) => w[0]).join(' ').length) * FACTOR));
-const topSeguro = (top: number, lineas: Linea[], baja: boolean) =>
-  Math.max(ARRIBA, Math.min(Math.max(top, ARRIBA), ABAJO - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
-const FraseGrande: React.FC<{t: number; g: Grande}> = ({t, g}) => CAPA === 'lottie' ? null : (
+const topSeguro = (top: number, lineas: Linea[], baja: boolean, a = -1, b = -1) => {
+  // además, sin pisar los elementos animados que estén en pantalla a la vez (arriba o abajo)
+  const [arriba, abajo] = hueco(ZONAS as Zona[], a, b, ARRIBA, ABAJO);
+  return Math.max(arriba, Math.min(Math.max(top, arriba), abajo - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
+};
+const FraseGrande: React.FC<{t: number; g: Grande}> = ({t, g}) => SIN_TEXTO ? null : (
   <Ventana t={t} a={g.a} b={g.b + SALIDA}>
-    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(g.top, g.lineas, g.top < ARRIBA) - 60, padding: '60px 90px', background: VELO}}>
+    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(g.top, g.lineas, g.top < ARRIBA, g.a, g.b + SALIDA) - 60, padding: '60px 90px', background: VELO}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, filter: SOMBRA, ...H}}>
         {g.lineas.flatMap(partir).map((l, li) => {
           const chars = l.ws.map((w) => w[0]).join(' ').length;
@@ -836,8 +839,8 @@ export const ReelE9: React.FC = () => {
             <Video src={staticFile('e9/e9.mp4')} volume={STEM === 'sfx' ? 0 : 1} style={lleno} />
           </Sequence>
         </div>
-        {CAPA !== 'lottie' && <PantallaPartida t={t} p={SPLIT1} />}
-        {CAPA !== 'lottie' && <PantallaPartida t={t} p={SPLIT2} />}
+        {CAPA !== 'lottie' && CAPA !== 'texto' && <PantallaPartida t={t} p={SPLIT1} />}
+        {CAPA !== 'lottie' && CAPA !== 'texto' && <PantallaPartida t={t} p={SPLIT2} />}
         <ZonaSegura t={t} zonas={ZONAS}><Red t={t} /></ZonaSegura>
       </ConTransicion>
 
@@ -853,7 +856,7 @@ export const ReelE9: React.FC = () => {
       <Subtitulos t={t} />
 
       {/* CTA en estilo subtítulo con la flecha en la misma línea, justo después de "abajo" */}
-      <Ventana t={t} a={CAPA === 'lottie' ? 1e9 : CTA} b={CTA_FIN}>
+      <Ventana t={t} a={SIN_TEXTO ? 1e9 : CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {CTA_PAL.map(([w, en]) => (

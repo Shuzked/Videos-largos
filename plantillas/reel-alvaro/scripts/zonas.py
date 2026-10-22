@@ -36,7 +36,8 @@ for i, j in escenas:
     a = np.array(cs)
     L, R = np.percentile(a[:, 0], 3), np.percentile(a[:, 1], 97)
     T, B = np.percentile(a[:, 2], 3), np.percentile(a[:, 3], 97)
-    if L >= X0 - 4 and R <= (930 if B > 1330 else 980) + 4 and T >= Y0 - 4 and B <= Y1 + 4: continue
+    if L >= X0 - 4 and R <= (930 if B > 1330 else 980) + 4 and T >= Y0 - 4 and B <= Y1 + 4:   # sin ajuste, pero se apunta su caja
+        zonas.append(dict(a=round(i / fps, 3), b=round((j + 1) / fps, 3), s=1, tx=0, ty=0, y0=round(T), y1=round(B))); continue
     X1 = 930 if B > 1330 else 980                          # abajo a la derecha está la columna de botones de Instagram
     W, H = R - L, B - T
     s = min(1.0, (X1 - X0) / W, (Y1 - Y0) / H)
@@ -47,7 +48,8 @@ for i, j in escenas:
     else: ny = T + (1 - s) * H / 2
     nx = (L + R) / 2 - s * W / 2
     nx = min(max(nx, X0), X1 - s * W)
-    z = dict(a=round(i / fps, 3), b=round((j + 1) / fps, 3), s=round(s, 4), tx=round(nx - s * L, 1), ty=round(ny - s * T, 1))
+    z = dict(a=round(i / fps, 3), b=round((j + 1) / fps, 3), s=round(s, 4), tx=round(nx - s * L, 1), ty=round(ny - s * T, 1),
+             y0=round(ny), y1=round(ny + s * H))           # caja final: el texto grande no puede pisarla
     zonas.append(z)
     print(f"escena {z['a']:6.2f}-{z['b']:6.2f}  caja x {L:4.0f}-{R:4.0f} y {T:4.0f}-{B:4.0f}  →  escala {s:.2f}, nueva caja x {nx:4.0f}-{nx + s * W:4.0f} y {ny:4.0f}-{ny + s * H:4.0f}")
 json.dump(zonas, open(out, "w"), indent=1)
