@@ -102,7 +102,9 @@ const camara = (t: number) => {
   const s = BASE * escala(t);
   const [fx, fy] = cara(t);
   let tx = OBJ_X - fx * s;
-  let ty = OBJ_Y - fy * s;
+  // con «para que haga esto» la cara sube a la altura que tendrá en la pantalla partida: el texto va en el pecho, no en los ojos
+  const sube = t >= 1.86 && t < 6.56 ? Easing.inOut(Easing.cubic)(Math.min(1, (t - 1.86) / 0.24)) : 0;
+  let ty = OBJ_Y - 200 * sube - fy * s;
   for (const a of IMPACTOS) {
     const k = Math.floor((t - a) * FPS);
     if (k >= 0 && k < SACUDIDA.length) {
@@ -221,7 +223,7 @@ const Partida: React.FC<{t: number}> = ({t}) => {
   const [fx, fy] = cara(t);
   const tx = Math.min(0, Math.max(1080 * (1 - s), 540 - fx * s));
   const ty = Math.min(0, Math.max(960 - 1920 * s, 470 - fy * s));
-  const anchoClip = 1707; // 16:9 a 960 de alto
+  const anchoClip = 1707 * 1.15; // 16:9, ampliado y subido: la cara del empleado queda arriba y «durante ocho horas» va debajo
   const veces = PULSOS.filter(([p, l]) => l === 'V' && t >= p).length;
   const vecesAp = aparece(t, PULSOS[1][0], 0);
   return (
@@ -237,7 +239,7 @@ const Partida: React.FC<{t: number}> = ({t}) => {
         {/* el mismo trozo de 0,76 s una y otra vez: el empleado "en bucle" */}
         {Array.from({length: 6}, (_, i) => (
           <Sequence key={i} from={fr(a + i * 0.76)} durationInFrames={fr(0.76)} layout="none">
-            <Video src={staticFile('e6/broll/oficina.mp4')} muted trimBefore={fr(3.1)} style={{position: 'absolute', top: 0, left: 540 - 0.5 * anchoClip, width: anchoClip, height: 960}} />
+            <Video src={staticFile('e6/broll/oficina.mp4')} muted trimBefore={fr(3.1)} style={{position: 'absolute', top: 960 - 960 * 1.15, left: 540 - 0.5 * anchoClip, width: anchoClip, height: 960 * 1.15}} />
           </Sequence>
         ))}
         <AbsoluteFill style={{background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%)'}} />
@@ -639,10 +641,13 @@ const LISTA: [number, number] = [-10, -10];
 const CTA = 58.8;
 const CTA_FIN = 60.06; // tras "haz clic aquí abajo ↓" sigue la frase en subtítulos (como en los demás 1E)
 const SALIDA = 6 * F;
-// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+// Nunca se pisan dos frases grandes (en ninguna zona: al recolocarse por la zona segura pueden acabar en la misma): si la
+// siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
-  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
-  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+  const n = arr[i + 1];
+  // (nunca antes de su última palabra: si no, esa palabra no se vería)
+  const ultima = Math.max(...g.lineas.flatMap((l) => l.ws.map((w) => w[1] as number)));
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, ultima + 0.2, n.a - SALIDA - 0.02);
 });
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((g) => x >= g.a - 0.01 && x < g.b) || (x >= LISTA[0] - 0.01 && x < LISTA[1]);

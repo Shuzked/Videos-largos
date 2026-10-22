@@ -268,6 +268,23 @@ const enBezier = (k: number) => {
   const u = 1 - k;
   return [u * u * u * x0 + 3 * u * u * k * x1 + 3 * u * k * k * x2 + k * k * k * x3, u * u * u * y0 + 3 * u * u * k * y1 + 3 * u * k * k * y2 + k * k * k * y3];
 };
+// Interrogación escrita con la fuente de los títulos (Montserrat Black), con contorno oscuro y glow como los titulares
+// (el cliente no quiere «?» dibujados a mano). Entra con muelle y después se balancea un poco.
+const SignoFuente: React.FC<{t: number; en: number; x: number; y: number; tam: number; giro?: number; fase?: number}> = ({t, en, x, y, tam, giro = 12, fase = 0}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, giro);
+  const fl = flota(t, fase, 5);
+  const vaiven = Math.sin(t * 2.6 + fase) * 5 * Math.min(1, Math.max(0, (t - en) / 0.5));
+  return (
+    <g transform={`translate(${x} ${y + fl.y}) scale(${ap.sx * fl.s} ${ap.sy * fl.s}) rotate(${ap.rot + vaiven})`}>
+      <text x={0} y={tam * 0.36} textAnchor="middle" fontFamily="Montserrat" fontWeight={900} fontSize={tam} fill="#fff"
+        stroke="rgba(10,10,14,0.72)" strokeWidth={tam * 0.07} strokeLinejoin="round" paintOrder="stroke"
+        style={{filter: `drop-shadow(0 0 ${tam * 0.05}px rgba(255,255,255,0.85)) drop-shadow(0 0 ${tam * 0.16}px rgba(255,255,255,0.45))`}}>
+        ?
+      </text>
+    </g>
+  );
+};
 const Pizarra: React.FC<{t: number}> = ({t}) => {
   const fase = PIZARRA.findIndex((p) => t >= p.a && t < p.b);
   if (fase < 0) return null;
@@ -296,10 +313,10 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
       <Columna t={t} t0={a} lado={-1} left={100} titulo="INSTALACIÓN" icono={ICONO.instalar} fichas={IZQ} activa={fase === 0 || brilloIzq > 0.3} anima={fase === 0} brillo={brilloIzq} />
       <Columna t={t} t0={a} lado={1} left={550} titulo="MANTENIMIENTO" icono={ICONO.ciclo} fichas={fase === 0 ? [] : DER} activa={fase >= 1 && (fase === 1 || brilloDer > 0.3)} anima={fase === 1} brillo={brilloDer} gira={giro}
         extra={fase === 0 ? (
-          // la incógnita: una interrogación grande dibujada (gancho que se traza + punto con muelle) que bota y se balancea
+          // la incógnita: una interrogación grande con la fuente de los títulos (como pide el cliente) que bota y se balancea
           // esperando a "¿qué ocurre después?"
           <svg width={260} height={300} style={{marginTop: 50, overflow: 'visible', opacity: 0.85, translate: `0px ${-Math.abs(Math.sin(t * 3.2)) * 16}px`}}>
-            <Interrogante t={t} en={a + 0.35} x={130} y={160} s={1.8} color={TIZA} />
+            <SignoFuente t={t} en={a + 0.35} x={130} y={150} tam={210} />
           </svg>
         ) : cal && kcal > 0 ? (
           // calendario "mensual": sale con muelle y se balancea como un colgante
@@ -479,8 +496,8 @@ const GRANDES: Grande[] = [
   // Pizarra 3: puedes tener una primera parte del proyecto que es la implementación y otra parte que consiste en seguir prestando un servicio a ese cliente
   {a: 34.28, b: 36.4, top: 1090, lineas: [{ws: [['puedes', 34.28], ['tener', 34.6]], size: 80}, {ws: [['una', 34.88], ['primera', 35.1], ['parte', 35.4, amarillo]], size: 90}, {ws: [['del', 35.64], ['proyecto', 35.8]], size: 80}]},
   {a: 36.44, b: 38.16, top: 1090, lineas: [{ws: [['que', 36.44], ['es', 36.56], ['la', 36.72]], size: 84}, {ws: [['implementación', 36.92, amarillo]], size: 130, golpe: true}]},
-  {a: 38.2, b: 39.88, top: 1090, lineas: [{ws: [['y', 38.2], ['otra', 38.36], ['parte', 38.64, amarillo]], size: 90}, {ws: [['que', 39.08], ['consiste', 39.24], ['en', 39.8]], size: 80}]},
-  {a: 39.92, b: 42.44, top: 1090, lineas: [{ws: [['seguir', 39.92], ['prestando', 40.44]], size: 84}, {ws: [['un servicio', 40.96, amarillo]], size: 120, golpe: true}, {ws: [['a', 41.8], ['ese', 41.96], ['cliente', 42.2]], size: 84}]},
+  {a: 38.2, b: 39.88, top: 1090, lineas: [{ws: [['y', 38.2], ['otra', 38.36], ['parte', 38.64, amarillo]], size: 90}, {ws: [['que', 39.08], ['consiste', 39.24]], size: 80}]},
+  {a: 39.8, b: 42.44, top: 1090, lineas: [{ws: [['en', 39.8], ['seguir', 39.92], ['prestando', 40.44]], size: 84}, {ws: [['un servicio', 40.96, amarillo]], size: 120, golpe: true}, {ws: [['a', 41.8], ['ese', 41.96], ['cliente', 42.2]], size: 84}]},
   // Eso sí, hay algo importante
   {a: 42.72, b: 44.1, top: 960, lineas: [{ws: [['eso', 42.72], ['sí', 43.04]], size: 84}, {ws: [['hay', 43.36], ['algo', 43.56]], size: 84}, {ws: [['importante', 43.76, amarillo]], size: 140, golpe: true}]},
   // Montaje final (B-roll, texto abajo: las caras están arriba)
@@ -492,10 +509,13 @@ const LISTA: [number, number] = [-10, -10];
 const CTA = 72.66;
 const CTA_FIN = DURACION_A8; // "haz clic aquí abajo" hasta el final
 const SALIDA = 6 * F;
-// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+// Nunca se pisan dos frases grandes (en ninguna zona: al recolocarse por la zona segura pueden acabar en la misma): si la
+// siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
-  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
-  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+  const n = arr[i + 1];
+  // (nunca antes de su última palabra: si no, esa palabra no se vería)
+  const ultima = Math.max(...g.lineas.flatMap((l) => l.ws.map((w) => w[1] as number)));
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, ultima + 0.2, n.a - SALIDA - 0.02);
 });
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((g) => x >= g.a - 0.01 && x < g.b) || (x >= LISTA[0] - 0.01 && x < LISTA[1]);

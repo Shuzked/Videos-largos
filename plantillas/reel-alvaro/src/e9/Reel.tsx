@@ -649,10 +649,12 @@ const GRANDES: Grande[] = [
   {a: 0.04, b: 2.32, top: 70, lineas: [{ws: [['dos', 0.04], ['personas', 0.28]], size: 104}, {ws: [['pueden', 0.72], ['vender', 1.08]], size: 84}, {ws: [['exactamente', 1.44, amarillo]], size: 130, golpe: true}]},
   // HOOK 2/4 (debajo de la cara): el mismo servicio de inteligencia artificial (sale antes del corte a la pantalla partida)
   {a: 2.32, b: 4.22, top: 960, lineas: [{ws: [['el mismo', 2.32, amarillo]], size: 150, golpe: true}, {ws: [['servicio', 2.72], ['de', 3.16]], size: 90}, {ws: [['inteligencia', 3.24]], size: 90}, {ws: [['artificial', 3.8]], size: 90}]},
-  // HOOK 3/4 (pantalla partida, mitad de arriba): pero una puede estar trabajando como freelancer
-  {a: 4.5, b: 9.0, top: 400, lineas: [{ws: [['pero', 4.5], ['una', 4.8], ['puede', 5.12]], size: 84}, {ws: [['estar', 5.4], ['trabajando', 5.64]], size: 84}, {ws: [['como', 6.16]], size: 84}, {ws: [['freelancer', 6.4, amarillo]], size: 130, golpe: true}]},
-  // HOOK 4/4 (pantalla partida, mitad de abajo): y la otra construyendo una agencia
-  {a: 7.12, b: 9.0, top: 1360, lineas: [{ws: [['y', 7.12], ['la', 7.28], ['otra', 7.52]], size: 84}, {ws: [['construyendo', 7.88], ['una', 8.64]], size: 84}, {ws: [['agencia', 8.84, amarillo]], size: 150, golpe: true}]},
+  // HOOK 3/4 (pantalla partida, mitad de arriba, debajo de la barbilla): pero una puede estar trabajando como freelancer;
+  // sale justo antes de que se encienda la mitad de abajo
+  {a: 4.5, b: 6.88, top: 450, lineas: [{ws: [['pero', 4.5], ['una', 4.8], ['puede', 5.12]], size: 84}, {ws: [['estar', 5.4], ['trabajando', 5.64]], size: 84}, {ws: [['como', 6.16]], size: 84}, {ws: [['freelancer', 6.4, amarillo]], size: 130, golpe: true}]},
+  // HOOK 4/4: y la otra construyendo una agencia. Va en el mismo hueco de arriba (el freelancer ya atenuado): en la mitad
+  // de abajo el equipo ocupa todo el alto y el texto les taparía la cara
+  {a: 7.12, b: 9.0, top: 450, lineas: [{ws: [['y', 7.12], ['la', 7.28], ['otra', 7.52]], size: 84}, {ws: [['construyendo', 7.88], ['una', 8.64]], size: 84}, {ws: [['agencia', 8.84, amarillo]], size: 150, golpe: true}]},
   // Lo que hace es introducir una estructura distinta
   {a: 43.2, b: 45.56, top: 960, lineas: [{ws: [['lo', 43.2], ['que', 43.4], ['hace', 43.52], ['es', 43.68]], size: 84}, {ws: [['introducir', 43.76], ['una', 44.28]], size: 90}, {ws: [['estructura', 44.44]], size: 125, golpe: true}, {ws: [['distinta', 44.92, amarillo]], size: 125, golpe: true}]},
   // Está disponible por 1 €
@@ -664,10 +666,13 @@ const CTA_PAL: [string, number][] = [['haz', 73.38], ['clic', 73.56], ['aquí', 
 const CTA_FLECHA = 74.1;
 const CTA_FIN = 74.42; // empieza "y descubre cómo empezar…"
 const SALIDA = 6 * F;
-// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+// Nunca se pisan dos frases grandes (en ninguna zona: al recolocarse por la zona segura pueden acabar en la misma): si la
+// siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
-  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
-  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+  const n = arr[i + 1];
+  // (nunca antes de su última palabra: si no, esa palabra no se vería)
+  const ultima = Math.max(...g.lineas.flatMap((l) => l.ws.map((w) => w[1] as number)));
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, ultima + 0.2, n.a - SALIDA - 0.02);
 });
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 // la frase partida (4,48–9,24) va entera en grande: la palabra "pero" (4,48) entra con la pantalla partida

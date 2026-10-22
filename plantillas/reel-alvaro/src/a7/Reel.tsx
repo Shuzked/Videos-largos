@@ -448,7 +448,7 @@ const Varita: React.FC<{t: number}> = ({t}) => {
   const {a, b, varita, estrella: est, formula, magica} = VARITA;
   const dibuja = lim((t - varita) / 0.35);
   const cae = t > magica ? 1 - Math.exp(-4 * (t - magica)) * Math.cos((t - magica) * 9) : 0;
-  const ang = -40 + cae * 75;
+  const ang = -40 + cae * 50; // cae poco: la punta se queda por encima de la cabeza (nunca sobre la cara)
   const apaga = lim((t - magica) / 0.35);
   const col = apaga > 0.5 ? 'rgba(200,200,210,0.85)' : C.amarillo;
   const e = aparece(t, est, 30);
@@ -590,7 +590,7 @@ const rosaFuerte: React.CSSProperties = {...rosa, textShadow: glow('255,177,191'
 // Solo frases CORTAS en grande (2-4 palabras, enteras), alternando con frases en subtítulo
 const GRANDES: Grande[] = [
   // HOOK (detrás de Álvaro)
-  {a: 0.0, b: 3.58, top: 60, lineas: [{ws: [['si', 0.0], ['te', 0.13], ['da', 0.26]], size: 80}, {ws: [['miedo', 0.39, rosaFuerte]], size: 190, golpe: true}, {ws: [['llamar', 0.71], ['a', 1.1], ['una', 1.16], ['empresa', 1.36]], size: 76, abajo: true}, {ws: [['para', 1.81], ['venderle', 2.07], ['algo', 2.58]], size: 76, abajo: true}, {ws: [['escucha', 2.9, amarillo], ['esto', 3.36, amarillo]], size: 100, abajo: true}]},
+  {a: 0.0, b: 3.58, top: 60, lineas: [{ws: [['si', 0.0], ['te', 0.13], ['da', 0.26]], size: 80}, {ws: [['miedo', 0.39, rosaFuerte]], size: 190, golpe: true}, {ws: [['llamar', 0.71], ['a', 1.1], ['una', 1.16], ['empresa', 1.36]], size: 76, abajo: true}, {ws: [['para', 1.81], ['venderle', 2.07], ['algo', 2.58]], size: 76, abajo: true}, {ws: [['escucha', 2.9, amarillo], ['esto', 3.36, amarillo]], size: 88, abajo: true}]},
   // Mis primeras 10 reuniones como emprendedor terminaron en 10 noes
   {a: 3.84, b: 7.86, top: 960, lineas: [{ws: [['mis', 3.84], ['primeras', 4.05]], size: 80}, {ws: [['10 reuniones', 4.61, amarillo]], size: 120, golpe: true}, {ws: [['como', 5.37], ['emprendedor', 5.65]], size: 76}, {ws: [['terminaron', 6.42], ['en', 7.11]], size: 76}, {ws: [['10 noes', 7.25, rosaFuerte]], size: 170, golpe: true}]},
   // 10 negocios. 10 reuniones. Y 10 personas diciéndome que no.
@@ -606,10 +606,13 @@ const LISTA: [number, number] = [-10, -10];
 const CTA = 74.52;
 const CTA_FIN = DURACION_A7; // "haz clic aquí abajo" hasta el final
 const SALIDA = 6 * F;
-// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+// Nunca se pisan dos frases grandes (en ninguna zona: al recolocarse por la zona segura pueden acabar en la misma): si la
+// siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
-  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
-  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+  const n = arr[i + 1];
+  // (nunca antes de su última palabra: si no, esa palabra no se vería)
+  const ultima = Math.max(...g.lineas.flatMap((l) => l.ws.map((w) => w[1] as number)));
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, ultima + 0.2, n.a - SALIDA - 0.02);
 });
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((g) => x >= g.a - 0.01 && x < g.b) || (x >= LISTA[0] - 0.01 && x < LISTA[1]);

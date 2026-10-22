@@ -44,7 +44,8 @@ for i, j in escenas:
     # lo de arriba se encoge anclado abajo (hasta un 60 %) y casi no baja: así nunca se mete en la cabeza ni tapa la cara
     if T < Y0: s = min(s, max(0.6, (B + 30 - Y0) / H))
     if T < Y0: ny = max(Y0, B + 30 - s * H)
-    elif B > Y1: ny = max(Y0, min(T, Y1 - s * H))
+    elif B > Y1:                                             # abajo (p. ej. la barra de progreso de un montaje): más pequeña, para que el
+        s = min(s, 0.72); ny = max(Y0, min(T, Y1 - s * H))   # texto grande quepa entre ella y las caras del B-roll
     else: ny = T + (1 - s) * H / 2
     nx = (L + R) / 2 - s * W / 2
     nx = min(max(nx, X0), X1 - s * W)

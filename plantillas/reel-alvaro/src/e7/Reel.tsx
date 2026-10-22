@@ -870,7 +870,7 @@ const GRANDES: Grande[] = [
   {a: 0.04, b: 1.84, top: 60, lineas: [{ws: [['cuando', 0.04], ['alguien', 0.28]], size: 84}, {ws: [['piensa', 0.6], ['en', 0.92], ['abrir', 1.0]], size: 84},
     {ws: [['un negocio', 1.32, amarillo]], size: 130, golpe: true}]},
   // muchas veces se imagina
-  {a: 1.84, b: 3.02, top: 960, lineas: [{ws: [['muchas', 1.84], ['veces', 2.24]], size: 90}, {ws: [['se imagina', 2.57, amarillo]], size: 130, golpe: true}]},
+  {a: 1.84, b: 2.86, top: 960, lineas: [{ws: [['muchas', 1.84], ['veces', 2.24]], size: 90}, {ws: [['se imagina', 2.57, amarillo]], size: 130, golpe: true}]},
   // alquilar un local, comprar maquinaria, contratar empleados y hacer una inversión enorme
   {a: 3.12, b: 4.2, top: MONTAJE, lineas: [{ws: [['alquilar', 3.12], ['un', 3.6]], size: 90}, {ws: [['local', 3.72, amarillo]], size: 160, golpe: true}]},
   {a: 4.24, b: 5.48, top: MONTAJE, lineas: [{ws: [['comprar', 4.24]], size: 90}, {ws: [['maquinaria', 4.76, amarillo]], size: 130, golpe: true}]},
@@ -887,10 +887,13 @@ const LISTA: [number, number] = [-10, -10];
 const CTA = 75.0;
 const CTA_FIN = 76.16; // tras "haz clic aquí abajo ↓" sigue la frase en subtítulos (como en los demás 1E)
 const SALIDA = 6 * F;
-// Nunca se pisan dos frases grandes en la misma zona: si la siguiente entra antes de que esta acabe de salir, esta sale antes
+// Nunca se pisan dos frases grandes (en ninguna zona: al recolocarse por la zona segura pueden acabar en la misma): si la
+// siguiente entra antes de que esta acabe de salir, esta sale antes
 [...GRANDES].sort((x, y) => x.a - y.a).forEach((g, i, arr) => {
-  const n = arr.slice(i + 1).find((m) => Math.abs(m.top - g.top) < 300);
-  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, n.a - SALIDA - 0.02);
+  const n = arr[i + 1];
+  // (nunca antes de su última palabra: si no, esa palabra no se vería)
+  const ultima = Math.max(...g.lineas.flatMap((l) => l.ws.map((w) => w[1] as number)));
+  if (n && n.a < g.b + SALIDA) g.b = Math.max(g.a + 0.3, ultima + 0.2, n.a - SALIDA - 0.02);
 });
 // palabra dicha mientras está en pantalla un texto grande (su salida no cuenta: esas palabras van en subtítulo, que entra al acabar la salida)
 const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((g) => x >= g.a - 0.01 && x < g.b) || (x >= LISTA[0] - 0.01 && x < LISTA[1]);
