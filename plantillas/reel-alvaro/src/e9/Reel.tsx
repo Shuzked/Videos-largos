@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, ZonaSegura} from '../zona';
+import {CAPA, SinZona, ZonaSegura} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -367,7 +367,7 @@ const Red: React.FC<{t: number}> = ({t}) => {
   const cab = aparece(t, cabecera, 0);
   return (
     <AbsoluteFill>
-      <FondoRed t={t} />
+      <SinZona><FondoRed t={t} /></SinZona>
       <Lienzo>
         {/* cabecera: el nombre del lado (indicación del cliente) */}
         {t >= cabecera && (

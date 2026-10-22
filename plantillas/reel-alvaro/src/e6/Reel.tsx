@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, ZonaSegura} from '../zona';
+import {CAPA, SinZona, ZonaSegura} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -379,7 +379,7 @@ const Proceso: React.FC<{t: number}> = ({t}) => {
   const veces = reps + (en('pega') ? 1 : 0);
   return (
     <AbsoluteFill>
-      <FondoProceso t={t} />
+      <SinZona><FondoProceso t={t} /></SinZona>
       <Lienzo>
         {/* chat: llega la consulta */}
         <VentanaUI t={t} en={a + 0.05} y={150} h={330} icono={ICONO.chat} color={C.amarillo} activa={en('consulta') && !en('busca')}>

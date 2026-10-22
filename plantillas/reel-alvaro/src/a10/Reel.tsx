@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, ZonaSegura} from '../zona';
+import {CAPA, SinZona, ZonaSegura} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -487,7 +487,7 @@ const Plataforma: React.FC<{t: number}> = ({t}) => {
   const habla = (i: number) => (i === 0 ? 1 : 0);
   return (
     <AbsoluteFill>
-      <FondoPlataforma t={t} />
+      <SinZona><FondoPlataforma t={t} /></SinZona>
       <div style={{position: 'absolute', left: 90, top: 180, width: W, height: Hh, translate: `0px ${(1 - v) * 90}px`, scale: `${0.9 + 0.1 * v}`, opacity: lim((t - a) / 0.2)}}>
         <svg width={W} height={Hh} style={{overflow: 'visible', filter: 'drop-shadow(0 18px 40px rgba(0,0,0,0.6))'}}>
           <rect width={W} height={Hh} rx={34} fill="rgba(24,26,36,0.97)" stroke="rgba(255,255,255,0.16)" strokeWidth={3} />

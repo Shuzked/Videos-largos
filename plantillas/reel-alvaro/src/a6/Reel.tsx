@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, ZonaSegura} from '../zona';
+import {CAPA, SinZona, ZonaSegura} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -770,7 +770,7 @@ export const ReelA6: React.FC = () => {
           <Broll key={b.src} t={t} b={b} />
         ))}
         {/* el fondo de las pantallas va aparte: para la zona segura se encogen las ventanas, no el fondo */}
-        {PANTALLAS.some((p) => t >= p.a && t < p.b) && <FondoUI t={t} />}
+        {PANTALLAS.some((p) => t >= p.a && t < p.b) && <SinZona><FondoUI t={t} /></SinZona>}
         <ZonaSegura t={t} zonas={ZONAS}><PantallaCopiar t={t} a={PANTALLAS[0].a} b={PANTALLAS[0].b} /></ZonaSegura>
         <ZonaSegura t={t} zonas={ZONAS}><PantallaBandeja t={t} a={PANTALLAS[1].a} b={PANTALLAS[1].b} /></ZonaSegura>
       </ConTransicion>

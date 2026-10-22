@@ -3,7 +3,7 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
-import {CAPA, ZonaSegura} from '../zona';
+import {CAPA, SinZona, ZonaSegura} from '../zona';
 import ZONAS from './zonas.json';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
@@ -380,7 +380,7 @@ const Comparativa: React.FC<{t: number}> = ({t}) => {
   const tiembla = t > personal && t < agencia ? Math.sin((t - personal) * 40) * 4 : 0;
   return (
     <AbsoluteFill>
-      <FondoPizarra />
+      <SinZona><FondoPizarra /></SinZona>
       <Tarjeta t={t} t0={a} lado={-1} left={100} titulo="FREELANCER" sub="TODO DEPENDE DE TI" activa={izq} color={rosa.color as string}>
         <svg width={430} height={600} style={{position: 'absolute', left: 0, top: 150, overflow: 'visible'}}>
           {TAREAS.map((d, i) => {
