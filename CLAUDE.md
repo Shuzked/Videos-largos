@@ -50,7 +50,7 @@ Apunta fuente, página y licencia de cada recurso en `trabajo/<proyecto>/credito
 - Conserva siempre el original; trabaja sobre copias.
 - El repo es público: las releases también lo son. Recuérdaselo al usuario si el vídeo parece privado.
 - El disco de la sesión es limitado (~30 GB). Borra `trabajo/<pedido>/` cuando el resultado ya esté publicado.
-- La memoria también: si el uso pasa de ~11 GB el contenedor se reinicia y mata todo lo que corre. Los renders largos de Remotion van por trozos (`trabajo/taxi/render_trozos.sh`: un proceso por trozo, `--offthreadvideo-cache-size-in-bytes`, se retoma tras un reinicio) y nunca a la vez que SAM2 large (~4 GB). Los enlaces de `remotion/public/` siempre absolutos o copias reales: los relativos se rompen al empaquetar.
+- La memoria también: si el uso pasa de ~11 GB el contenedor se reinicia y mata todo lo que corre. Los renders largos de Remotion van por trozos (`scripts/render_trozos.sh`: un proceso por trozo, `--offthreadvideo-cache-size-in-bytes`, se retoma tras un reinicio) y nunca a la vez que SAM2 large (~4 GB). Los enlaces de `remotion/public/` siempre absolutos o copias reales: los relativos se rompen al empaquetar.
 
 ## Estilo de edición del cliente (aplicar SIEMPRE en todos los vídeos)
 
