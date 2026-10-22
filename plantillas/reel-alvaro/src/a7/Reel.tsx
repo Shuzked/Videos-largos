@@ -3,6 +3,8 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, ease, golpe, iv, Ventana} from '../anim';
+import {CAPA, ZonaSegura} from '../zona';
+import ZONAS from './zonas.json';
 import {H, MIN, amarillo, rosa} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
@@ -615,7 +617,7 @@ const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((
 // Subtítulos: solo las palabras que no están en grande, en bloques de hasta 4 que nunca se cruzan con un titular
 // Subtítulos: solo las palabras que no están en grande. Primero se separa por frases (punto, coma, interrogación,
 // pausa o titular) y cada frase se reparte en bloques equilibrados de 2-4 palabras que caben en UNA línea.
-const MAX_CAR = 22;
+const MAX_CAR = 20; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
 const textoBloque = (ws: W[]) => ws.map((x) => limpiar(x[0])).join(' ').length;
 const repartir = (f: W[]): W[][] => {
   // programación dinámica: menos bloques, sin bloques de 1 palabra si se puede, y largos parecidos
@@ -680,6 +682,7 @@ const FondoSub: React.FC<{opacidad: number}> = ({opacidad}) => (
 );
 
 const Subtitulos: React.FC<{t: number}> = ({t}) => {
+  if (CAPA === 'lottie') return null;
   const hay = (x: number) => BLOQUES.some((bq) => x >= bq.a && x < bq.b);
   const op = Math.max(...[-4, -2, 0, 2, 4].map((d) => (hay(t + d * F) ? 1 - Math.abs(d) / 6 : 0)));
   const bl = BLOQUES.find((x) => t >= x.a && t < x.b);
@@ -702,7 +705,7 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
 // Frase grande: palabras que entran al ritmo de la voz; la palabra clave entra de golpe
 // parte "arriba" = líneas normales; "abajo" = líneas marcadas abajo (van delante, en la zona inferior)
 // Legibilidad: las líneas de apoyo nunca bajan de 80 px; si no caben, se parten en dos líneas (no se encogen)
-const ANCHO = 880; // ancho útil: ~100 px de margen a cada lado
+const ANCHO = 800; // x 140-940: margen de Instagram a los lados y sin meterse bajo la columna de botones (x≈930) // ancho útil: ~100 px de margen a cada lado
 const FACTOR = 0.68; // ancho medio de un carácter de Montserrat en mayúsculas, en "em"
 const MINIMO = 72; // las líneas de apoyo nunca bajan de aquí
 const largoTxt = (ws: Pal[]) => ws.map((w) => w[0]).join(' ').length;
@@ -722,15 +725,24 @@ const partir = (l: Linea): Linea[] => {
 // Velo oscuro suave detrás del texto grande + sombra, para que se lea sobre cualquier fondo
 const VELO = 'radial-gradient(ellipse 55% 50% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.32) 55%, rgba(0,0,0,0) 100%)';
 const SOMBRA = 'drop-shadow(0 3px 8px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))';
+// Zona segura de Instagram para el texto grande: x 140-940 (márgenes y columna de botones), nunca por encima de ARRIBA
+// (barra del móvil y cabecera) ni por debajo de ABAJO (botón «Ver detalles» de los anuncios). Si un bloque pedía estar más
+// arriba, baja y se reduce un 10 %; si se salía por abajo, sube. La palabra de golpe deja margen para su animación de entrada.
+const ARRIBA = 230;
+const ABAJO = 1480;
+const ANCHO_GOLPE = 740;
+const tamLinea = (l: Linea, baja: boolean) => Math.min(l.size * (baja ? 0.9 : 1), (l.golpe ? ANCHO_GOLPE : ANCHO) / (Math.max(1, l.ws.map((w) => w[0]).join(' ').length) * FACTOR));
+const topSeguro = (top: number, lineas: Linea[], baja: boolean) =>
+  Math.max(ARRIBA, Math.min(Math.max(top, ARRIBA), ABAJO - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
 const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> = ({t, g, parte = 'arriba'}) =>
   // sin líneas en esta parte no se pinta nada (ni el velo)
-  !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
+  CAPA === 'lottie' || !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
   <Ventana t={t} a={g.a} b={g.b + SALIDA}>
-    <div style={{position: 'absolute', left: -60, right: -60, top: (parte === 'abajo' ? 1180 : g.top) - 60, padding: '60px 90px', background: VELO}}>
+    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(parte === 'abajo' ? 1180 : g.top, g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo), g.top < ARRIBA && parte !== 'abajo') - 60, padding: '60px 90px', background: VELO}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, filter: SOMBRA, ...H}}>
         {g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo).flatMap(partir).map((l, li) => {
           const chars = l.ws.map((w) => w[0]).join(' ').length;
-          const tam = Math.min(l.size, ANCHO / (Math.max(1, chars) * FACTOR));
+          const tam = tamLinea(l, g.top < ARRIBA && parte !== 'abajo');
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
@@ -791,21 +803,20 @@ export const ReelA7: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Diez t={t} />
-      <Vacio t={t} />
-      <Vender t={t} />
-      <Convencer t={t} />
-      <Buscar t={t} />
-      <Marcador3 t={t} />
-      <Varita t={t} />
-      <Ciclo t={t} />
-      <Ensena t={t} />
-      <Tecnologia t={t} />
-
+      <ZonaSegura t={t} zonas={ZONAS}><Diez t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Vacio t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Vender t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Convencer t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Buscar t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Marcador3 t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Varita t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Ciclo t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Ensena t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Tecnologia t={t} /></ZonaSegura>
       <Subtitulos t={t} />
 
       {/* CTA en estilo subtítulo con flecha */}
-      <Ventana t={t} a={CTA} b={CTA_FIN}>
+      <Ventana t={t} a={CAPA === 'lottie' ? 1e9 : CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           <Sube t={t} en={74.52}>haz</Sube>

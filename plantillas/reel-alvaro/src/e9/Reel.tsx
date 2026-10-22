@@ -3,6 +3,8 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
+import {CAPA, ZonaSegura} from '../zona';
+import ZONAS from './zonas.json';
 import {H, MIN, amarillo} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
@@ -214,8 +216,9 @@ const PantallaPartida: React.FC<{t: number; p: Partida}> = ({t, p}) => {
         {p.enciendeAbajo > p.a + 0.3 && cometa(p.enciendeAbajo)}
         {p.etiquetas && (
           <>
-            <Pildora t={t} en={p.a + 0.3} x={100} y={140} txt="FREELANCER" ancla="start" activa={false} check={p.a + 0.6} />
-            <Pildora t={t} en={p.a + 0.55} x={980} y={1650} txt="AGENCIA" ancla="end" activa />
+            {/* etiquetas dentro de la zona segura de Instagram (arriba la cabecera, abajo el botón del anuncio y la columna de botones) */}
+            <Pildora t={t} en={p.a + 0.3} x={110} y={260} txt="FREELANCER" ancla="start" activa={false} check={p.a + 0.6} />
+            <Pildora t={t} en={p.a + 0.55} x={920} y={1440} txt="AGENCIA" ancla="end" activa />
           </>
         )}
       </Lienzo>
@@ -672,7 +675,7 @@ const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || (x >= SPLIT1.a
 
 // Subtítulos: solo las palabras que no están en grande. Primero se separa por frases (punto, coma, interrogación,
 // pausa o titular) y cada frase se reparte en bloques equilibrados de 2-4 palabras que caben en UNA línea.
-const MAX_CAR = 22;
+const MAX_CAR = 20; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
 const MAX_LARGO = 25; // solo si así se evita un bloque de una palabra (el subtítulo se ajusta para caber en una línea)
 // cortes de frase por sentido: "…con servicios / de IA", "…cada herramienta / para dirigir…", "…14 clases / en las que explico…"
 const CORTE_FRASE = new Set([48.88, 54.8, 68.0, 32.72, 35.56]);
@@ -741,6 +744,7 @@ const FondoSub: React.FC<{opacidad: number}> = ({opacidad}) => (
 );
 
 const Subtitulos: React.FC<{t: number}> = ({t}) => {
+  if (CAPA === 'lottie') return null;
   const hay = (x: number) => BLOQUES.some((bq) => x >= bq.a && x < bq.b);
   const op = Math.max(...[-4, -2, 0, 2, 4].map((d) => (hay(t + d * F) ? 1 - Math.abs(d) / 6 : 0)));
   const bl = BLOQUES.find((x) => t >= x.a && t < x.b);
@@ -762,7 +766,7 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
 
 // Frase grande: palabras que entran al ritmo de la voz; la palabra clave entra de golpe
 // Legibilidad: las líneas de apoyo nunca bajan de 72 px; si no caben, se parten en dos líneas (no se encogen)
-const ANCHO = 880; // ancho útil: ~100 px de margen a cada lado
+const ANCHO = 800; // x 140-940: margen de Instagram a los lados y sin meterse bajo la columna de botones (x≈930) // ancho útil: ~100 px de margen a cada lado
 const FACTOR = 0.68; // ancho medio de un carácter de Montserrat en mayúsculas, en "em"
 const MINIMO = 72; // las líneas de apoyo nunca bajan de aquí
 const largoTxt = (ws: Pal[]) => ws.map((w) => w[0]).join(' ').length;
@@ -782,13 +786,22 @@ const partir = (l: Linea): Linea[] => {
 // Velo oscuro suave detrás del texto grande + sombra, para que se lea sobre cualquier fondo
 const VELO = 'radial-gradient(ellipse 55% 50% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.32) 55%, rgba(0,0,0,0) 100%)';
 const SOMBRA = 'drop-shadow(0 3px 8px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))';
-const FraseGrande: React.FC<{t: number; g: Grande}> = ({t, g}) => (
+// Zona segura de Instagram para el texto grande: x 140-940 (márgenes y columna de botones), nunca por encima de ARRIBA
+// (barra del móvil y cabecera) ni por debajo de ABAJO (botón «Ver detalles» de los anuncios). Si un bloque pedía estar más
+// arriba, baja y se reduce un 10 %; si se salía por abajo, sube. La palabra de golpe deja margen para su animación de entrada.
+const ARRIBA = 230;
+const ABAJO = 1480;
+const ANCHO_GOLPE = 740;
+const tamLinea = (l: Linea, baja: boolean) => Math.min(l.size * (baja ? 0.9 : 1), (l.golpe ? ANCHO_GOLPE : ANCHO) / (Math.max(1, l.ws.map((w) => w[0]).join(' ').length) * FACTOR));
+const topSeguro = (top: number, lineas: Linea[], baja: boolean) =>
+  Math.max(ARRIBA, Math.min(Math.max(top, ARRIBA), ABAJO - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
+const FraseGrande: React.FC<{t: number; g: Grande}> = ({t, g}) => CAPA === 'lottie' ? null : (
   <Ventana t={t} a={g.a} b={g.b + SALIDA}>
-    <div style={{position: 'absolute', left: -60, right: -60, top: g.top - 60, padding: '60px 90px', background: VELO}}>
+    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(g.top, g.lineas, g.top < ARRIBA) - 60, padding: '60px 90px', background: VELO}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, filter: SOMBRA, ...H}}>
         {g.lineas.flatMap(partir).map((l, li) => {
           const chars = l.ws.map((w) => w[0]).join(' ').length;
-          const tam = Math.min(l.size, ANCHO / (Math.max(1, chars) * FACTOR));
+          const tam = tamLinea(l, g.top < ARRIBA);
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
@@ -823,25 +836,24 @@ export const ReelE9: React.FC = () => {
             <Video src={staticFile('e9/e9.mp4')} volume={STEM === 'sfx' ? 0 : 1} style={lleno} />
           </Sequence>
         </div>
-        <PantallaPartida t={t} p={SPLIT1} />
-        <PantallaPartida t={t} p={SPLIT2} />
-        <Red t={t} />
+        {CAPA !== 'lottie' && <PantallaPartida t={t} p={SPLIT1} />}
+        {CAPA !== 'lottie' && <PantallaPartida t={t} p={SPLIT2} />}
+        <ZonaSegura t={t} zonas={ZONAS}><Red t={t} /></ZonaSegura>
       </ConTransicion>
 
       {/* Frases en grande (delante) */}
       {GRANDES.map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Orbita t={t} />
-      <Diferencia t={t} />
-      <Dirigir t={t} />
-      <Pilares t={t} />
-      <Fichas t={t} />
-
+      <ZonaSegura t={t} zonas={ZONAS}><Orbita t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Diferencia t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Dirigir t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Pilares t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Fichas t={t} /></ZonaSegura>
       <Subtitulos t={t} />
 
       {/* CTA en estilo subtítulo con la flecha en la misma línea, justo después de "abajo" */}
-      <Ventana t={t} a={CTA} b={CTA_FIN}>
+      <Ventana t={t} a={CAPA === 'lottie' ? 1e9 : CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           {CTA_PAL.map(([w, en]) => (

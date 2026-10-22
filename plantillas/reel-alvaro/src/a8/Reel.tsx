@@ -3,6 +3,8 @@ import {AbsoluteFill, Easing, Sequence, getInputProps, staticFile, useCurrentFra
 import {OffthreadVideo, Video} from '../sinvideo';
 import {C, GLOW_AMARILLO, glow, lleno} from '../estilo';
 import {F, Son, Sube, iv, Ventana} from '../anim';
+import {CAPA, ZonaSegura} from '../zona';
+import ZONAS from './zonas.json';
 import {H, MIN, amarillo} from '../texto';
 import {ConTransicion} from '../a1/transicion';
 import PALABRAS from './palabras.json';
@@ -98,7 +100,8 @@ const camara = (t: number) => {
   const s = BASE * escala(t);
   const [fx, fy] = cara(t);
   let tx = OBJ_X - fx * s;
-  let ty = OBJ_Y - fy * s;
+  // durante el hook, más aire encima de la cabeza (el titular cabe entre la zona segura de Instagram y Álvaro); al acabar vuelve suave
+  let ty = OBJ_Y + 110 * (1 - Easing.inOut(Easing.cubic)(Math.min(1, Math.max(0, (t - 4.0) / 0.8)))) - fy * s;
   for (const a of IMPACTOS) {
     const k = Math.floor((t - a) * FPS);
     if (k >= 0 && k < SACUDIDA.length) {
@@ -288,6 +291,8 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
       <AbsoluteFill style={{background: 'radial-gradient(ellipse 95% 70% at 50% 38%, #2a3631 0%, #18201c 62%, #0f1412 100%)'}} />
       <AbsoluteFill style={{background: 'radial-gradient(ellipse 30% 9% at 30% 16%, rgba(255,255,255,0.05), transparent), radial-gradient(ellipse 26% 8% at 72% 84%, rgba(255,255,255,0.045), transparent), radial-gradient(ellipse 40% 10% at 60% 52%, rgba(255,255,255,0.03), transparent)'}} />
       <div style={{position: 'absolute', inset: 34, borderRadius: 30, border: '3px solid rgba(255,255,255,0.07)'}} />
+      {/* zona segura de Instagram: el contenido de la pizarra (no el fondo) se recoge un 8 %, el calendario no sube de y≈220 */}
+      <div style={{position: 'absolute', inset: 0, transformOrigin: '540px 1150px', scale: '0.92'}}>
       <Columna t={t} t0={a} lado={-1} left={100} titulo="INSTALACIÓN" icono={ICONO.instalar} fichas={IZQ} activa={fase === 0 || brilloIzq > 0.3} anima={fase === 0} brillo={brilloIzq} />
       <Columna t={t} t0={a} lado={1} left={550} titulo="MANTENIMIENTO" icono={ICONO.ciclo} fichas={fase === 0 ? [] : DER} activa={fase >= 1 && (fase === 1 || brilloDer > 0.3)} anima={fase === 1} brillo={brilloDer} gira={giro}
         extra={fase === 0 ? (
@@ -298,7 +303,7 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
           </svg>
         ) : cal && kcal > 0 ? (
           // calendario "mensual": sale con muelle y se balancea como un colgante
-          <svg width={120} height={120} viewBox="0 0 24 24" style={{position: 'absolute', right: -20, top: -150, overflow: 'visible', transformOrigin: '50% 0%',
+          <svg width={120} height={120} viewBox="0 0 24 24" style={{position: 'absolute', right: -20, top: -80, overflow: 'visible', transformOrigin: '50% 0%',
             transform: `scale(${cal.sx}, ${cal.sy}) rotate(${22 * Math.exp(-3 * kcal) * Math.sin(kcal * 11)}deg)`, filter: `drop-shadow(0 0 14px rgba(${GLOW_AMARILLO},0.9))`}}>
             <circle cx={12} cy={12} r={11.5} fill={C.amarillo} />
             <g transform="translate(5 5) scale(0.58)"><path d={ICONO.calendario} fill="#1b1b20" /></g>
@@ -322,6 +327,7 @@ const Pizarra: React.FC<{t: number}> = ({t}) => {
           </g>
         )}
       </svg>
+      </div>
     </AbsoluteFill>
   );
 };
@@ -496,7 +502,7 @@ const tapado = (x: number) => (x >= CTA - 0.01 && x < CTA_FIN) || GRANDES.some((
 
 // Subtítulos: solo las palabras que no están en grande. Primero se separa por frases (punto, coma, interrogación,
 // pausa o titular) y cada frase se reparte en bloques equilibrados de 2-4 palabras que caben en UNA línea.
-const MAX_CAR = 22;
+const MAX_CAR = 20; // ~780 px a 70 px: no llega a la columna de botones de Instagram (x≈930)
 const textoBloque = (ws: W[]) => ws.map((x) => limpiar(x[0])).join(' ').length;
 const repartir = (f: W[]): W[][] => {
   // programación dinámica: menos bloques, sin bloques de 1 palabra si se puede, y largos parecidos
@@ -561,6 +567,7 @@ const FondoSub: React.FC<{opacidad: number}> = ({opacidad}) => (
 );
 
 const Subtitulos: React.FC<{t: number}> = ({t}) => {
+  if (CAPA === 'lottie') return null;
   const hay = (x: number) => BLOQUES.some((bq) => x >= bq.a && x < bq.b);
   const op = Math.max(...[-4, -2, 0, 2, 4].map((d) => (hay(t + d * F) ? 1 - Math.abs(d) / 6 : 0)));
   const bl = BLOQUES.find((x) => t >= x.a && t < x.b);
@@ -583,7 +590,7 @@ const Subtitulos: React.FC<{t: number}> = ({t}) => {
 // Frase grande: palabras que entran al ritmo de la voz; la palabra clave entra de golpe
 // parte "arriba" = líneas normales; "abajo" = líneas marcadas abajo (van delante, en la zona inferior)
 // Legibilidad: las líneas de apoyo nunca bajan de 72 px; si no caben, se parten en dos líneas (no se encogen)
-const ANCHO = 880; // ancho útil: ~100 px de margen a cada lado
+const ANCHO = 800; // x 140-940: margen de Instagram a los lados y sin meterse bajo la columna de botones (x≈930) // ancho útil: ~100 px de margen a cada lado
 const FACTOR = 0.68; // ancho medio de un carácter de Montserrat en mayúsculas, en "em"
 const MINIMO = 72; // las líneas de apoyo nunca bajan de aquí
 const largoTxt = (ws: Pal[]) => ws.map((w) => w[0]).join(' ').length;
@@ -603,15 +610,24 @@ const partir = (l: Linea): Linea[] => {
 // Velo oscuro suave detrás del texto grande + sombra, para que se lea sobre cualquier fondo
 const VELO = 'radial-gradient(ellipse 55% 50% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.32) 55%, rgba(0,0,0,0) 100%)';
 const SOMBRA = 'drop-shadow(0 3px 8px rgba(0,0,0,0.75)) drop-shadow(0 0 2px rgba(0,0,0,0.5))';
+// Zona segura de Instagram para el texto grande: x 140-940 (márgenes y columna de botones), nunca por encima de ARRIBA
+// (barra del móvil y cabecera) ni por debajo de ABAJO (botón «Ver detalles» de los anuncios). Si un bloque pedía estar más
+// arriba, baja y se reduce un 10 %; si se salía por abajo, sube. La palabra de golpe deja margen para su animación de entrada.
+const ARRIBA = 230;
+const ABAJO = 1480;
+const ANCHO_GOLPE = 740;
+const tamLinea = (l: Linea, baja: boolean) => Math.min(l.size * (baja ? 0.9 : 1), (l.golpe ? ANCHO_GOLPE : ANCHO) / (Math.max(1, l.ws.map((w) => w[0]).join(' ').length) * FACTOR));
+const topSeguro = (top: number, lineas: Linea[], baja: boolean) =>
+  Math.max(ARRIBA, Math.min(Math.max(top, ARRIBA), ABAJO - lineas.flatMap(partir).reduce((s, l) => s + tamLinea(l, baja) * 1.02 + 4, 0)));
 const FraseGrande: React.FC<{t: number; g: Grande; parte?: 'arriba' | 'abajo'}> = ({t, g, parte = 'arriba'}) =>
   // sin líneas en esta parte no se pinta nada (ni el velo)
-  !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
+  CAPA === 'lottie' || !g.lineas.some((l) => (parte === 'abajo') === !!l.abajo) ? null : (
   <Ventana t={t} a={g.a} b={g.b + SALIDA}>
-    <div style={{position: 'absolute', left: -60, right: -60, top: (parte === 'abajo' ? 1180 : g.top) - 60, padding: '60px 90px', background: VELO}}>
+    <div style={{position: 'absolute', left: -60, right: -60, top: topSeguro(parte === 'abajo' ? 1180 : g.top, g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo), g.top < ARRIBA && parte !== 'abajo') - 60, padding: '60px 90px', background: VELO}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, filter: SOMBRA, ...H}}>
         {g.lineas.filter((l) => (parte === 'abajo') === !!l.abajo).flatMap(partir).map((l, li) => {
           const chars = l.ws.map((w) => w[0]).join(' ').length;
-          const tam = Math.min(l.size, ANCHO / (Math.max(1, chars) * FACTOR));
+          const tam = tamLinea(l, g.top < ARRIBA && parte !== 'abajo');
           return (
             <div key={li} style={{display: 'flex', justifyContent: 'center', gap: '0.24em', fontSize: tam, lineHeight: 1.02, whiteSpace: 'nowrap'}}>
               {l.golpe ? (
@@ -662,7 +678,7 @@ export const ReelA8: React.FC = () => {
         {BROLL.map((b) => (
           <Broll key={b.src} t={t} b={b} />
         ))}
-        <Pizarra t={t} />
+        {CAPA !== 'lottie' && <Pizarra t={t} />}
       </ConTransicion>
 
       {hook.map((g) => (
@@ -673,15 +689,14 @@ export const ReelA8: React.FC = () => {
       {GRANDES.slice(1).map((g) => (
         <FraseGrande key={g.a} t={t} g={g} />
       ))}
-      <Visto t={t} en={18.72} a={18.42} b={19.3} top={150} />
-      <Ciclo t={t} />
-      <Modelo t={t} />
-      <Progreso t={t} />
-
+      <ZonaSegura t={t} zonas={ZONAS}><Visto t={t} en={18.72} a={18.42} b={19.3} top={150} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Ciclo t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Modelo t={t} /></ZonaSegura>
+      <ZonaSegura t={t} zonas={ZONAS}><Progreso t={t} /></ZonaSegura>
       <Subtitulos t={t} />
 
       {/* CTA en estilo subtítulo con flecha */}
-      <Ventana t={t} a={CTA} b={CTA_FIN}>
+      <Ventana t={t} a={CAPA === 'lottie' ? 1e9 : CTA} b={CTA_FIN}>
         <FondoSub opacidad={iv(t, [CTA, CTA + 4 * F], [0, 1])} />
         <div style={{position: 'absolute', left: 0, right: 0, top: 1390, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.28em', ...MIN, fontSize: 70, fontWeight: 600, textShadow: `0 2px 10px rgba(0,0,0,0.9), ${glow('255,255,255', 0.45)}`}}>
           <Sube t={t} en={72.66}>haz</Sube>
