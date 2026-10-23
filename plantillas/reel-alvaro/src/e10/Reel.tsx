@@ -523,9 +523,9 @@ const GRANDES: Grande[] = [
   // HOOK 2/3: las agencias de inteligencia artificial por 1 €
   {a: 2.24, b: 4.6, top: 56, lineas: [{ws: [['las', 2.24], ['agencias', 2.3], ['de', 2.64]], size: 76}, {ws: [['inteligencia', 2.76]], size: 88}, {ws: [['artificial', 3.32]], size: 88}, {ws: [['por 1 €', 3.92, amarillo]], size: 140, golpe: true}]},
   // HOOK 3/3: quiero explicarte para quién es y para quién no
-  {a: 5.84, b: 8.68, top: 66, lineas: [{ws: [['quiero', 5.84], ['explicarte', 6.08]], size: 80}, {ws: [['para quién es', 6.64, amarillo]], size: 120, golpe: true}, {ws: [['y para quién no', 7.52, rosaFuerte]], size: 120, golpe: true}]},
+  {a: 5.84, b: 8.68, top: 1000, lineas: [{ws: [['quiero', 5.84], ['explicarte', 6.08]], size: 80}, {ws: [['para quién es', 6.64, amarillo]], size: 120, golpe: true}, {ws: [['y para quién no', 7.52, rosaFuerte]], size: 120, golpe: true}]},
   // que puedes conseguir por solo 1 €
-  {a: 59.5, b: 61.48, top: 56, lineas: [{ws: [['que', 59.5], ['puedes', 59.6], ['conseguir', 59.88]], size: 80}, {ws: [['por', 60.4], ['solo', 60.64]], size: 96}, {ws: [['1 €', 61.0, amarillo]], size: 180, golpe: true}]},
+  {a: 59.5, b: 61.48, top: 1000, lineas: [{ws: [['que', 59.5], ['puedes', 59.6], ['conseguir', 59.88]], size: 80}, {ws: [['por', 60.4], ['solo', 60.64]], size: 96}, {ws: [['1 €', 61.0, amarillo]], size: 180, golpe: true}]},
 ];
 const LISTA: [number, number] = [-10, -10];
 // CTA (tiempos sílaba a sílaba con la forma de onda): "haz clic aquí abajo ↓", y la frase sigue en subtítulos

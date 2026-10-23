@@ -521,10 +521,11 @@ const GRANDES: Grande[] = [
   // Has creado otro trabajo
   {a: 6.08, b: 7.8, top: 960, lineas: [{ws: [['has', 6.08], ['creado', 6.32]], size: 96}, {ws: [['otro trabajo', 6.92, rosaFuerte]], size: 150, golpe: true}]},
   // Montaje del ciclo (B-roll, texto abajo: las caras están arriba)
-  {a: 12.16, b: 13.56, top: 1150, lineas: [{ws: [['consigue', 12.16]], size: 96}, {ws: [['un cliente', 12.68, amarillo]], size: 130, golpe: true}]},
-  {a: 13.6, b: 14.76, top: 1150, lineas: [{ws: [['hace', 13.6], ['todo', 13.92]], size: 96}, {ws: [['el trabajo', 14.12, amarillo]], size: 130, golpe: true}]},
-  {a: 14.8, b: 16.2, top: 1150, lineas: [{ws: [['busca', 14.8], ['el', 15.12]], size: 90}, {ws: [['siguiente', 15.2, amarillo]], size: 130, golpe: true}, {ws: [['cliente', 15.52]], size: 110}]},
-  {a: 16.24, b: 17.7, top: 1150, lineas: [{ws: [['vuelve', 16.24], ['a', 16.72], ['hacer', 16.8]], size: 90}, {ws: [['todo', 17.04], ['el', 17.28]], size: 100}, {ws: [['trabajo', 17.44, rosaFuerte]], size: 140, golpe: true}]},
+  // montaje: letra algo más pequeña para que el bloque (apoyado sobre la barra) quede por debajo de la barbilla del B-roll
+  {a: 12.16, b: 13.56, top: 1150, lineas: [{ws: [['consigue', 12.16]], size: 84}, {ws: [['un cliente', 12.68, amarillo]], size: 112, golpe: true}]},
+  {a: 13.6, b: 14.76, top: 1150, lineas: [{ws: [['hace', 13.6], ['todo', 13.92]], size: 84}, {ws: [['el trabajo', 14.12, amarillo]], size: 112, golpe: true}]},
+  {a: 14.8, b: 16.2, top: 1150, lineas: [{ws: [['busca', 14.8], ['el', 15.12]], size: 78}, {ws: [['siguiente', 15.2, amarillo]], size: 90, golpe: true}, {ws: [['cliente', 15.52]], size: 110}]},
+  {a: 16.24, b: 17.7, top: 1150, lineas: [{ws: [['vuelve', 16.24], ['a', 16.72], ['hacer', 16.8]], size: 78}, {ws: [['todo', 17.04], ['el', 17.28]], size: 86}, {ws: [['trabajo', 17.44, rosaFuerte]], size: 118, golpe: true}]},
   // ¿Cuál es el problema?
   {a: 22.52, b: 23.5, top: 960, lineas: [{ws: [['¿cuál', 22.52], ['es', 22.76], ['el', 22.88]], size: 90}, {ws: [['problema?', 23.0, rosaFuerte]], size: 150, golpe: true}]},
   // La primera es conseguir clientes
