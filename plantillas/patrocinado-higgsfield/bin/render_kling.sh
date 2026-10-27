@@ -13,12 +13,12 @@ for ((a = 0; a < N; a += TROZO)); do
   o=$D/$(printf %06d $a).mp4
   [ -s "$o" ] && continue
   rm -rf /tmp/remotion-*-assets* /tmp/react-motion-render* 2>/dev/null || true
-  nice -n 3 node bin/render.cjs "$o.tmp.mp4" $a $b $ESC $CRF 2>&1 | grep -vE "Detected differing|Memory reported|inadvertently|Using the lower" > "$D/log_$a.txt" || true
+  node bin/render.cjs "$o.tmp.mp4" $a $b $ESC $CRF 2>&1 | grep -vE "Detected differing|Memory reported|inadvertently|Using the lower" > "$D/log_$a.txt" || true
   [ -s "$o.tmp.mp4" ] && grep -q TROZO_OK "$D/log_$a.txt" || { echo "TROZO_FALLO $a"; tail -20 "$D/log_$a.txt"; exit 1; }
   mv "$o.tmp.mp4" "$o"; echo "TROZO $a-$b $(date +%T)"
 done
 rm -rf /tmp/remotion-*-assets* /tmp/react-motion-render* 2>/dev/null || true
 ls "$D"/*.mp4 | grep -v '\.tmp\.mp4$' | sed "s|^|file '|;s|$|'|" > "$D/lista.txt"
-ffmpeg -nostdin -v error -y -f concat -safe 0 -i "$D/lista.txt" -i final/mezcla.wav -map 0:v -map 1:a -c:v copy \
+ffmpeg -nostdin -v error -y -f concat -safe 0 -i "$D/lista.txt" -i final/mezcla.wav -map 0:v -map 1:a -c:v copy -af apad \
   -map_metadata -1 -c:a aac -b:a 256k -shortest -movflags +faststart "$SAL"
 echo "RENDER_OK $SAL $(ffprobe -v error -show_entries format=duration -of csv=p=0 "$SAL")"

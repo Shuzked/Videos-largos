@@ -116,7 +116,7 @@ for s in plan["sfx"]:
 # ---------- 6) suma, sonoridad y limitador ----------
 mezcla = voz + res + mus + efx
 L = lufs(mezcla); g = -14.0 - L
-LIMIT = "aresample=192000,alimiter=limit=0.89:level=0:attack=5:release=50,aresample=48000"
+LIMIT = "aresample=192000,alimiter=limit=0.84:level=0:attack=5:release=50,aresample=48000"
 tmp = OUT + ".tmp.f32"
 mezcla.astype(np.float32).tofile(tmp)
 for _ in range(2):  # el limitador baja algo el nivel integrado: se mide ya limitado y se corrige la ganancia

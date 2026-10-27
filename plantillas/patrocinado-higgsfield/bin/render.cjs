@@ -1,5 +1,5 @@
 // Renderiza un trozo de la composición Kling desde el bundle ya empaquetado (bin/empaquetar.cjs), sin audio:
-// node bin/render.cjs <salida.mp4> <primer_fotograma> <último_fotograma> <escala> <crf>
+// node bin/render.cjs <salida.mp4> <primer_fotograma> <último_fotograma> <escala> <crf>   (PRESET=veryfast y CONC=n opcionales)
 const path = require('path');
 require('./enlaces.cjs');
 const R = path.resolve(__dirname, '../remotion');
@@ -11,8 +11,8 @@ const browserExecutable = '/opt/pw-browsers/chromium_headless_shell-1194/chrome-
   const composition = await selectComposition({serveUrl: BUNDLE, id: 'Kling', browserExecutable});
   await renderMedia({
     composition, serveUrl: BUNDLE, codec: 'h264', outputLocation: out, frameRange: [parseInt(a), parseInt(b)],
-    scale: parseFloat(escala), crf: parseInt(crf), x264Preset: 'medium', pixelFormat: 'yuv420p', muted: true,
-    imageFormat: 'jpeg', jpegQuality: parseFloat(escala) < 1 ? 85 : 95, concurrency: 4,
+    scale: parseFloat(escala), crf: parseInt(crf), x264Preset: process.env.PRESET || 'medium', pixelFormat: 'yuv420p', muted: true,
+    imageFormat: 'jpeg', jpegQuality: parseFloat(escala) < 1 ? 85 : 95, concurrency: parseInt(process.env.CONC || '4'),
     offthreadVideoCacheSizeInBytes: 1500 * 1024 * 1024, browserExecutable, logLevel: 'error',
   });
   console.log('TROZO_OK', out);

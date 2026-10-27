@@ -22,7 +22,7 @@ Los vídeos NO viven en el repo (GitHub no admite archivos grandes). El usuario 
    - Clips cortos verticales → elige los mejores momentos por la transcripción, reencuadre 9:16.
    - Gráficos y títulos → skill `talking-head-recut`.
    Antes de un render largo, enseña al usuario un fragmento corto o un fotograma para validar el estilo.
-4. Publica el resultado como asset de una **GitHub Release** del repo (hasta 2 GB por archivo): `scripts/release.sh subir <nombre-del-pedido> <archivo>`. `gh release` no funciona aquí (usa GraphQL); usa siempre este script.
+4. Publica el resultado como asset de una **GitHub Release** del repo (hasta 2 GB por archivo): `scripts/release.sh subir <nombre-del-pedido> <archivo>`. `gh release` no funciona aquí (usa GraphQL); usa siempre este script. Si GitHub responde «Creating, editing, or deleting releases is not permitted for this session type» (403), esta sesión no puede publicar releases: entrega por el chat una copia de menos de 400 MiB (x264 `-preset slow` a dos pasadas con el bitrate justo; a la vista queda igual) y guarda el archivo a calidad completa.
 5. Actualiza el `Estado` del pedido a `listo` con el enlace de descarga, y haz commit y push de ese cambio.
 
 ## Vídeos que el usuario sube a Releases
