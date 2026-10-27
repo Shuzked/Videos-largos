@@ -674,3 +674,22 @@ export const CtaBloques: React.FC<{t: number; a: number; b: number; bloques: {a:
     </>
   );
 };
+
+// el momento del anuncio del que habla (p. ej. la mano), junto a su cámara en grande
+export const Momento: React.FC<{t: number; a: number; b: number; en: number; src: string; desde: number; dur: number; etiqueta: string; x: number; y: number; w: number}> = ({
+  t, a, b, en, src, desde, dur, etiqueta, x, y, w,
+}) => {
+  if (t < en) return null;
+  const ap = aparece(t, en, 4);
+  const fl = flota(t, 0.8, 4);
+  const h = (w * 9) / 16;
+  return (
+    <Ventana t={t} a={a} b={b} suave>
+      <div style={{position: 'absolute', left: x, top: y + fl.y, width: w, height: h, borderRadius: 20, overflow: 'hidden', border: '3px solid rgba(255,255,255,0.85)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.65)', scale: `${ap.sx} ${ap.sy}`, opacity: ap.op}}>
+        <Clip src={src} en={en} desde={desde} dur={dur} />
+        <div style={{position: 'absolute', left: 12, top: 10}}><Etiqueta txt={etiqueta} /></div>
+      </div>
+    </Ventana>
+  );
+};

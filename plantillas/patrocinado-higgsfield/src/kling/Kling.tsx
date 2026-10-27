@@ -8,7 +8,7 @@ import {Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie'
 import {cabe} from './iconos';
 import {Avatar, Bocadillo, Claqueta, Cronometro, Ico, Insignia} from './iconosFlat';
 import {Aviso, Fondo, Suave} from './piezas';
-import {AbreKling, ComparaA2v2, ComparaB2, CtaBloques, LineaClavado, Plan3, Planeado2, PromptCard, Recap, Storyboard, Transicion16, TresModos, Valioso2} from './v2';
+import {AbreKling, ComparaA2v2, ComparaB2, CtaBloques, LineaClavado, Momento, Plan3, Planeado2, PromptCard, Recap, Storyboard, Transicion16, TresModos, Valioso2} from './v2';
 import EDL from './edl.json';
 
 // Vídeo «Kling 4.0 en Higgsfield» (patrocinado). Base: el corte del usuario (25 fps); salida a 30 fps. Todo sale de
@@ -58,26 +58,27 @@ const camara = (t: number): React.CSSProperties => {
 // ---------------- escena de pantalla: dividida (su burbuja + la web, como en el corte) ↔ web a pantalla completa ----------------
 const enPantalla = (c: number) => D.pantalla.some(([a, b]) => c >= a - 1e-3 && c < b - 1e-3);
 const MEDIA = 0.4; // la transformación dura 0,8 s, centrada en el cambio
-const valorModo = (m: string) => (m === 'web' ? 1 : 0);
-const modoWeb = (t: number) => {
+// [web, cámara]: web = la web a pantalla completa; cámara = solo él, en grande; [0, 0] = dividida
+const VEC: Record<string, [number, number]> = {web: [1, 0], dividida: [0, 0], camara: [0, 1]};
+const hacia = (A: [number, number], B: [number, number], k: number): [number, number] => [A[0] + (B[0] - A[0]) * k, A[1] + (B[1] - A[1]) * k];
+const modo = (t: number): [number, number] => {
   for (let i = 0; i < D.modos.length; i++) {
     const s = D.modos[i];
     if (t < s.a - MEDIA || t >= s.b + MEDIA) continue;
     const prev = D.modos[i - 1], next = D.modos[i + 1];
-    let v = valorModo(s.m);
+    let v = VEC[s.m];
     if (t < s.a) { if (prev && Math.abs(prev.b - s.a) < 1e-3) continue; return v; }
     if (t >= s.b) { if (next && Math.abs(next.a - s.b) < 1e-3) continue; return v; }
-    if (prev && Math.abs(prev.b - s.a) < 1e-3 && prev.m !== s.m && t < s.a + MEDIA) {
-      const pv = valorModo(prev.m); v = pv + (v - pv) * SUAVE(lim((t - (s.a - MEDIA)) / (2 * MEDIA)));
-    }
-    if (next && Math.abs(next.a - s.b) < 1e-3 && next.m !== s.m && t > s.b - MEDIA) {
-      const nv = valorModo(next.m); v = v + (nv - v) * SUAVE(lim((t - (s.b - MEDIA)) / (2 * MEDIA)));
-    }
+    if (prev && Math.abs(prev.b - s.a) < 1e-3 && prev.m !== s.m && t < s.a + MEDIA) v = hacia(VEC[prev.m], v, SUAVE(lim((t - (s.a - MEDIA)) / (2 * MEDIA))));
+    if (next && Math.abs(next.a - s.b) < 1e-3 && next.m !== s.m && t > s.b - MEDIA) v = hacia(v, VEC[next.m], SUAVE(lim((t - (s.b - MEDIA)) / (2 * MEDIA))));
     return v;
   }
-  return 0;
+  return [0, 0];
 };
 const mezcla = (A: Caja, B: Caja, m: number): Caja => ({x: A.x + (B.x - A.x) * m, y: A.y + (B.y - A.y) * m, w: A.w + (B.w - A.w) * m, h: A.h + (B.h - A.h) * m});
+// solo él: su burbuja en grande, centrada, sobre ella misma desenfocada
+const CAMARA_GRANDE: Caja = {x: (1920 - 594) / 2, y: 60, w: 594, h: 960};
+const FONDO_CAM: Caja = {x: -40, y: (1080 - (2000 * 789) / 488) / 2, w: 2000, h: (2000 * 789) / 488};
 
 // recorte del corte (un trozo del fotograma) colocado en un rectángulo de la pantalla
 const Recorte: React.FC<{caja: Caja; corte: Caja; radio: number; style?: React.CSSProperties; children?: React.ReactNode; s: Seg}> = ({caja, corte, radio, style, children, s}) => {
@@ -141,16 +142,17 @@ const Focos: React.FC<{t: number; s: Seg; W: Caja}> = ({t, s, W}) => {
 const Base: React.FC<{s: Seg; t: number}> = ({s, t}) => {
   const c = (s.desde ?? 0) + Math.round((t - s.ini) * 25) / 25;
   const p = enPantalla(c);
-  const m = p ? modoWeb(t) : 0;
-  const W = mezcla(D.vc, D.web, m);
+  const [m, r] = p ? modo(t) : [0, 0];
+  const W = mezcla(mezcla(D.vc, D.web, m), {x: 1990, y: D.vc.y + 60, w: D.vc.w * 0.9, h: D.vc.h * 0.9}, r);
   const k = W.w / D.vc.w;
-  const B = {x: D.bc.x - 620 * m, y: D.bc.y + 40 * m, w: D.bc.w * (1 - 0.12 * m), h: D.bc.h * (1 - 0.12 * m)};
+  const B = mezcla({x: D.bc.x - 620 * m, y: D.bc.y + 40 * m, w: D.bc.w * (1 - 0.12 * m), h: D.bc.h * (1 - 0.12 * m)}, CAMARA_GRANDE, r);
   return (
     <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
       {p ? (
         <>
           <Fondo t={t} />
-          {m < 0.999 && <Recorte caja={B} corte={D.bc} radio={20} s={s} style={{opacity: 1 - m * 0.6, boxShadow: '0 20px 60px rgba(0,0,0,0.55)'}} />}
+          {r > 0.001 && <Recorte caja={FONDO_CAM} corte={D.bc} radio={0} s={s} style={{opacity: r, filter: 'blur(36px) brightness(0.5) saturate(0.9)'}} />}
+          {m < 0.999 && <Recorte caja={B} corte={D.bc} radio={20 + 8 * r} s={s} style={{opacity: 1 - m * 0.6, boxShadow: `0 20px ${60 + 40 * r}px rgba(0,0,0,${0.55 + 0.2 * r})`}} />}
           <Recorte caja={W} corte={D.vc} radio={14 * k} s={s} style={{boxShadow: '0 26px 80px rgba(0,0,0,0.7)'}}>
             <Pestanas t={t} />
           </Recorte>
@@ -842,6 +844,7 @@ const Grafico: React.FC<{t: number; g: Grafico}> = ({t, g}) => {
     case 'aviso': return <Aviso {...(p as React.ComponentProps<typeof Aviso>)} t={t} />;
     case 'valioso2': return <Valioso2 {...(p as React.ComponentProps<typeof Valioso2>)} t={t} />;
     case 'nota': return <Nota {...(p as React.ComponentProps<typeof Nota>)} t={t} />;
+    case 'momento': return <Momento {...(p as React.ComponentProps<typeof Momento>)} t={t} />;
     case 'compara_a2v2': return <ComparaA2v2 {...(p as React.ComponentProps<typeof ComparaA2v2>)} t={t} />;
     case 'clonado': return <Clonado {...(p as React.ComponentProps<typeof Clonado>)} t={t} />;
     case 'compara_b2': return <ComparaB2 {...(p as React.ComponentProps<typeof ComparaB2>)} t={t} />;

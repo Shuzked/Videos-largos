@@ -67,6 +67,11 @@
 },
 {
 "a": 260.833,
+"b": 267.153,
+"m": "camara"
+},
+{
+"a": 267.153,
 "b": 292.703,
 "m": "dividida"
 },
@@ -77,6 +82,11 @@
 },
 {
 "a": 361.4,
+"b": 364.47,
+"m": "camara"
+},
+{
+"a": 364.47,
 "b": 393.77,
 "m": "dividida"
 },
@@ -910,6 +920,19 @@
 "texto": "La mano: el color no es del todo humano",
 "tono": "malo",
 "en": 262.773
+},
+{
+"tipo": "momento",
+"a": 262.603,
+"b": 267.353,
+"en": 262.773,
+"src": "medios/r2.mp4",
+"desde": 2.2,
+"dur": 3.0,
+"etiqueta": "ANUNCIO · 0:02",
+"x": 1300,
+"y": 330,
+"w": 520
 },
 {
 "tipo": "nota",

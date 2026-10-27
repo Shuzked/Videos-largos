@@ -53,13 +53,15 @@ KW = 1840 / VC["w"]
 WEB = dict(x=40, y=round((1080 - VC["h"] * KW) / 2, 2), w=1840, h=round(VC["h"] * KW, 2))  # la ventana a pantalla completa
 PANT = json.load(open(f"{R}/trans/pantalla.json"))  # tramos en que el corte enseña la pantalla (burbuja + web)
 
-# modo de cada tramo de pantalla: «web» (maneja la web o lee: la web a pantalla completa) o «dividida» (habla: su burbuja y la
-# web, como en el corte). Lo que no está en la lista va dividido. Los cambios entre tramos contiguos se transforman.
+# modo de cada tramo de pantalla: «web» (maneja la web o lee: la web a pantalla completa), «dividida» (habla: su burbuja y la
+# web, como en el corte) o «camara» (solo él, en grande: al volver de un resultado, mientras la web aún enseña ese mismo
+# vídeo parado o desde el principio; así no se ve dos veces). Lo que no está en la lista va dividido. Los cambios entre
+# tramos contiguos se transforman.
 MODOS_C = [(34.0, 45.08, "web"),
            (105.36, 106.4, "dividida"), (106.4, 141.7, "web"), (141.7, 147.9, "dividida"), (147.9, 175.3, "web"),
            (175.3, 180.45, "dividida"), (180.45, 186.3, "web"),
-           (224.43, 256.3, "dividida"), (295.1, 309.98, "dividida"),
-           (324.63, 357.0, "dividida"), (368.18, 378.9, "dividida"), (378.9, 402.54, "web"),
+           (224.43, 230.75, "camara"), (230.75, 256.3, "dividida"), (295.1, 309.98, "dividida"),
+           (324.63, 327.7, "camara"), (327.7, 357.0, "dividida"), (368.18, 378.9, "dividida"), (378.9, 402.54, "web"),
            (435.7, 492.92, "dividida")]
 modos = [dict(a=T(a), b=T(b), m=m) for a, b, m in MODOS_C]
 
@@ -178,6 +180,8 @@ g("prompt_card", 174.9, 180.4, etiqueta="PROMPT · REFERENCES", partes=PROMPT_RE
 g("valioso2", 186.3, 200.78, enTitulo=187.56, enProd=190.7, enModelo=193.56, enAnuncio=195.36, enValioso=198.48, listo=199.28)
 # 3 · reacción a Frames (escena con su cámara) y comparativa A2
 g("nota", 225.9, 235.2, texto="La mano: el color no es del todo humano", tono="malo", en=226.37)
+# mientras lo dice (y él sale en grande), el momento de la mano en el anuncio; luego la web ya enseña la mano
+g("momento", 226.2, 230.95, en=226.37, src="medios/r2.mp4", desde=2.2, dur=3.0, etiqueta="ANUNCIO · 0:02", x=1300, y=330, w=520)
 g("nota", 236.9, 241.0, texto="La caja se abre un poco rara", tono="malo", en=237.4)
 g("nota", 243.6, 249.2, texto="Un instante en que las letras fallan", tono="malo", en=244.58)
 g("nota", 250.6, 256.2, texto="Se ajusta muchísimo a las fotos y al movimiento", tono="bueno", en=251.64)
