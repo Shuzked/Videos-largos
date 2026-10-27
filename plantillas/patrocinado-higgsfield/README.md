@@ -11,3 +11,10 @@ componentes del showdown (`src/anim.tsx`, `texto.tsx`, `estilo.ts`, `lottie.tsx`
   de los resultados ni de las comparativas) → -14 LUFS con ganancia lineal y limitador sin autonivel.
 - `bin/render_kling.sh` → render por trozos desde el bundle (`empaquetar.cjs` + `enlaces.cjs`, ver CLAUDE.md) y mux.
 - `bin/fotogramas.cjs` + `bin/hoja.py` → fotogramas sueltos y hoja de contacto para revisar.
+- `bin/marcos.py` → mide el rectángulo del borde blanco de la ventana y de la burbuja en todo el corte (la ventana cambia
+  de alto cuando la web reproduce un vídeo): con eso se recorta exacto y se le pone el contorno blanco sin cortarlo.
+- `bin/seguir_r4.py` → sigue en un resultado la cara (FaceLandmarker), el pecho y el frasco, para que un foco o una
+  etiqueta acompañen lo que se señala mientras el vídeo corre.
+- Fondo desenfocado (como el del corte): `medios/corte_fondo.mp4` = el corte a 384×216 con `gblur=sigma=5`, ampliado
+  ×1,3 detrás de la escena de pantalla y de las escenas a pantalla completa (`PlanoDifuminado` / `FondoDifuminado`).
+  Se hace una vez con ffmpeg: el render no tiene que desenfocar un 1080p en cada fotograma.

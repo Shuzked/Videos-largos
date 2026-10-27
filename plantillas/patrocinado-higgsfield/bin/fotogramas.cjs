@@ -11,7 +11,7 @@ const [out, ...ts] = process.argv.slice(2);
   require('fs').mkdirSync(out, {recursive: true});
   for (const t of ts) {
     const frame = Math.min(composition.durationInFrames - 1, Math.round(parseFloat(t) * 30));
-    await renderStill({composition, serveUrl, frame, output: `${out}/f_${t}.jpg`, imageFormat: 'jpeg', jpegQuality: 80, scale: 0.5, browserExecutable});
+    await renderStill({composition, serveUrl, frame, output: `${out}/f_${t}.jpg`, imageFormat: 'jpeg', jpegQuality: 80, scale: parseFloat(process.env.SCALE || '0.5'), browserExecutable});
     process.stdout.write(t + ' ');
   }
   console.log('ok');

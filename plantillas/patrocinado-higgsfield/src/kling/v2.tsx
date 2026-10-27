@@ -6,7 +6,6 @@ import {F, Sube, Ventana, golpe, iv} from '../anim';
 import {H, IconoHiggsfield, LogoHiggsfield, amarillo} from '../texto';
 import {Conector, Particulas, Pulso, aparece, flota, puntaFlecha} from '../lottie';
 import {FiltroRGB, estadoTransicion} from '../a1/transicion';
-import {Fondo} from './piezas';
 import {Ico, Insignia} from './iconosFlat';
 import {cabe} from './iconos';
 import EDL from './edl.json';
@@ -56,6 +55,180 @@ export const CamVivo: React.FC<{t: number; x: number; y: number; w: number; radi
           style={{position: 'absolute', left: -BUR.x * k, top: -BUR.y * k, width: 1920 * k, height: 1080 * k}} />
       </Sequence>
     </div>
+  );
+};
+
+// ---------------- fondo desenfocado, como el del corte: su propio plano ampliado y muy desenfocado ----------------
+// (medios/corte_fondo.mp4: el corte a 384×216 con desenfoque gaussiano; ampliado no se nota y el render no tiene que desenfocar)
+const baseEn = (t: number) => {
+  const bases = SEGS.filter((g) => g.tipo === 'base');
+  return bases.find((g) => t >= g.ini && t < g.ini + g.dur) ?? bases.reduce((m, g) => (Math.abs(g.ini - t) < Math.abs(m.ini - t) ? g : m), bases[0]);
+};
+export const PlanoDifuminado: React.FC<{s: Seg; luz?: number}> = ({s, luz = 0.8}) => (
+  <div style={{position: 'absolute', inset: 0, overflow: 'hidden', background: '#0b0b0d'}}>
+    <OffthreadVideo src={staticFile('medios/corte_fondo.mp4')} muted trimBefore={fr(s.desde ?? 0)}
+      style={{position: 'absolute', inset: 0, width: '100%', height: '100%', scale: 1.3, filter: `brightness(${luz})`}} />
+  </div>
+);
+export const FondoDifuminado: React.FC<{t: number; luz?: number}> = ({t, luz = 0.55}) => {
+  const s = baseEn(t);
+  return (
+    <AbsoluteFill style={{background: '#0b0b0d'}}>
+      <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
+        <PlanoDifuminado s={s} luz={luz} />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
+
+// ---------------- «estoy clonado»: una lupa para cada cosa que nombra de su cara (la de la IA, pausada en la web) ----------------
+type Lupa = {art: string; txt: string; en: number; r3: number[]; pt: number[]; lente: number[]};
+const bez = (p0: number[], c: number[], p1: number[], u: number) => [0, 1].map((j) => (1 - u) * (1 - u) * p0[j] + 2 * (1 - u) * u * c[j] + u * u * p1[j]);
+export const Lupas: React.FC<{t: number; a: number; b: number; img: string; lupas: Lupa[]}> = ({t, a, b, img, lupas}) => {
+  if (t < a || t >= b) return null;
+  const R = 125, Z = 2.3;
+  const op = 1 - lim((t - (b - 0.3)) / 0.3);
+  return (
+    <AbsoluteFill style={{opacity: op}}>
+      {lupas.map((l, i) => {
+        if (t < l.en - 0.1) return null;
+        const fl = flota(t, i * 1.7, 4);
+        const c = [l.lente[0], l.lente[1] + fl.y];
+        const dx = l.pt[0] - c[0], dy = l.pt[1] - c[1], d = Math.hypot(dx, dy);
+        const fin = [c[0] + (dx / d) * (R + 4), c[1] + (dy / d) * (R + 4)];
+        const ctrl = [(l.pt[0] + fin[0]) / 2 - (dy / d) * 0.12 * d, (l.pt[1] + fin[1]) / 2 + (dx / d) * 0.12 * d];
+        const path = `M ${l.pt[0]} ${l.pt[1]} Q ${ctrl[0]} ${ctrl[1]} ${fin[0]} ${fin[1]}`;
+        const traza = Easing.out(Easing.cubic)(lim((t - l.en) / 0.4));
+        const cometa = bez(l.pt, ctrl, fin, traza);
+        const ap = aparece(t, l.en + 0.3, i % 2 ? 4 : -4);
+        const punto = aparece(t, l.en, 0);
+        const zoom = 1 + 0.05 * lim((t - l.en) / 5);
+        return (
+          <React.Fragment key={i}>
+            <svg width={1920} height={1080} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+              <path d={path} fill="none" stroke="rgba(0,0,0,0.45)" strokeWidth={8} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+              <path d={path} fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="1 1" strokeDashoffset={1 - traza} />
+              {traza >= 1 && <path d={path} fill="none" stroke={C.amarillo} strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray="0.03 0.14" strokeDashoffset={-(t - l.en) * 0.5} />}
+              {traza > 0 && traza < 1 && <circle cx={cometa[0]} cy={cometa[1]} r={9} fill="#fff" style={{filter: `drop-shadow(0 0 10px ${C.amarillo}) drop-shadow(0 0 22px ${C.amarillo})`}} />}
+              <Pulso t={t} en={l.en} x={l.pt[0]} y={l.pt[1]} r={34} color={C.amarillo} />
+              <g transform={`translate(${l.pt[0]} ${l.pt[1]}) scale(${punto.sx} ${punto.sy})`}>
+                <circle r={11} fill={C.amarillo} opacity={0.35 + 0.15 * Math.sin((t - l.en) * 4)} />
+                <circle r={6.5} fill="#fff" style={{filter: `drop-shadow(0 0 6px ${C.amarillo})`}} />
+              </g>
+              <Particulas t={t} en={l.en + 0.35} x={c[0]} y={c[1]} n={10} radio={190} colores={[C.amarillo, '#fff']} />
+            </svg>
+            {/* la lupa: ese punto de la cara, ampliado */}
+            <div style={{position: 'absolute', left: c[0] - R, top: c[1] - R, width: 2 * R, height: 2 * R, scale: `${ap.sx} ${ap.sy}`, rotate: `${ap.rot}deg`, opacity: ap.op}}>
+              <div style={{position: 'absolute', inset: 0, borderRadius: R, overflow: 'hidden', border: '5px solid #fff', boxSizing: 'border-box', background: '#000',
+                boxShadow: `0 0 0 2px rgba(0,0,0,0.25), 0 0 30px rgba(${GLOW_AMARILLO},0.45), 0 18px 50px rgba(0,0,0,0.65)`}}>
+                <Img src={staticFile(img)} style={{position: 'absolute', left: R - l.r3[0] * Z, top: R - l.r3[1] * Z, width: 1920 * Z, height: 1080 * Z, maxWidth: 'none',
+                  transformOrigin: `${l.r3[0] * Z}px ${l.r3[1] * Z}px`, scale: zoom}} />
+                {/* brillo del cristal */}
+                <div style={{position: 'absolute', inset: 0, borderRadius: R, background: 'radial-gradient(circle at 32% 26%, rgba(255,255,255,0.22), rgba(255,255,255,0) 42%)'}} />
+              </div>
+            </div>
+            {/* lo que dice, debajo de la lupa */}
+            <div style={{position: 'absolute', left: c[0] - 260, width: 520, top: c[1] + R + 16, display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: '0.28em',
+              whiteSpace: 'nowrap', textShadow: `0 3px 12px rgba(0,0,0,0.9), ${glow('255,255,255', 0.35)}`}}>
+              <Sube t={t} en={l.en + 0.3} style={{fontWeight: 700, fontSize: 38}}>{l.art}</Sube>
+              <Sube t={t} en={l.en + 0.38} style={{fontWeight: 900, fontSize: 54, ...amarillo}}>{l.txt}</Sube>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+
+// ---------------- C: «solo cambia el fondo». Lo que pidió (lista) y, en el vídeo, un foco que va a cada cosa ----------------
+export const ComparaC2: React.FC<{t: number; a: number; b: number; titulo1: number; titulo2: number; revela: number; cambiaEn: number; igualEn: number;
+  logrado: number; loop: number; off: number; items: [string, string, number][]; spot: number[][]; cort: number[]}> = ({
+  t, a, b, titulo1, titulo2, revela, cambiaEn, igualEn, logrado, loop, off, items, spot, cort,
+}) => {
+  if (t < a || t >= b) return null;
+  const X = 620, Y = 230, W = 1200, ALTO = 675, ESC = W / 1920;
+  const i = Math.min(spot.length - 1, Math.max(0, Math.round((t - a) * FPS)));
+  const [sx, sy, sr, sv] = spot[i];
+  const k = cort[i];
+  const vid = {position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover'} as React.CSSProperties;
+  const capa = (src: string) => (
+    <>
+      <Sequence from={fr(a)} durationInFrames={fr(loop) - fr(a) + 1} layout="none">
+        <OffthreadVideo src={staticFile(src)} muted trimBefore={fr(off)} style={vid} />
+      </Sequence>
+      <Sequence from={fr(loop - 0.25)} durationInFrames={Math.max(1, fr(b) - fr(loop - 0.25))} layout="none">
+        <div style={{position: 'absolute', inset: 0, opacity: lim((t - (loop - 0.25)) / 0.25)}}><OffthreadVideo src={staticFile(src)} muted style={vid} /></div>
+      </Sequence>
+    </>
+  );
+  const fin = entra(t, titulo2 - 0.2, 0.35);
+  const ok = t >= logrado;
+  const brillo = ok ? Math.max(0, 1 - (t - logrado) / 0.9) : 0;
+  // lista: lo que le pidió, se marca al decirlo
+  const activo = items.reduce((m, it, j) => (t >= it[2] ? j : m), -1);
+  const fila = (it: [string, string, number], j: number, y: number) => {
+    if (t < it[2] - 0.1) return null;
+    const ap = aparece(t, it[2], -3);
+    const on = j === activo && t < titulo2;
+    return (
+      <div key={j} style={{position: 'absolute', left: 100, top: y, height: 52, display: 'flex', alignItems: 'center', gap: 14, opacity: ap.op * (on ? 1 : 0.82),
+        scale: `${ap.sx} ${ap.sy}`, transformOrigin: '0% 50%'}}>
+        <Ico tam={46}><Insignia t={t} en={it[2] + 0.1} r={20} bien rafaga={false} /></Ico>
+        <span style={{fontWeight: on ? 900 : 700, fontSize: 36, whiteSpace: 'nowrap', color: on ? C.amarillo : '#fff', textShadow: on ? glow(GLOW_AMARILLO, 0.5) : '0 2px 8px rgba(0,0,0,0.8)'}}>{it[1]}</span>
+      </div>
+    );
+  };
+  const cabecera = (txt: string, en: number, y: number, fondo: string) =>
+    t < en ? null : (
+      <div style={{position: 'absolute', left: 100, top: y, ...golpe(t, en)}}><Etiqueta txt={txt} fondo={fondo} style={{fontSize: 24}} /></div>
+    );
+  const cambia = items.filter((it) => it[0] === 'cambia'), igual = items.filter((it) => it[0] === 'igual');
+  const YC = 268, YI = YC + 50 + cambia.length * 58 + 44;
+  return (
+    <AbsoluteFill>
+      <FondoDifuminado t={t} />
+      {/* rótulos de arriba y, al final, el titular */}
+      <div style={{position: 'absolute', left: 100, top: 172, fontWeight: 800, fontSize: 30, letterSpacing: '0.14em', color: C.amarillo, textShadow: glow(GLOW_AMARILLO, 0.5), opacity: 1 - fin}}>
+        <Sube t={t} en={titulo1}>LO QUE LE PEDÍ</Sube>
+      </div>
+      <div style={{position: 'absolute', left: X, top: 172, fontWeight: 800, fontSize: 30, letterSpacing: '0.14em', opacity: (1 - fin) * entra(t, a + 0.2, 0.4)}}>
+        LO QUE HIZO · KLING 4.0 EDIT VIDEO
+      </div>
+      {t >= titulo2 - 0.05 && (
+        <div style={{position: 'absolute', left: 0, right: 0, top: 92, textAlign: 'center', ...H, fontSize: 84, ...golpe(t, titulo2)}}>
+          SOLO CAMBIA <span style={amarillo}>EL FONDO</span>
+        </div>
+      )}
+      {cabecera('CAMBIA', cambiaEn, YC, LIMA)}
+      {cambia.map((it, j) => fila(it, items.indexOf(it), YC + 50 + j * 58))}
+      {cabecera('SE MANTIENE', igualEn, YI, '#fff')}
+      {igual.map((it, j) => fila(it, items.indexOf(it), YI + 50 + j * 58))}
+      {/* el vídeo: después (r4) entero y, a la izquierda de la cortinilla, el antes (r3), sincronizados */}
+      <div style={{position: 'absolute', left: X, top: Y, width: W, height: ALTO, borderRadius: 22, overflow: 'hidden', background: '#000',
+        border: `3px solid ${ok ? LIMA : 'rgba(255,255,255,0.9)'}`, boxShadow: `0 0 ${20 + 50 * brillo}px rgba(209,254,23,${ok ? 0.3 + 0.4 * brillo : 0}), 0 24px 70px rgba(0,0,0,0.7)`,
+        opacity: entra(t, a, 0.3)}}>
+        {capa('medios/r4.mp4')}
+        <div style={{position: 'absolute', inset: 0, clipPath: `inset(0 ${(1 - k) * 100}% 0 0)`}}>{capa('medios/r3.mp4')}</div>
+        {/* foco: lo demás se apaga */}
+        {sv > 0.001 && (
+          <div style={{position: 'absolute', inset: 0, background: `radial-gradient(circle ${sr * ESC}px at ${sx * ESC}px ${sy * ESC}px, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 58%, rgba(0,0,0,${0.62 * sv}) 100%)`}} />
+        )}
+        {k > 0.004 && k < 0.996 && (
+          <>
+            <div style={{position: 'absolute', top: 0, bottom: 0, left: `${k * 100}%`, width: 4, marginLeft: -2, background: '#fff', boxShadow: '0 0 16px #fff'}} />
+            <div style={{position: 'absolute', top: '50%', left: `${k * 100}%`, width: 52, height: 52, margin: '-26px 0 0 -26px', borderRadius: 26, background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(0,0,0,0.5)'}}>
+              <svg width={32} height={20} viewBox="0 0 34 20"><path d="M 11 3 L 3 10 L 11 17 M 23 3 L 31 10 L 23 17" fill="none" stroke="#141418" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+          </>
+        )}
+        <div style={{position: 'absolute', left: 16, top: 14, opacity: lim((k - 0.06) / 0.08)}}><Etiqueta txt="ANTES" fondo="rgba(10,10,12,0.85)" color="#fff" /></div>
+        <div style={{position: 'absolute', right: 16, top: 14, opacity: lim((0.94 - k) / 0.08) * entra(t, revela, 0.3)}}><Etiqueta txt="DESPUÉS" /></div>
+      </div>
+      <svg width={1920} height={1080} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+        <Particulas t={t} en={logrado} x={X + W / 2} y={Y + ALTO / 2} n={18} radio={700} colores={[LIMA, '#fff']} />
+      </svg>
+    </AbsoluteFill>
   );
 };
 
@@ -253,10 +426,8 @@ export const Storyboard: React.FC<{t: number; a: number; b: number; titulo: numb
   const titulo2 = entra(t, en[0] - 0.4, 0.6);
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
-      {/* rejilla fina de storyboard y luz cálida */}
-      <AbsoluteFill style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
-        backgroundSize: '60px 60px', opacity: 0.8}} />
+      <FondoDifuminado t={t} />
+      {/* luz cálida que se mueve despacio */}
       <AbsoluteFill style={{background: `radial-gradient(circle at ${50 + 18 * Math.sin(t * 0.3)}% 40%, rgba(255,170,60,0.10), transparent 45%)`}} />
       {/* título: grande al principio, luego arriba a la izquierda */}
       <div style={{position: 'absolute', left: 0, right: 0, top: 380 - 310 * titulo2, textAlign: 'center', transformOrigin: '50% 0%', scale: 1 - 0.45 * titulo2}}>
@@ -370,7 +541,7 @@ export const Valioso2: React.FC<{t: number; a: number; b: number; enTitulo: numb
   const gen = t < listo;
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
+      <FondoDifuminado t={t} />
       <AbsoluteFill style={{background: `radial-gradient(ellipse 55% 45% at 50% 55%, rgba(209,254,23,0.06), transparent 70%)`}} />
       {/* las dos generaciones siguen en marcha */}
       <div style={{position: 'absolute', right: 100, top: 70, display: 'flex', alignItems: 'center', gap: 14, padding: '10px 24px 10px 14px', borderRadius: 999, background: PANEL,
@@ -419,7 +590,7 @@ export const ComparaA2v2: React.FC<{t: number; a: number; b: number; en: number[
   const camIn = entra(t, a, 0.6);
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
+      <FondoDifuminado t={t} />
       <div style={{position: 'absolute', left: X, width: W, top: 70, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between'}}>
         <div style={{...H, fontSize: 56}}>LO QUE PLANEÉ <span style={{opacity: 0.45}}>vs</span> LO QUE <span style={amarillo}>SALIÓ</span></div>
         <div style={{display: 'flex', gap: 10}}>
@@ -485,7 +656,7 @@ export const ComparaB2: React.FC<{t: number; a: number; b: number; en: number; c
   const fotos = FOTOS.map((f, k) => ({f, x: GX + (k % 2) * (FW + GAP), y: GY + Math.floor(k / 2) * (FW + GAP)}));
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
+      <FondoDifuminado t={t} />
       <div style={{position: 'absolute', left: 0, right: 0, top: 96, textAlign: 'center', ...H, fontSize: 70, ...golpe(t, a + 0.15)}}>
         CON ESTAS <span style={amarillo}>4 FOTOS</span>
       </div>
@@ -553,7 +724,7 @@ export const Recap: React.FC<{t: number; a: number; b: number; enTitulo: number;
   const activo = en.reduce((k, e, i) => (t >= e ? i : k), -1);
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
+      <FondoDifuminado t={t} />
       <div style={{position: 'absolute', left: 0, right: 0, top: 110, textAlign: 'center', ...H, fontSize: 84, ...golpe(t, enTitulo)}}>
         ESTO ES <span style={amarillo}>EL SERVICIO</span>
       </div>
@@ -632,21 +803,30 @@ export const TresModos: React.FC<{t: number; a: number; b: number; en: number; s
   );
 };
 
-// «abre Kling 4.0 en Higgsfield»: el rótulo de Kling cae y debajo se dibuja el logo de Higgsfield con un barrido de luz
+// reflejo que recorre el logo: una franja de luz recortada con la forma del propio logo (máscara con su SVG)
+const LOGO_SVG = staticFile('logos/higgsfield-logo.svg');
+const BrilloLogo: React.FC<{p: number}> = ({p}) => {
+  const x = -30 + 160 * Easing.inOut(Easing.quad)(p);
+  const mascara = {WebkitMaskImage: `url(${LOGO_SVG})`, maskImage: `url(${LOGO_SVG})`, WebkitMaskSize: '100% 100%', maskSize: '100% 100%',
+    WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat'} as React.CSSProperties;
+  return (
+    <div style={{position: 'absolute', inset: 0, ...mascara, background: `linear-gradient(105deg, rgba(255,255,255,0) ${x - 20}%, rgba(255,255,255,0.45) ${x - 7}%, #fff ${x}%, rgba(255,255,255,0.45) ${x + 7}%, rgba(255,255,255,0) ${x + 20}%)`}} />
+  );
+};
+
+// «abre Kling 4.0 en Higgsfield»: el rótulo de Kling cae y debajo el logo de Higgsfield, con un reflejo que lo recorre
 export const AbreKling: React.FC<{t: number; a: number; b: number; enAbre: number; enKling: number; enHiggs: number}> = ({t, a, b, enAbre, enKling, enHiggs}) => {
   if (t < a || t >= b + 8 * F) return null;
-  const barrido = lim((t - enHiggs - 0.3) / 0.9);
+  const barrido = lim((t - enHiggs - 0.3) / 1.1);
   return (
     <div style={{position: 'absolute', left: 0, right: 0, top: 600, padding: '50px 0', opacity: iv(t, [a, a + 3 * F, b - 4 * F, b], [0, 1, 1, 0]),
       background: 'radial-gradient(ellipse 40% 50% at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0) 100%)'}}>
       <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, filter: 'drop-shadow(0 3px 10px rgba(0,0,0,0.8))'}}>
         <div style={{...H, fontSize: 64}}><Sube t={t} en={enAbre}>abre</Sube></div>
         <div style={{...H, fontSize: 138, lineHeight: 1, ...amarillo, ...golpe(t, enKling)}}>KLING 4.0</div>
-        <div style={{position: 'relative', marginTop: 10, overflow: 'hidden', ...golpe(t, enHiggs)}}>
+        <div style={{position: 'relative', marginTop: 10, lineHeight: 0, ...golpe(t, enHiggs)}}>
           <LogoHiggsfield w={420} />
-          {barrido > 0 && barrido < 1 && (
-            <div style={{position: 'absolute', top: 0, bottom: 0, left: `${-30 + 140 * barrido}%`, width: '25%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)', transform: 'skewX(-20deg)'}} />
-          )}
+          {barrido > 0 && barrido < 1 && <BrilloLogo p={barrido} />}
         </div>
       </div>
     </div>

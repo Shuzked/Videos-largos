@@ -12,6 +12,7 @@
 # Todo el texto en seg. del CORTE (c) y se pasa a tiempo de salida con T().
 # Salida: remotion/src/kling/edl.json (imagen) y plan_audio.json (voz, resultados, efectos y música para la mezcla).
 import json, math
+import numpy as np
 R = "/home/user/videos-largos/trabajo/kling4"
 FPS = 30
 fr = lambda t: round(round(t * FPS) / FPS, 4)
@@ -47,8 +48,12 @@ def T(c):
     raise ValueError(f"{c} cae en un inserto")
 
 # ---------------- geometría de la escena de pantalla (coordenadas del corte nuevo, sin barra del navegador) ----------------
-VC = dict(x=518, y=192, w=1381, h=699)   # ventana del navegador en el corte (con su borde blanco)
-BC = dict(x=17, y=146, w=488, h=789)     # burbuja de la cámara en el corte
+# rectángulo exacto del borde blanco (trans/marcos.json): la ventana es más alta cuando reproduce un vídeo en el
+# reproductor de Higgsfield; la burbuja no cambia
+VC = dict(x=518, y=194, w=1380, h=694)       # ventana del navegador en el corte
+VC_ALTA = dict(x=518, y=149, w=1381, h=780)  # la misma, con el reproductor de vídeo
+ALTAS = [(201.56, 230.56), (309.76, 356.96), (404.16, 417.96)]
+BC = dict(x=18, y=147, w=485, h=785)         # burbuja de la cámara en el corte
 KW = 1840 / VC["w"]
 WEB = dict(x=40, y=round((1080 - VC["h"] * KW) / 2, 2), w=1840, h=round(VC["h"] * KW, 2))  # la ventana a pantalla completa
 PANT = json.load(open(f"{R}/trans/pantalla.json"))  # tramos en que el corte enseña la pantalla (burbuja + web)
@@ -61,7 +66,7 @@ MODOS_C = [(34.0, 45.08, "web"),
            (105.36, 106.4, "dividida"), (106.4, 141.7, "web"), (141.7, 147.9, "dividida"), (147.9, 175.3, "web"),
            (175.3, 180.45, "dividida"), (180.45, 186.3, "web"),
            (224.43, 230.75, "camara"), (230.75, 256.3, "dividida"), (295.1, 309.98, "dividida"),
-           (324.63, 327.7, "camara"), (327.7, 357.0, "dividida"), (368.18, 378.9, "dividida"), (378.9, 402.54, "web"),
+           (324.63, 327.7, "camara"), (327.7, 347.6, "dividida"), (347.6, 357.4, "web"), (357.4, 378.9, "dividida"), (378.9, 402.54, "web"),
            (435.7, 492.92, "dividida")]
 modos = [dict(a=T(a), b=T(b), m=m) for a, b, m in MODOS_C]
 
@@ -126,7 +131,8 @@ for e in etiquetas: e["en"], e["b"] = T(e["en"]), T(167.7)
 # ---------------- gráficos ----------------
 G = []
 TIEMPOS = {"logo", "escribe", "flecha", "producto", "ia", "linea", "clavado", "cambios", "supEn", "tituloEn", "inicio", "rodaje", "sub",
-           "orden", "tiempo", "listo", "creado", "sitio", "editas", "ejemplos", "fin", "iaFin", "match"}
+           "orden", "tiempo", "listo", "creado", "sitio", "editas", "ejemplos", "fin", "iaFin", "cambiaEn", "igualEn", "titulo1", "titulo2",
+           "logrado", "loop", "revela"}
 def _conv(q, v):
     """pasa a tiempo de salida los campos de tiempo (los «en…», listas de tiempos, ítems, partes y palabras)"""
     if q in ("items",): return [it[:2] + [T(it[2])] + it[3:] for it in v]
@@ -134,7 +140,7 @@ def _conv(q, v):
     if q in ("bloques",): return [dict(b, a=T(b["a"]), b=T(b["b"]), ws=[[w[0], T(w[1])] for w in b["ws"]], **({"flecha": T(b["flecha"])} if "flecha" in b else {})) for b in v]
     if q in ("lineas",): return [dict(l, ws=[[w[0], T(w[1])] + w[2:] for w in l["ws"]]) for l in v]
     if q in ("ws",): return [[w[0], T(w[1])] + w[2:] for w in v]
-    if q == "match": return v
+    if q in ("match", "lupas", "spot", "cort"): return v
     if q.startswith("en") or q in TIEMPOS or (q == "titulo" and isinstance(v, (int, float))):
         if isinstance(v, (int, float)): return T(v)
         if isinstance(v, list): return [T(x) for x in v]
@@ -181,7 +187,7 @@ g("valioso2", 186.3, 200.78, enTitulo=187.56, enProd=190.7, enModelo=193.56, enA
 # 3 · reacción a Frames (escena con su cámara) y comparativa A2
 g("nota", 225.9, 235.2, texto="La mano: el color no es del todo humano", tono="malo", en=226.37)
 # mientras lo dice (y él sale en grande), el momento de la mano en el anuncio; luego la web ya enseña la mano
-g("momento", 226.2, 230.95, en=226.37, src="medios/r2.mp4", desde=2.2, dur=3.0, etiqueta="ANUNCIO · 0:02", x=1300, y=330, w=520)
+g("momento", 226.2, 230.4, en=226.37, src="medios/r2.mp4", desde=2.2, dur=3.0, etiqueta="ANUNCIO · 0:02", x=1300, y=330, w=520)
 g("nota", 236.9, 241.0, texto="La caja se abre un poco rara", tono="malo", en=237.4)
 g("nota", 243.6, 249.2, texto="Un instante en que las letras fallan", tono="malo", en=244.58)
 g("nota", 250.6, 256.2, texto="Se ajusta muchísimo a las fotos y al movimiento", tono="bueno", en=251.64)
@@ -190,12 +196,87 @@ g("compara_a2v2", 256.3, 295.1, en=[259.55, 265.09, 289.53, 293.02], clavado=[26
 # 4 · reacción a References
 g("nota", 327.6, 333.8, texto="Las manos: lo único que se nota un poco", tono="malo", en=327.99)
 g("nota", 335.6, 340.5, texto="El tapón aparece solo en el frasco", tono="malo", en=336.2)
-g("clonado", 345.2, 357.0, en=[347.85, 350.21, 351.39, 353.3], textos=["ESTOY CLONADO", "las arruguitas", "el remolino de las cejas", "el pelo de la barba"])
-g("compara_b2", 357.0, 368.18, en=358.91, clavado=361.35, producto=363.94, creado=365.32)
-g("cliente", 368.2, 378.8, en=369.98, escribe=372.33, rodaje=377.52)
+# «estoy clonado»: la web a pantalla completa con la cara de la IA (r3 en su 13,33 s, pausado en el corte de 349,8 a 355,9) y
+# una lupa para cada cosa que nombra, con su línea hasta el punto exacto de la cara. Coordenadas: r3 → corte (reproductor,
+# medido) → la ventana alta a pantalla completa.
+KA = 1840 / VC_ALTA["w"]
+WA_Y = (1080 - VC_ALTA["h"] * KA) / 2
+def r3_pant(rx, ry):
+    return [round(40 + (522 + 0.716 * rx - VC_ALTA["x"]) * KA, 1), round(WA_Y + (152 + 0.716 * ry - VC_ALTA["y"]) * KA, 1)]
+LUPAS = [("las", "arrugas", 350.21, (1131, 444), (1585, 640)), ("las", "cejas", 351.39, (1024, 349), (1585, 290)),
+         ("la", "barba", 353.3, (702, 656), (335, 750)), ("el", "grano", 355.29, (760, 584), (335, 400))]
+g("lupas", 347.6, 356.95, img="medios/kf/r3_cara.png",
+  lupas=[dict(art=a_, txt=w_, en=T(e_), r3=list(p_), pt=r3_pant(*p_), lente=list(l_)) for a_, w_, e_, p_, l_ in LUPAS])
+# B solo cuando dice «fijaos, solo con estas cuatro fotos lo que ha creado» (antes, la web enseña las fotos que subió)
+g("compara_b2", 365.2, 369.84, en=365.32, clavado=366.27, producto=999, creado=366.9)
+g("cliente", 369.84, 378.8, en=369.98, escribe=372.33, rodaje=377.52)
 g("prompt_card", 389.0, 395.3, etiqueta="PROMPT · EDIT VIDEO", partes=PROMPT_EDIT, fin=999)
 # 5 · reacción a Edit y veredicto
-g("compara_c", 416.83, 434.5, en=417.0)
+# C: «solo cambia el fondo». Antes (r3) | después (r4): el mismo plano, sincronizados, con una cortinilla. A la izquierda, lo
+# que le pidió (se marca al decirlo); en el vídeo, un foco que va a cada cosa (el resto se apaga) siguiendo la cara, la ropa
+# y el frasco (bin/seguir_r4.py + frasco a mano). El vídeo arranca en su 5,9 s (primer plano: la luz dorada y el skyline
+# mientras los nombra) y vuelve a empezar en 425,9 (plano abierto: él, la ropa, el perfume y los movimientos).
+C_A, C_B, C_LOOP, C_OFF = 416.83, 434.5, 425.9, 5.9
+PUNTOS = json.load(open(f"{R}/trans/r4_puntos.json"))
+FRASCO = [(0, 930, 800), (1, 931, 806), (2, 797, 562), (2.5, 821, 619), (3, 787, 619), (3.5, 783, 533), (4, 812, 605), (4.5, 773, 576),
+          (5, 783, 662), (5.5, 720, 677), (6, 615, 605), (6.5, 524, 850)]
+SOL = [(11.6, 616, 660), (12.5, 616, 690), (13.5, 616, 720), (15.1, 616, 720)]
+TORRE = [(11.6, 1365, 680), (12.5, 1370, 690), (13.5, 1370, 700), (15.1, 1370, 720)]
+def kf(lista, r):
+    ts = [k[0] for k in lista]
+    return [float(np.interp(r, ts, [k[1] for k in lista])), float(np.interp(r, ts, [k[2] for k in lista]))]
+def cara(r):
+    i = min(len(PUNTOS["t"]) - 1, max(0, int(round(r * 24))))
+    while PUNTOS["cara"][i] is None: i -= 1
+    return PUNTOS["cara"][i], PUNTOS["alto_cara"][i]
+def r_c(c):
+    """segundo del vídeo (r3/r4) que se ve en el instante c del corte"""
+    return C_OFF + (c - C_A) if c < C_LOOP else c - (C_LOOP - 0.25)
+def foco_c(c):
+    r = r_c(c)
+    if 422.63 <= c < 424.06: return ("sol", *kf(SOL, r), 200)
+    if 424.06 <= c < 425.6: return ("torre", *kf(TORRE, r), 250)
+    (nx, ny), h = cara(r)
+    if 426.75 <= c < 427.95: return ("hombre", nx, ny - 0.12 * h, 0.85 * h)
+    if 427.95 <= c < 428.62: return ("ropa", nx + 0.75 * h, ny + 0.95 * h, 0.6 * h)  # la camiseta, junto al hombro
+    if 428.62 <= c < 429.38: return ("frasco", *kf(FRASCO, r), 165)
+    if 429.38 <= c < 430.35: return ("manos", 830, 690, 300)
+    if 430.35 <= c < 431.94: return ("todo", 960, 540, 1500)
+    return None
+def cortinilla_c(c):
+    """posición de la cortinilla (0 = todo «después»; a su izquierda, «antes»)"""
+    if c < 421.49: return ("ini", 0.0)
+    if c < 422.63: return ("revela", 0.45)
+    if c < 425.9: return ("fondo", 0.17)
+    if c < 432.42: return ("cara", cara(r_c(c))[0][0] / 1920)
+    if c < 433.0: return ("final1", 0.1)
+    if c < 433.6: return ("final2", 0.9)
+    return ("final3", 0.5)
+def suaviza(fn, dur=0.45):
+    """muestra fn a 30 fps; al cambiar de objetivo se desliza con curva en «dur» s; sin objetivo se apaga en el sitio"""
+    out, prev_id, desde, t_cambio, vis, ult = [], None, None, 0.0, 0.0, None
+    n = int(round((T(C_B) - T(C_A)) * FPS))
+    for i in range(n + 1):
+        c = C_A + i / FPS
+        o = fn(c)
+        if o is None:
+            vis = max(0.0, vis - 1 / (0.3 * FPS)); out.append(ult[:-1] + [round(vis, 3)] if ult else [0, 0, 0, 0]); continue
+        oid, *val = o
+        if oid != prev_id:
+            desde = ult[:-1] if (ult and vis > 0.05) else None
+            prev_id, t_cambio = oid, c
+        if desde is not None:
+            p = min(1.0, (c - t_cambio) / dur); p = p * p * (3 - 2 * p)
+            val = [d + (v - d) * p for d, v in zip(desde, val)]
+        vis = min(1.0, vis + 1 / (0.3 * FPS))
+        ult = [round(v, 1) if abs(v) > 5 else round(v, 4) for v in val] + [round(vis, 3)]
+        out.append(ult)
+    return out
+g("compara_c2", C_A, C_B, titulo1=419.41, titulo2=432.42, revela=421.49, cambiaEn=421.06, igualEn=426.06, logrado=433.95, loop=C_LOOP, off=C_OFF,
+  items=[["cambia", "el fondo", 421.92], ["cambia", "golden hour", 422.63], ["cambia", "skyline de ciudad", 424.06],
+         ["igual", "el hombre", 426.75], ["igual", "la ropa", 428.13], ["igual", "el perfume", 428.62], ["igual", "los movimientos", 429.38],
+         ["igual", "la cámara", 430.35]],
+  spot=suaviza(foco_c, 0.35), cort=[x[0] for x in suaviza(cortinilla_c, 0.55)])
 g("capitulo", 434.5, 435.7, num="MI OPINIÓN", titulo="VEREDICTO", en=434.62)
 g("fichas", 436.2, 492.8, x=1350, items=[["Hace lo que le pides", "lo ha clavado", 436.24, "bueno"], ["Le falta realismo", "aún no es el resultado final", 440.63, "malo"],
                                           ["Primeras tomas y mockups", "y luego, un modelo hiperrealista", 473.02, "bueno"], ["15 créditos", "el coste es irrisorio", 488.78, "bueno"]])
@@ -215,7 +296,7 @@ for x in G:  # los ítems de las fichas llevan [txt, sub, en, tono]
 
 # ---------------- cambios de escena: aquí, y solo aquí, la transición del ejemplo del cliente ----------------
 # (la tarjeta de Instagram ya entra con la transición del propio corte, en 71,72-71,84)
-PANTALLA_COMPLETA = ("broll", "storyboard", "valioso2", "compara_a2v2", "compara_b2", "compara_c", "capitulo", "recap")
+PANTALLA_COMPLETA = ("broll", "storyboard", "valioso2", "compara_a2v2", "compara_b2", "compara_c2", "capitulo", "recap")
 cortes = set(limites) | {T(34.0), T(45.08), T(492.92)}
 for x in G:
     if x["tipo"] in PANTALLA_COMPLETA: cortes |= {x["a"], x["b"]}
@@ -226,7 +307,8 @@ for c in cortes:  # dos cambios casi a la vez (p. ej. el final de una escena y e
     dedup.append(c)
 cortes = dedup
 
-edl = dict(dur=DURACION, fps=FPS, pantalla=PANT, vc=VC, bc=BC, web=WEB, modos=modos, camara=camara, acentos=acentos, segs=segs,
+ventanas = [dict(a=a, b=b, **VC_ALTA) for a, b in ALTAS]  # en segundos del corte
+edl = dict(dur=DURACION, fps=FPS, pantalla=PANT, vc=VC, bc=BC, web=WEB, ventanas=ventanas, modos=modos, camara=camara, acentos=acentos, segs=segs,
            focos=focos, etiquetas=etiquetas, graficos=G, cortes=cortes)
 json.dump(edl, open(f"{R}/remotion/src/kling/edl.json", "w"), ensure_ascii=False, indent=0)
 
@@ -254,8 +336,10 @@ for x in G:
     elif tp == "valioso2": sfx += [dict(s="pop", en=x[k], db=-14) for k in ("enProd", "enModelo", "enAnuncio")] + [dict(s="hit", en=x["enValioso"], db=-12), dict(s="exito", en=x["listo"], db=-18)]
     elif tp == "nota": sfx.append(dict(s="negativo" if x["tono"] == "malo" else "confirmar", en=x["en"], db=-16))
     elif tp == "compara_a2v2": sfx += [dict(s="swish", en=e, db=-16) for e in x["en"]] + [dict(s="shutter", en=c, db=-16) for c in x["clavado"]]
-    elif tp == "clonado": sfx += [dict(s="pop", en=e, db=-16) for e in x["en"]]
+    elif tp == "lupas": sfx += [dict(s="pop", en=l["en"], db=-16) for l in x["lupas"]]
     elif tp == "compara_b2": sfx += [dict(s="pop", en=x["en"], db=-14), dict(s="swish", en=x["clavado"], db=-16), dict(s="pop", en=x["producto"], db=-14), dict(s="hit", en=x["creado"], db=-14)]
+    elif tp == "compara_c2": sfx += [dict(s="pop", en=x["titulo1"], db=-16), dict(s="swish", en=x["revela"], db=-16), dict(s="hit", en=x["titulo2"], db=-12),
+                                     dict(s="exito", en=x["logrado"], db=-18)] + [dict(s="tap", en=it[2], db=-20) for it in x["items"]]
     elif tp == "cliente": sfx.append(dict(s="mensaje", en=x["en"], db=-12))
     elif tp == "capitulo": sfx.append(dict(s="hit", en=x["en"], db=-10))
     elif tp == "fichas": sfx += [dict(s="pop", en=it[3], db=-14) for it in x["items"]]

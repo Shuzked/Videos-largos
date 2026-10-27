@@ -8,7 +8,8 @@ import {Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie'
 import {cabe} from './iconos';
 import {Avatar, Bocadillo, Claqueta, Cronometro, Ico, Insignia} from './iconosFlat';
 import {Aviso, Fondo, Suave} from './piezas';
-import {AbreKling, ComparaA2v2, ComparaB2, CtaBloques, LineaClavado, Momento, Plan3, Planeado2, PromptCard, Recap, Storyboard, Transicion16, TresModos, Valioso2} from './v2';
+import {AbreKling, ComparaA2v2, ComparaB2, ComparaC2, CtaBloques, FondoDifuminado, LineaClavado, Lupas, Momento, PlanoDifuminado, Plan3, Planeado2, PromptCard, Recap, Storyboard,
+  Transicion16, TresModos, Valioso2} from './v2';
 import EDL from './edl.json';
 
 // Vídeo «Kling 4.0 en Higgsfield» (patrocinado). Base: el corte del usuario (25 fps); salida a 30 fps. Todo sale de
@@ -31,7 +32,7 @@ type Caja = {x: number; y: number; w: number; h: number};
 type Foco = {a: number; b: number; r?: number[]; pos?: number[][]; c: string};
 type Etq = {en: number; b: number; x: number; y: number; txt: string; arriba: boolean};
 type Grafico = {tipo: string; a: number; b: number; [k: string]: unknown};
-const D = EDL as unknown as {dur: number; pantalla: number[][]; vc: Caja; bc: Caja; web: Caja; modos: {a: number; b: number; m: string}[];
+const D = EDL as unknown as {dur: number; pantalla: number[][]; vc: Caja; bc: Caja; web: Caja; ventanas: (Caja & {a: number; b: number})[]; modos: {a: number; b: number; m: string}[];
   camara: {t: number; s: number; x: number; y: number; d: number}[]; acentos: {t: number; a: number}[]; segs: Seg[]; focos: Foco[]; etiquetas: Etq[];
   graficos: Grafico[]; cortes: number[]};
 export const DURACION_KLING = D.dur;
@@ -75,6 +76,12 @@ const modo = (t: number): [number, number] => {
   }
   return [0, 0];
 };
+// ventana del corte en cada instante (más alta con el reproductor de vídeo) y su sitio a pantalla completa (1840 de ancho, centrada)
+const vcEn = (c: number): Caja => D.ventanas.find((v) => c >= v.a - 1e-3 && c < v.b - 1e-3) ?? D.vc;
+const webDe = (vc: Caja): Caja => {
+  const k = D.web.w / vc.w;
+  return {x: D.web.x, y: (1080 - vc.h * k) / 2, w: D.web.w, h: vc.h * k};
+};
 const mezcla = (A: Caja, B: Caja, m: number): Caja => ({x: A.x + (B.x - A.x) * m, y: A.y + (B.y - A.y) * m, w: A.w + (B.w - A.w) * m, h: A.h + (B.h - A.h) * m});
 // solo él: su burbuja en grande, centrada, sobre ella misma desenfocada
 const CAMARA_GRANDE: Caja = {x: (1920 - 594) / 2, y: 60, w: 594, h: 960};
@@ -110,11 +117,17 @@ const Pestanas: React.FC<{t: number}> = ({t}) => (
   </>
 );
 
+// contorno blanco de la ventana y de su burbuja (como en el corte)
+const Contorno: React.FC<{caja: Caja; radio: number; op?: number}> = ({caja, radio, op = 1}) => (
+  <div style={{position: 'absolute', left: caja.x, top: caja.y, width: caja.w, height: caja.h, borderRadius: radio, opacity: op,
+    boxShadow: 'inset 0 0 0 3px rgba(255,255,255,0.96), 0 0 10px rgba(255,255,255,0.12)'}} />
+);
+
 // resaltado: lo demás se apaga y el control entero se levanta un poco y brilla (sin trazos)
-const Focos: React.FC<{t: number; s: Seg; W: Caja}> = ({t, s, W}) => {
+const Focos: React.FC<{t: number; s: Seg; W: Caja; vc: Caja}> = ({t, s, W, vc}) => {
   const activos = D.focos.filter((f) => t >= f.a && t < f.b + 0.35);
   if (!activos.length) return null;
-  const k = W.w / D.vc.w;
+  const k = W.w / vc.w;
   const vis = Math.max(...activos.map((f) => Math.min(lim((t - f.a) / 0.3), 1 - lim((t - f.b) / 0.35))));
   return (
     <>
@@ -123,7 +136,7 @@ const Focos: React.FC<{t: number; s: Seg; W: Caja}> = ({t, s, W}) => {
         let r = f.r ?? [0, 0, 0, 0];
         if (f.pos) for (const p of f.pos) if (t >= p[0]) r = p.slice(1);
         const pad = 3;
-        const caja = {x: W.x + (r[0] - pad - D.vc.x) * k, y: W.y + (r[1] - pad - D.vc.y) * k, w: (r[2] + 2 * pad) * k, h: (r[3] + 2 * pad) * k};
+        const caja = {x: W.x + (r[0] - pad - vc.x) * k, y: W.y + (r[1] - pad - vc.y) * k, w: (r[2] + 2 * pad) * k, h: (r[3] + 2 * pad) * k};
         const v = Math.min(lim((t - f.a) / 0.3), 1 - lim((t - f.b) / 0.35));
         const m = muelle(t, f.a, 2.2, 6);
         const late = 0.5 + 0.5 * Math.sin((t - f.a) * 4);
@@ -143,20 +156,29 @@ const Base: React.FC<{s: Seg; t: number}> = ({s, t}) => {
   const c = (s.desde ?? 0) + Math.round((t - s.ini) * 25) / 25;
   const p = enPantalla(c);
   const [m, r] = p ? modo(t) : [0, 0];
-  const W = mezcla(mezcla(D.vc, D.web, m), {x: 1990, y: D.vc.y + 60, w: D.vc.w * 0.9, h: D.vc.h * 0.9}, r);
-  const k = W.w / D.vc.w;
+  const vc = vcEn(c);
+  const W = mezcla(mezcla(vc, webDe(vc), m), {x: 1990, y: vc.y + 60, w: vc.w * 0.9, h: vc.h * 0.9}, r);
+  const k = W.w / vc.w;
   const B = mezcla({x: D.bc.x - 620 * m, y: D.bc.y + 40 * m, w: D.bc.w * (1 - 0.12 * m), h: D.bc.h * (1 - 0.12 * m)}, CAMARA_GRANDE, r);
+  const rB = 20 + 8 * r;
   return (
     <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
       {p ? (
         <>
-          <Fondo t={t} />
+          {/* fondo desenfocado, como el del corte */}
+          <PlanoDifuminado s={s} />
           {r > 0.001 && <Recorte caja={FONDO_CAM} corte={D.bc} radio={0} s={s} style={{opacity: r, filter: 'blur(36px) brightness(0.5) saturate(0.9)'}} />}
-          {m < 0.999 && <Recorte caja={B} corte={D.bc} radio={20 + 8 * r} s={s} style={{opacity: 1 - m * 0.6, boxShadow: `0 20px ${60 + 40 * r}px rgba(0,0,0,${0.55 + 0.2 * r})`}} />}
-          <Recorte caja={W} corte={D.vc} radio={14 * k} s={s} style={{boxShadow: '0 26px 80px rgba(0,0,0,0.7)'}}>
+          {m < 0.999 && (
+            <>
+              <Recorte caja={B} corte={D.bc} radio={rB} s={s} style={{opacity: 1 - m * 0.6, boxShadow: `0 20px ${60 + 40 * r}px rgba(0,0,0,${0.55 + 0.2 * r})`}} />
+              <Contorno caja={B} radio={rB} op={1 - m * 0.6} />
+            </>
+          )}
+          <Recorte caja={W} corte={vc} radio={14 * k} s={s} style={{boxShadow: '0 26px 80px rgba(0,0,0,0.7)'}}>
             <Pestanas t={t} />
           </Recorte>
-          <Focos t={t} s={s} W={W} />
+          <Contorno caja={W} radio={14 * k} />
+          <Focos t={t} s={s} W={W} vc={vc} />
         </>
       ) : (
         <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
@@ -707,7 +729,7 @@ const Capitulo: React.FC<{t: number; a: number; b: number; num: string; titulo: 
   const linea = 1 - Math.pow(1 - lim((t - a - 2 * F) / 0.45), 3);
   return (
     <AbsoluteFill>
-      <Fondo t={t} />
+      <FondoDifuminado t={t} />
       <div style={{position: 'absolute', left: 0, right: 0, top: 380, textAlign: 'center', fontWeight: 800, fontSize: 40, letterSpacing: '0.3em', color: C.amarillo, textShadow: glow(GLOW_AMARILLO, 0.7)}}>
         <Sube t={t} en={a}>{num}</Sube>
       </div>
@@ -827,7 +849,7 @@ const Generando: React.FC<{t: number; a: number; b: number; en: number}> = ({t, 
   );
 };
 
-const PANTALLA = ['broll', 'storyboard', 'valioso2', 'compara_a2v2', 'compara_b2', 'compara_c', 'capitulo', 'recap'];
+const PANTALLA = ['broll', 'storyboard', 'valioso2', 'compara_a2v2', 'compara_b2', 'compara_c', 'compara_c2', 'capitulo', 'recap'];
 const Grafico: React.FC<{t: number; g: Grafico}> = ({t, g}) => {
   const p = g as never;
   switch (g.tipo) {
@@ -847,9 +869,11 @@ const Grafico: React.FC<{t: number; g: Grafico}> = ({t, g}) => {
     case 'momento': return <Momento {...(p as React.ComponentProps<typeof Momento>)} t={t} />;
     case 'compara_a2v2': return <ComparaA2v2 {...(p as React.ComponentProps<typeof ComparaA2v2>)} t={t} />;
     case 'clonado': return <Clonado {...(p as React.ComponentProps<typeof Clonado>)} t={t} />;
+    case 'lupas': return <Lupas {...(p as React.ComponentProps<typeof Lupas>)} t={t} />;
     case 'compara_b2': return <ComparaB2 {...(p as React.ComponentProps<typeof ComparaB2>)} t={t} />;
     case 'cliente': return <Cliente {...(p as React.ComponentProps<typeof Cliente>)} t={t} />;
     case 'compara_c': return <ComparaC {...(p as React.ComponentProps<typeof ComparaC>)} t={t} />;
+    case 'compara_c2': return <ComparaC2 {...(p as React.ComponentProps<typeof ComparaC2>)} t={t} />;
     case 'capitulo': return <Capitulo {...(p as React.ComponentProps<typeof Capitulo>)} t={t} />;
     case 'fichas': return <Fichas {...(p as React.ComponentProps<typeof Fichas>)} t={t} />;
     case 'recap': return <Recap {...(p as React.ComponentProps<typeof Recap>)} t={t} />;
