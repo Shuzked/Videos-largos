@@ -8,13 +8,14 @@ import {Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie'
 import {cabe} from './iconos';
 import {Avatar, Bocadillo, Claqueta, Cronometro, Ico, Insignia} from './iconosFlat';
 import {Aviso, Fondo, Suave} from './piezas';
-import {TransicionUsuario} from './transicion';
+import {AbreKling, ComparaA2v2, ComparaB2, CtaBloques, LineaClavado, Plan3, Planeado2, PromptCard, Recap, Storyboard, Transicion16, TresModos, Valioso2} from './v2';
 import EDL from './edl.json';
 
 // Vídeo «Kling 4.0 en Higgsfield» (patrocinado). Base: el corte del usuario (25 fps); salida a 30 fps. Todo sale de
-// edl.json (bin/montaje.py): segmentos (anuncio del gancho, tramos del corte y los tres resultados enteros), zooms a la
-// web, anillos, difuminado de la barra del navegador, gráficos y cortes con la transición del usuario. Sin audio: la
-// mezcla (voz, resultados, efectos y música) se hace aparte (bin/mezcla.py).
+// edl.json (bin/montaje.py): segmentos (anuncio del gancho, tramos del corte y los tres resultados enteros), escenas de
+// pantalla (dividida con su cámara o la web a pantalla completa, con transformación suave entre ellas), cámara virtual,
+// resaltados, pestañas, gráficos y los cambios de escena con la transición del cliente. Sin audio: la mezcla (voz,
+// resultados, efectos y música) se hace aparte (bin/mezcla.py).
 
 const FPS = 30;
 const fr = (s: number) => Math.round(s * FPS);
@@ -23,79 +24,141 @@ const PANEL = 'rgba(14,14,18,0.88)';
 const SOMBRA = 'drop-shadow(0 8px 22px rgba(0,0,0,0.7))';
 const CHISPA = 'M0 -12 C 1.5 -3, 3 -1.5, 12 0 C 3 1.5, 1.5 3, 0 12 C -1.5 3, -3 1.5, -12 0 C -3 -1.5, -1.5 -3, 0 -12 Z';
 const SUAVE = Easing.bezier(0.65, 0, 0.35, 1);
+const CURVA = Easing.bezier(0.45, 0, 0.12, 1); // zooms: arrancan suave y se asientan despacio
 
 type Seg = {tipo: 'base' | 'resultado'; ini: number; dur: number; desde?: number; src?: string; modo?: string; creditos?: number; antes?: number};
-type Anillo = {a: number; b: number; r?: number[]; pos?: number[][]};
-type Rect = {a: number; b: number; x: number; y: number; w: number; h: number};
+type Caja = {x: number; y: number; w: number; h: number};
+type Foco = {a: number; b: number; r?: number[]; pos?: number[][]; c: string};
+type Etq = {en: number; b: number; x: number; y: number; txt: string; arriba: boolean};
 type Grafico = {tipo: string; a: number; b: number; [k: string]: unknown};
-type Ventana = {x: number; y: number; w: number; h: number; k: number; sx: number; sy: number};
-const D = EDL as unknown as {dur: number; pantalla: number[][]; ventana: Ventana; segs: Seg[]; zooms: number[][]; anillos: Anillo[]; difuminados: Rect[]; graficos: Grafico[]; cortes: number[]};
+const D = EDL as unknown as {dur: number; pantalla: number[][]; vc: Caja; bc: Caja; web: Caja; modos: {a: number; b: number; m: string}[];
+  camara: {t: number; s: number; x: number; y: number; d: number}[]; acentos: {t: number; a: number}[]; segs: Seg[]; focos: Foco[]; etiquetas: Etq[];
+  graficos: Grafico[]; cortes: number[]};
 export const DURACION_KLING = D.dur;
 
-// ---------------- base: el corte del usuario con zooms suaves a la web ----------------
-const zoom = (t: number) => {
-  let s = 1, fx = 0.5, fy = 0.5;
-  for (const [a, v, x, y, d] of D.zooms) {
-    if (t < a) break;
-    const k = d > 0 ? SUAVE(Math.min(1, (t - a) / d)) : 1;
-    s = s + (v - s) * k;
-    fx = fx + (x - fx) * k;
-    fy = fy + (y - fy) * k;
+// ---------------- cámara virtual: centro y escala con curva; acentos suaves en las palabras clave ----------------
+const camara = (t: number): React.CSSProperties => {
+  let cx = 960, cy = 540, ls = 0;
+  for (const k of D.camara) {
+    if (t < k.t) break;
+    const p = k.d > 0 ? CURVA(lim((t - k.t) / k.d)) : 1;
+    cx += (k.x - cx) * p; cy += (k.y - cy) * p; ls += (Math.log(k.s) - ls) * p;
   }
-  return {s, estilo: {position: 'absolute', inset: 0, transformOrigin: `${fx * 100}% ${fy * 100}%`, scale: s} as React.CSSProperties};
+  let s = Math.exp(ls);
+  for (const ac of D.acentos) {  // sube en 0,3 s y se relaja en 1,6 s
+    const u = t - ac.t;
+    if (u > 0 && u < 2.2) s *= 1 + ac.a * (u < 0.3 ? Easing.out(Easing.cubic)(u / 0.3) : 1 - SUAVE(lim((u - 0.3) / 1.6)));
+  }
+  s *= 1 + 0.006 * (0.5 + 0.5 * Math.sin(t * 0.42)); // respira, casi imperceptible: nada se queda congelado
+  cx = Math.min(1920 - 960 / s, Math.max(960 / s, cx));
+  cy = Math.min(1080 - 540 / s, Math.max(540 / s, cy));
+  return {position: 'absolute', inset: 0, transformOrigin: '0 0', translate: `${960 - cx * s}px ${540 - cy * s}px`, scale: s};
 };
 
-// barra del navegador (marcadores y extensiones de terceros): desenfoque fuerte
-const Difuminados: React.FC<{t: number}> = ({t}) => (
+// ---------------- escena de pantalla: dividida (su burbuja + la web, como en el corte) ↔ web a pantalla completa ----------------
+const enPantalla = (c: number) => D.pantalla.some(([a, b]) => c >= a - 1e-3 && c < b - 1e-3);
+const MEDIA = 0.4; // la transformación dura 0,8 s, centrada en el cambio
+const valorModo = (m: string) => (m === 'web' ? 1 : 0);
+const modoWeb = (t: number) => {
+  for (let i = 0; i < D.modos.length; i++) {
+    const s = D.modos[i];
+    if (t < s.a - MEDIA || t >= s.b + MEDIA) continue;
+    const prev = D.modos[i - 1], next = D.modos[i + 1];
+    let v = valorModo(s.m);
+    if (t < s.a) { if (prev && Math.abs(prev.b - s.a) < 1e-3) continue; return v; }
+    if (t >= s.b) { if (next && Math.abs(next.a - s.b) < 1e-3) continue; return v; }
+    if (prev && Math.abs(prev.b - s.a) < 1e-3 && prev.m !== s.m && t < s.a + MEDIA) {
+      const pv = valorModo(prev.m); v = pv + (v - pv) * SUAVE(lim((t - (s.a - MEDIA)) / (2 * MEDIA)));
+    }
+    if (next && Math.abs(next.a - s.b) < 1e-3 && next.m !== s.m && t > s.b - MEDIA) {
+      const nv = valorModo(next.m); v = v + (nv - v) * SUAVE(lim((t - (s.b - MEDIA)) / (2 * MEDIA)));
+    }
+    return v;
+  }
+  return 0;
+};
+const mezcla = (A: Caja, B: Caja, m: number): Caja => ({x: A.x + (B.x - A.x) * m, y: A.y + (B.y - A.y) * m, w: A.w + (B.w - A.w) * m, h: A.h + (B.h - A.h) * m});
+
+// recorte del corte (un trozo del fotograma) colocado en un rectángulo de la pantalla
+const Recorte: React.FC<{caja: Caja; corte: Caja; radio: number; style?: React.CSSProperties; children?: React.ReactNode; s: Seg}> = ({caja, corte, radio, style, children, s}) => {
+  const k = caja.w / corte.w;
+  return (
+    <div style={{position: 'absolute', left: caja.x, top: caja.y, width: caja.w, height: caja.h, borderRadius: radio, overflow: 'hidden', ...style}}>
+      <div style={{position: 'absolute', left: -corte.x * k, top: -corte.y * k, width: 1920, height: 1080, transformOrigin: '0 0', scale: k}}>
+        <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
+        {children}
+      </div>
+    </div>
+  );
+};
+
+// pestaña de lo elegido en cada foto de Frames, debajo de la miniatura (coordenadas del corte; se amplía con la ventana)
+const Pestanas: React.FC<{t: number}> = ({t}) => (
   <>
-    {D.difuminados.filter((r) => t >= r.a && t < r.b).map((r, i) => (
-      <div key={i} style={{position: 'absolute', left: r.x, top: r.y, width: r.w, height: r.h, backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', background: 'rgba(24,24,28,0.55)'}} />
-    ))}
+    {D.etiquetas.filter((e) => t >= e.en && t < e.b + 0.3).map((e, i) => {
+      const ap = aparece(t, e.en, 0);
+      const sale = lim((t - e.b) / 0.3);
+      return (
+        <div key={i} style={{position: 'absolute', left: e.x - 32, width: 64, top: e.y + 22, display: 'flex', justifyContent: 'center',
+          scale: `${ap.sx} ${ap.sy}`, opacity: ap.op * (1 - sale), transformOrigin: '50% 0%'}}>
+          <div style={{padding: '1.5px 4px', borderRadius: 4, background: LIMA, color: '#111', fontWeight: 900, fontSize: 8.5, letterSpacing: '0.04em', whiteSpace: 'nowrap',
+            boxShadow: '0 0 8px rgba(209,254,23,0.7), 0 2px 6px rgba(0,0,0,0.6)'}}>{e.txt}</div>
+        </div>
+      );
+    })}
   </>
 );
 
-// anillo que se dibuja alrededor de un control de la web (coordenadas del corte, dentro del zoom)
-const Anillos: React.FC<{t: number}> = ({t}) => (
-  <svg width={1920} height={1080} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
-    {D.anillos.filter((an) => t >= an.a - 0.05 && t < an.b + 0.25).map((an, i) => {
-      let r = an.r;
-      if (an.pos) for (const p of an.pos) if (t >= p[0]) r = p.slice(1);
-      if (!r) return null;
-      const [x, y, w, h] = r;
-      const pad = 5, rr = (h + 2 * pad) / 2;
-      const per = 2 * (w + h + 4 * pad);
-      const dib = 1 - Math.pow(1 - lim((t - an.a) / 0.35), 3);
-      const sale = lim((t - an.b) / 0.25);
-      return (
-        <g key={i} opacity={1 - sale}>
-          <rect x={x - pad} y={y - pad} width={w + 2 * pad} height={h + 2 * pad} rx={rr} fill="none" stroke={C.amarillo} strokeWidth={3.2}
-            strokeDasharray={`${per * dib} ${per}`} style={{filter: `drop-shadow(0 0 6px rgba(${GLOW_AMARILLO},0.9))`}} />
-          <rect x={x - pad} y={y - pad} width={w + 2 * pad} height={h + 2 * pad} rx={rr} fill={`rgba(${GLOW_AMARILLO},${0.12 * dib * (0.7 + 0.3 * Math.sin(t * 6))})`} />
-        </g>
-      );
-    })}
-  </svg>
-);
+// resaltado: lo demás se apaga y el control entero se levanta un poco y brilla (sin trazos)
+const Focos: React.FC<{t: number; s: Seg; W: Caja}> = ({t, s, W}) => {
+  const activos = D.focos.filter((f) => t >= f.a && t < f.b + 0.35);
+  if (!activos.length) return null;
+  const k = W.w / D.vc.w;
+  const vis = Math.max(...activos.map((f) => Math.min(lim((t - f.a) / 0.3), 1 - lim((t - f.b) / 0.35))));
+  return (
+    <>
+      <div style={{position: 'absolute', left: -400, top: -400, width: 2720, height: 1880, background: `rgba(0,0,0,${0.62 * vis})`}} />
+      {activos.map((f, i) => {
+        let r = f.r ?? [0, 0, 0, 0];
+        if (f.pos) for (const p of f.pos) if (t >= p[0]) r = p.slice(1);
+        const pad = 3;
+        const caja = {x: W.x + (r[0] - pad - D.vc.x) * k, y: W.y + (r[1] - pad - D.vc.y) * k, w: (r[2] + 2 * pad) * k, h: (r[3] + 2 * pad) * k};
+        const v = Math.min(lim((t - f.a) / 0.3), 1 - lim((t - f.b) / 0.35));
+        const m = muelle(t, f.a, 2.2, 6);
+        const late = 0.5 + 0.5 * Math.sin((t - f.a) * 4);
+        const col = f.c === 'lima' ? '209,254,23' : '255,255,255';
+        return (
+          <div key={i} style={{position: 'absolute', left: caja.x, top: caja.y, width: caja.w, height: caja.h, opacity: v, scale: 1 + 0.07 * m,
+            filter: `drop-shadow(0 0 ${8 + 6 * late}px rgba(${col},0.95)) drop-shadow(0 0 ${26 + 12 * late}px rgba(${col},0.55)) brightness(${1 + 0.12 * v})`}}>
+            <Recorte caja={{x: 0, y: 0, w: caja.w, h: caja.h}} corte={{x: r[0] - pad, y: r[1] - pad, w: r[2] + 2 * pad, h: r[3] + 2 * pad}} radio={9 * k} s={s} />
+          </div>
+        );
+      })}
+    </>
+  );
+};
 
-// tramos de pantalla del corte (con su burbuja de cámara): aquí va la web sola, sin cámara. La ventana del navegador del
-// corte se amplía a casi toda la pantalla, centrada y con esquinas redondeadas, sobre el fondo del vídeo. Misma estructura
-// en los dos casos (solo cambian los estilos) para que el vídeo no se vuelva a montar en cada cambio.
-const V = D.ventana;
-const enPantalla = (c: number) => D.pantalla.some(([a, b]) => c >= a - 1e-3 && c < b - 1e-3);
 const Base: React.FC<{s: Seg; t: number}> = ({s, t}) => {
-  const c = (s.desde ?? 0) + Math.round((t - s.ini) * FPS) / FPS;
+  const c = (s.desde ?? 0) + Math.round((t - s.ini) * 25) / 25;
   const p = enPantalla(c);
+  const m = p ? modoWeb(t) : 0;
+  const W = mezcla(D.vc, D.web, m);
+  const k = W.w / D.vc.w;
+  const B = {x: D.bc.x - 620 * m, y: D.bc.y + 40 * m, w: D.bc.w * (1 - 0.12 * m), h: D.bc.h * (1 - 0.12 * m)};
   return (
     <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
-      {p && <Fondo t={t} />}
-      <div style={p ? {position: 'absolute', left: V.sx, top: V.sy, width: V.w * V.k, height: V.h * V.k, borderRadius: 18, overflow: 'hidden',
-        boxShadow: '0 0 0 2px rgba(255,255,255,0.14), 0 26px 80px rgba(0,0,0,0.7)'} : {position: 'absolute', inset: 0, overflow: 'hidden'}}>
-        <div style={p ? {position: 'absolute', left: -V.x * V.k, top: -V.y * V.k, width: 1920, height: 1080, transformOrigin: '0 0', scale: V.k}
-          : {position: 'absolute', left: 0, top: 0, width: 1920, height: 1080}}>
-          <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
-          {p && <Anillos t={t} />}
-        </div>
-      </div>
+      {p ? (
+        <>
+          <Fondo t={t} />
+          {m < 0.999 && <Recorte caja={B} corte={D.bc} radio={20} s={s} style={{opacity: 1 - m * 0.6, boxShadow: '0 20px 60px rgba(0,0,0,0.55)'}} />}
+          <Recorte caja={W} corte={D.vc} radio={14 * k} s={s} style={{boxShadow: '0 26px 80px rgba(0,0,0,0.7)'}}>
+            <Pestanas t={t} />
+          </Recorte>
+          <Focos t={t} s={s} W={W} />
+        </>
+      ) : (
+        <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
+      )}
     </Sequence>
   );
 };
@@ -762,34 +825,34 @@ const Generando: React.FC<{t: number; a: number; b: number; en: number}> = ({t, 
   );
 };
 
-const PANTALLA = ['broll', 'compara_a2', 'compara_b', 'compara_c', 'capitulo'];
+const PANTALLA = ['broll', 'storyboard', 'valioso2', 'compara_a2v2', 'compara_b2', 'compara_c', 'capitulo', 'recap'];
 const Grafico: React.FC<{t: number; g: Grafico}> = ({t, g}) => {
   const p = g as never;
   switch (g.tipo) {
     case 'lateral': return <Lateral {...(p as React.ComponentProps<typeof Lateral>)} t={t} />;
-    case 'linea_tiempo': return <LineaTiempo {...(p as React.ComponentProps<typeof LineaTiempo>)} t={t} />;
+    case 'linea_clavado': return <LineaClavado {...(p as React.ComponentProps<typeof LineaClavado>)} t={t} />;
     case 'patrocinio': return <Patrocinio {...(p as React.ComponentProps<typeof Patrocinio>)} t={t} />;
     case 'broll': return <Broll {...(p as React.ComponentProps<typeof Broll>)} t={t} />;
     case 'duracion': return <Duracion {...(p as React.ComponentProps<typeof Duracion>)} t={t} />;
-    case 'pastilla_creditos': return <PastillaCreditos {...(p as React.ComponentProps<typeof PastillaCreditos>)} t={t} />;
     case 'pecho': return <Pecho {...(p as React.ComponentProps<typeof Pecho>)} t={t} />;
-    case 'lista': return <Lista {...(p as React.ComponentProps<typeof Lista>)} t={t} />;
-    case 'planeado': return <Planeado {...(p as React.ComponentProps<typeof Planeado>)} t={t} />;
-    case 'fotogramas': return <Fotogramas {...(p as React.ComponentProps<typeof Fotogramas>)} t={t} />;
-    case 'prompt_es': return <PromptEs {...(p as React.ComponentProps<typeof PromptEs>)} t={t} />;
+    case 'plan3': return <Plan3 {...(p as React.ComponentProps<typeof Plan3>)} t={t} />;
+    case 'planeado2': return <Planeado2 {...(p as React.ComponentProps<typeof Planeado2>)} t={t} />;
+    case 'storyboard': return <Storyboard {...(p as React.ComponentProps<typeof Storyboard>)} t={t} />;
+    case 'prompt_card': return <PromptCard {...(p as React.ComponentProps<typeof PromptCard>)} t={t} />;
     case 'aviso': return <Aviso {...(p as React.ComponentProps<typeof Aviso>)} t={t} />;
-    case 'generando': return <Generando {...(p as React.ComponentProps<typeof Generando>)} t={t} />;
-    case 'valioso': return <Valioso {...(p as React.ComponentProps<typeof Valioso>)} t={t} />;
+    case 'valioso2': return <Valioso2 {...(p as React.ComponentProps<typeof Valioso2>)} t={t} />;
     case 'nota': return <Nota {...(p as React.ComponentProps<typeof Nota>)} t={t} />;
-    case 'compara_a2': return <ComparaA2 {...(p as React.ComponentProps<typeof ComparaA2>)} t={t} />;
+    case 'compara_a2v2': return <ComparaA2v2 {...(p as React.ComponentProps<typeof ComparaA2v2>)} t={t} />;
     case 'clonado': return <Clonado {...(p as React.ComponentProps<typeof Clonado>)} t={t} />;
-    case 'compara_b': return <ComparaB {...(p as React.ComponentProps<typeof ComparaB>)} t={t} />;
+    case 'compara_b2': return <ComparaB2 {...(p as React.ComponentProps<typeof ComparaB2>)} t={t} />;
     case 'cliente': return <Cliente {...(p as React.ComponentProps<typeof Cliente>)} t={t} />;
     case 'compara_c': return <ComparaC {...(p as React.ComponentProps<typeof ComparaC>)} t={t} />;
     case 'capitulo': return <Capitulo {...(p as React.ComponentProps<typeof Capitulo>)} t={t} />;
     case 'fichas': return <Fichas {...(p as React.ComponentProps<typeof Fichas>)} t={t} />;
-    case 'tarjeta_broll': return <TarjetaBroll {...(p as React.ComponentProps<typeof TarjetaBroll>)} t={t} />;
-    case 'cta': return <Cta {...(p as React.ComponentProps<typeof Cta>)} t={t} />;
+    case 'recap': return <Recap {...(p as React.ComponentProps<typeof Recap>)} t={t} />;
+    case 'tres_modos': return <TresModos {...(p as React.ComponentProps<typeof TresModos>)} t={t} />;
+    case 'abre_kling': return <AbreKling {...(p as React.ComponentProps<typeof AbreKling>)} t={t} />;
+    case 'cta_bloques': return <CtaBloques {...(p as React.ComponentProps<typeof CtaBloques>)} t={t} />;
     case 'comentario': return <Comentario {...(p as React.ComponentProps<typeof Comentario>)} t={t} />;
     default: return null;
   }
@@ -798,19 +861,18 @@ const Grafico: React.FC<{t: number; g: Grafico}> = ({t, g}) => {
 export const Kling: React.FC = () => {
   const frame = useCurrentFrame();
   const t = frame / FPS;
-  // la transición del usuario está calcada a 25 fps: se indexa por tiempo para que dure lo mismo
+  // la transición del cliente está medida a 25 fps: se indexa por tiempo para que dure lo mismo
   const frame25 = Math.floor(t * 25 + 1e-6);
-  const z = zoom(t);
   const visibles = D.segs.filter((s) => t >= s.ini - 0.5 && t < s.ini + s.dur + 0.5);
   return (
     <AbsoluteFill style={{background: '#000', fontFamily: 'Montserrat', color: '#fff', overflow: 'hidden'}}>
-      <TransicionUsuario frame={frame25} cortes={D.cortes}>
-        <div style={z.estilo}>
+      <Transicion16 frame25={frame25} cortes={D.cortes}>
+        <div style={camara(t)}>
           {visibles.filter((s) => s.tipo === 'base').map((s) => <Base key={s.ini} s={s} t={t} />)}
         </div>
         {visibles.filter((s) => s.tipo === 'resultado').map((s) => <Resultado key={s.ini} t={t} s={s} />)}
         {D.graficos.filter((g) => PANTALLA.includes(g.tipo)).map((g, i) => <Grafico key={`p${i}`} t={t} g={g} />)}
-      </TransicionUsuario>
+      </Transicion16>
       {D.graficos.filter((g) => !PANTALLA.includes(g.tipo)).map((g, i) => <Grafico key={`g${i}`} t={t} g={g} />)}
     </AbsoluteFill>
   );

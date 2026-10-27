@@ -103,6 +103,7 @@ SBT = {
     "negativo": dict(pk=0.024, dur=0.78, peak=-8.6, obj=-19), "exito": dict(pk=0.024, dur=2.0, peak=-9.9, obj=-19),
     "confirmar": dict(pk=0.005, dur=0.64, peak=-17.1, obj=-19), "mensaje": dict(pk=3.089, dur=2.71, peak=-8.3, obj=-19, desde=2.589),
     "tap": dict(pk=0.118, dur=0.8, peak=-10.0, obj=-19),
+    "shutter": dict(pk=0.56, dur=0.45, peak=-3, obj=-16, desde=0.5),
 }
 efx = np.zeros((N, 2), np.float32)
 _cache = {}

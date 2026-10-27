@@ -11,15 +11,440 @@
 492.92
 ]
 ],
-"ventana": {
-"x": 521,
-"y": 196,
-"w": 1375,
-"h": 690,
-"k": 1.3381818181818181,
-"sx": 40,
-"sy": 78.32727272727271
+"vc": {
+"x": 518,
+"y": 192,
+"w": 1381,
+"h": 699
 },
+"bc": {
+"x": 17,
+"y": 146,
+"w": 488,
+"h": 789
+},
+"web": {
+"x": 40,
+"y": 74.34,
+"w": 1840,
+"h": 931.33
+},
+"modos": [
+{
+"a": 64.033,
+"b": 75.113,
+"m": "web"
+},
+{
+"a": 135.393,
+"b": 136.433,
+"m": "dividida"
+},
+{
+"a": 136.433,
+"b": 171.733,
+"m": "web"
+},
+{
+"a": 171.733,
+"b": 177.933,
+"m": "dividida"
+},
+{
+"a": 177.933,
+"b": 205.333,
+"m": "web"
+},
+{
+"a": 205.333,
+"b": 210.483,
+"m": "dividida"
+},
+{
+"a": 210.483,
+"b": 216.333,
+"m": "web"
+},
+{
+"a": 260.833,
+"b": 292.703,
+"m": "dividida"
+},
+{
+"a": 331.503,
+"b": 346.383,
+"m": "dividida"
+},
+{
+"a": 361.4,
+"b": 393.77,
+"m": "dividida"
+},
+{
+"a": 404.95,
+"b": 415.67,
+"m": "dividida"
+},
+{
+"a": 415.67,
+"b": 439.31,
+"m": "web"
+},
+{
+"a": 473.203,
+"b": 530.423,
+"m": "dividida"
+}
+],
+"camara": [
+{
+"t": 30.033,
+"s": 1.0,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 30.073,
+"s": 1.065,
+"x": 960,
+"y": 400,
+"d": 22.36
+},
+{
+"t": 57.653,
+"s": 1.065,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 57.693,
+"s": 1.01,
+"x": 960,
+"y": 400,
+"d": 6.28
+},
+{
+"t": 64.033,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 67.333,
+"s": 1.75,
+"x": 570.6,
+"y": 332.8,
+"d": 0.9
+},
+{
+"t": 71.033,
+"s": 1.6,
+"x": 622.0,
+"y": 861.8,
+"d": 0.9
+},
+{
+"t": 74.633,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.45
+},
+{
+"t": 75.113,
+"s": 1.0,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 75.153,
+"s": 1.065,
+"x": 960,
+"y": 400,
+"d": 6.22
+},
+{
+"t": 81.433,
+"s": 1.065,
+"x": 905,
+"y": 400,
+"d": 0
+},
+{
+"t": 81.473,
+"s": 1.01,
+"x": 905,
+"y": 400,
+"d": 14.86
+},
+{
+"t": 96.393,
+"s": 1.0,
+"x": 1010,
+"y": 400,
+"d": 0
+},
+{
+"t": 96.433,
+"s": 1.065,
+"x": 1010,
+"y": 400,
+"d": 5.26
+},
+{
+"t": 101.753,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 135.393,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 137.633,
+"s": 1.5,
+"x": 662.0,
+"y": 424.8,
+"d": 1.0
+},
+{
+"t": 145.333,
+"s": 1.8,
+"x": 555.3,
+"y": 852.4,
+"d": 0.9
+},
+{
+"t": 153.833,
+"s": 1.9,
+"x": 527.3,
+"y": 617.9,
+"d": 0.9
+},
+{
+"t": 171.033,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.7
+},
+{
+"t": 178.533,
+"s": 1.8,
+"x": 555.3,
+"y": 937.7,
+"d": 0.9
+},
+{
+"t": 184.033,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.6
+},
+{
+"t": 185.233,
+"s": 1.7,
+"x": 586.7,
+"y": 351.5,
+"d": 1.0
+},
+{
+"t": 191.433,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.7
+},
+{
+"t": 192.633,
+"s": 1.6,
+"x": 622.0,
+"y": 884.4,
+"d": 0.9
+},
+{
+"t": 197.633,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.7
+},
+{
+"t": 199.633,
+"s": 1.5,
+"x": 662.0,
+"y": 404.8,
+"d": 1.0
+},
+{
+"t": 204.633,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.7
+},
+{
+"t": 210.933,
+"s": 1.8,
+"x": 555.3,
+"y": 937.7,
+"d": 0.9
+},
+{
+"t": 260.833,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 331.503,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 361.4,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 404.95,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 417.37,
+"s": 1.5,
+"x": 662.0,
+"y": 404.8,
+"d": 1.0
+},
+{
+"t": 423.37,
+"s": 1.8,
+"x": 555.3,
+"y": 684.6,
+"d": 0.9
+},
+{
+"t": 431.77,
+"s": 1.8,
+"x": 555.3,
+"y": 937.7,
+"d": 0.9
+},
+{
+"t": 436.37,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0.8
+},
+{
+"t": 473.203,
+"s": 1.0,
+"x": 960,
+"y": 540,
+"d": 0
+},
+{
+"t": 530.423,
+"s": 1.065,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 530.423,
+"s": 1.0,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 530.463,
+"s": 1.01,
+"x": 960,
+"y": 400,
+"d": 2.28
+},
+{
+"t": 546.003,
+"s": 1.0,
+"x": 960,
+"y": 400,
+"d": 0
+},
+{
+"t": 546.043,
+"s": 1.065,
+"x": 960,
+"y": 400,
+"d": 15.52
+}
+],
+"acentos": [
+{
+"t": 31.733,
+"a": 0.035
+},
+{
+"t": 34.343,
+"a": 0.035
+},
+{
+"t": 41.743,
+"a": 0.035
+},
+{
+"t": 48.703,
+"a": 0.035
+},
+{
+"t": 60.343,
+"a": 0.035
+},
+{
+"t": 80.463,
+"a": 0.035
+},
+{
+"t": 81.433,
+"a": 0.035
+},
+{
+"t": 532.003,
+"a": 0.035
+},
+{
+"t": 546.613,
+"a": 0.035
+},
+{
+"t": 549.693,
+"a": 0.035
+},
+{
+"t": 557.623,
+"a": 0.035
+}
+],
 "segs": [
 {
 "tipo": "resultado",
@@ -82,156 +507,7 @@
 "desde": 416.83
 }
 ],
-"zooms": [
-[
-64.033,
-1,
-0.5,
-0.5,
-0
-],
-[
-67.483,
-1.85,
-0.0208,
-0.3079,
-0.45
-],
-[
-71.133,
-1.85,
-0.0208,
-0.8234,
-0.45
-],
-[
-75.013,
-1,
-0.5,
-0.5,
-0
-],
-[
-145.633,
-1.9,
-0.0208,
-0.7899,
-0.5
-],
-[
-154.033,
-2.05,
-0.0208,
-0.5793,
-0.5
-],
-[
-171.633,
-1.55,
-0.0208,
-0.5979,
-0.6
-],
-[
-177.733,
-1.9,
-0.0208,
-0.8705,
-0.5
-],
-[
-184.033,
-1,
-0.5,
-0.5,
-0.4
-],
-[
-187.333,
-1.75,
-0.0208,
-0.2509,
-0.45
-],
-[
-191.533,
-1,
-0.5,
-0.5,
-0.4
-],
-[
-192.933,
-1.8,
-0.0208,
-0.8085,
-0.45
-],
-[
-197.433,
-1,
-0.5,
-0.5,
-0.4
-],
-[
-202.333,
-1.75,
-0.0208,
-0.3749,
-0.5
-],
-[
-206.233,
-1,
-0.5,
-0.5,
-0.5
-],
-[
-210.533,
-1.9,
-0.0208,
-0.8705,
-0.45
-],
-[
-216.333,
-1,
-0.5,
-0.5,
-0.5
-],
-[
-260.833,
-1,
-0.5,
-0.5,
-0
-],
-[
-423.67,
-1.8,
-0.0208,
-0.6351,
-0.5
-],
-[
-432.27,
-1.9,
-0.0208,
-0.8705,
-0.45
-],
-[
-436.27,
-1,
-0.5,
-0.5,
-0.4
-]
-],
-"anillos": [
+"focos": [
 {
 "a": 67.753,
 "b": 69.083,
@@ -240,7 +516,8 @@
 371,
 78,
 31
-]
+],
+"c": "blanco"
 },
 {
 "a": 69.143,
@@ -250,7 +527,8 @@
 371,
 56,
 31
-]
+],
+"c": "blanco"
 },
 {
 "a": 69.903,
@@ -260,11 +538,12 @@
 371,
 70,
 31
-]
+],
+"c": "blanco"
 },
 {
 "a": 71.293,
-"b": 75.033,
+"b": 74.983,
 "pos": [
 [
 71.293,
@@ -287,7 +566,8 @@
 216,
 32
 ]
-]
+],
+"c": "lima"
 },
 {
 "a": 148.013,
@@ -297,7 +577,8 @@
 735,
 105,
 37
-]
+],
+"c": "blanco"
 },
 {
 "a": 148.923,
@@ -307,17 +588,19 @@
 735,
 106,
 37
-]
+],
+"c": "blanco"
 },
 {
 "a": 151.373,
-"b": 154.033,
+"b": 153.933,
 "r": [
 538,
 780,
 217,
 37
-]
+],
+"c": "blanco"
 },
 {
 "a": 180.733,
@@ -327,30 +610,77 @@
 824,
 216,
 32
-]
+],
+"c": "lima"
 },
 {
-"a": 210.933,
-"b": 216.333,
+"a": 195.493,
+"b": 197.533,
 "r": [
 538,
 824,
 216,
 32
-]
+],
+"c": "lima"
 },
 {
-"a": 432.51,
+"a": 210.933,
+"b": 216.233,
+"r": [
+538,
+824,
+216,
+32
+],
+"c": "lima"
+},
+{
+"a": 432.15,
 "b": 436.27,
 "r": [
 538,
 824,
 216,
 32
-]
+],
+"c": "lima"
 }
 ],
-"difuminados": [],
+"etiquetas": [
+{
+"en": 187.883,
+"x": 624,
+"y": 443,
+"txt": "START",
+"arriba": true,
+"b": 197.733
+},
+{
+"en": 188.423,
+"x": 670,
+"y": 443,
+"txt": "MIDDLE",
+"arriba": true,
+"b": 197.733
+},
+{
+"en": 189.313,
+"x": 716,
+"y": 443,
+"txt": "MIDDLE",
+"arriba": true,
+"b": 197.733
+},
+{
+"en": 190.483,
+"x": 578,
+"y": 489,
+"txt": "END",
+"arriba": false,
+"b": 197.733
+}
+],
 "graficos": [
 {
 "tipo": "lateral",
@@ -376,7 +706,7 @@
 "abajo": true
 },
 {
-"tipo": "linea_tiempo",
+"tipo": "linea_clavado",
 "a": 36.333,
 "b": 42.413,
 "en": [
@@ -386,7 +716,13 @@
 40.223
 ],
 "inicio": 37.093,
-"clavado": 41.743
+"clavado": 41.743,
+"match": [
+0.0,
+5.583,
+21.667,
+30.0
+]
 },
 {
 "tipo": "patrocinio",
@@ -412,16 +748,6 @@
 "enx2": 60.343,
 "en3": 61.233,
 "en15": 63.693
-},
-{
-"tipo": "pastilla_creditos",
-"a": 72.433,
-"b": 77.083,
-"antes": 120,
-"ahora": 30,
-"en": 73.273,
-"x": 1000,
-"y": 760
 },
 {
 "tipo": "pecho",
@@ -463,169 +789,154 @@
 ]
 },
 {
-"tipo": "lista",
+"tipo": "plan3",
 "a": 81.433,
 "b": 96.233,
-"x": 110,
-"y": 300,
-"w": 560,
-"paso": 170,
-"titulo": "EL PLAN · 3 PASOS",
 "tituloEn": 81.433,
 "items": [
 [
 "Frames",
 "qué pasa en cada momento",
-83.313
+83.313,
+"frames"
 ],
 [
 "References",
 "una persona real + el producto",
-87.633
+87.633,
+"references"
 ],
 [
-"Edit",
+"Edit video",
 "el cambio que pide el cliente",
-91.613
+91.613,
+"edit"
 ]
 ]
 },
 {
-"tipo": "planeado",
+"tipo": "planeado2",
 "a": 96.393,
-"b": 101.933,
+"b": 100.483,
 "en1": 98.253,
 "en2": 99.143
 },
 {
-"tipo": "fotogramas",
+"tipo": "storyboard",
 "a": 103.473,
-"b": 135.033,
+"b": 135.393,
 "titulo": 104.383,
+"sub": 106.213,
 "en": [
 109.453,
 113.373,
 116.773,
-120.973
+120.893
 ],
-"ia": 127.143,
-"linea": 129.633,
+"ia": 126.093,
+"linea": 128.533,
+"orden": 133.093,
+"tiempo": 133.893,
 "textos": [
 "Caja cerrada, a oscuras",
-"Se abre la tapa y entra la luz",
-"El frasco en el aire",
+"Una mano abre la tapa y entra la luz",
+"El frasco en el aire, entre bruma y gotas",
 "Plano final sobre el mármol"
 ]
 },
 {
-"tipo": "prompt_es",
+"tipo": "prompt_card",
 "a": 154.333,
-"b": 159.733,
-"txt": "Anuncio de perfume de lujo de 30 s, en una sola toma, lento y elegante",
-"etiqueta": "PROMPT · FRAMES"
-},
-{
-"tipo": "prompt_es",
-"a": 159.773,
-"b": 167.733,
-"txt": "0–7 s: caja negra cerrada, a oscuras, sobre mármol, con un hilo de luz dorada",
-"etiqueta": "PROMPT · FRAMES"
-},
-{
-"tipo": "prompt_es",
-"a": 167.773,
-"b": 171.733,
-"txt": "7–14 s: una mano abre la tapa, sale luz dorada y aparece el frasco AMBREVIA",
-"etiqueta": "PROMPT · FRAMES"
-},
-{
-"tipo": "prompt_es",
-"a": 171.773,
-"b": 174.933,
-"txt": "14–22 s: el frasco sube a cámara lenta entre bruma y gotas; la cámara lo rodea",
-"etiqueta": "PROMPT · FRAMES"
-},
-{
-"tipo": "prompt_es",
-"a": 174.933,
 "b": 177.933,
-"txt": "22–30 s: el frasco se posa en el mármol y la cámara se acerca al plano final",
-"etiqueta": "PROMPT · FRAMES"
-},
-{
-"tipo": "pastilla_creditos",
-"a": 180.733,
-"b": 184.033,
-"antes": 120,
-"ahora": 30,
-"en": 180.733,
-"x": 1000,
-"y": 820
+"etiqueta": "PROMPT · FRAMES",
+"partes": [
+[
+"Anuncio de perfume de lujo de 30 segundos, en una sola toma continua, lento y elegante.",
+154.293
+],
+[
+"0-7 s: una caja negra mate cerrada, a oscuras, sobre una mesa de mármol, con un hilo de luz dorada en el borde.",
+159.773
+],
+[
+"7-14 s: una mano levanta despacio la tapa, sale una luz dorada cálida y aparece el frasco de cristal ámbar con el grabado AMBREVIA.",
+167.773
+],
+[
+"14-22 s: el frasco sube por el aire a cámara lenta entre una bruma fina de perfume y gotas; la cámara gira despacio a su alrededor.",
+99999.0
+],
+[
+"22-30 s: el frasco se posa suavemente en el mármol y la cámara se acerca hasta el plano final, con contraluz dorado y reflejos suaves. Sin personas salvo la mano. Sin más textos ni logos.",
+99999.0
+]
+],
+"fin": 171.773
 },
 {
 "tipo": "aviso",
 "a": 184.233,
-"b": 187.333,
+"b": 187.033,
 "texto": "La primera vez lo lancé en otro modo por error → lo repito en Frames"
 },
 {
-"tipo": "prompt_es",
+"tipo": "prompt_card",
 "a": 204.933,
 "b": 210.433,
-"txt": "El hombre de las fotos coge el frasco, se perfuma, lo huele y sonríe a cámara",
-"etiqueta": "PROMPT · REFERENCES"
+"etiqueta": "PROMPT · REFERENCES",
+"partes": [
+[
+"El hombre de las fotos (misma cara, pelo rizado oscuro y barba corta, camiseta negra), de pie en un estudio oscuro y elegante con luz dorada cálida, coge de una mesa de mármol el frasco de perfume de cristal ámbar con el grabado AMBREVIA, se echa perfume una vez en la muñeca, lo huele, mira a cámara y sonríe con seguridad. Acercamiento lento de cámara, luz de cine, piel realista. Un solo plano.",
+204.933
+]
+],
+"fin": 99999.0
 },
 {
-"tipo": "pastilla_creditos",
-"a": 210.933,
-"b": 216.333,
-"antes": 60,
-"ahora": 15,
-"en": 210.933,
-"x": 1000,
-"y": 820
-},
-{
-"tipo": "generando",
-"a": 216.833,
-"b": 229.313,
-"en": 216.833
-},
-{
-"tipo": "valioso",
-"a": 219.233,
-"b": 230.733,
-"enProd": 222.293,
+"tipo": "valioso2",
+"a": 216.333,
+"b": 230.813,
+"enTitulo": 217.593,
+"enProd": 220.733,
 "enModelo": 223.593,
 "enAnuncio": 225.393,
-"enValioso": 228.513
+"enValioso": 228.513,
+"listo": 229.313
 },
 {
 "tipo": "nota",
-"a": 261.403,
-"b": 269.003,
+"a": 262.303,
+"b": 271.603,
 "texto": "La mano: el color no es del todo humano",
 "tono": "malo",
-"en": 262.003
+"en": 262.773
 },
 {
 "tipo": "nota",
-"a": 278.003,
-"b": 285.703,
+"a": 273.303,
+"b": 277.403,
+"texto": "La caja se abre un poco rara",
+"tono": "malo",
+"en": 273.803
+},
+{
+"tipo": "nota",
+"a": 280.003,
+"b": 285.603,
 "texto": "Un instante en que las letras fallan",
 "tono": "malo",
-"en": 279.803
+"en": 280.983
 },
 {
 "tipo": "nota",
-"a": 285.903,
-"b": 292.803,
+"a": 287.003,
+"b": 292.603,
 "texto": "Se ajusta muchísimo a las fotos y al movimiento",
 "tono": "bueno",
-"en": 286.903
+"en": 288.043
 },
 {
-"tipo": "compara_a2",
+"tipo": "compara_a2v2",
 "a": 292.703,
 "b": 331.503,
 "en": [
@@ -640,23 +951,30 @@
 328.133,
 330.073
 ],
-"ia": 314.603
+"match": [
+0.0,
+5.583,
+21.667,
+30.0
+],
+"ia": 314.003,
+"iaFin": 325.203
 },
 {
 "tipo": "nota",
-"a": 364.67,
+"a": 364.37,
 "b": 370.57,
 "texto": "Las manos: lo único que se nota un poco",
 "tono": "malo",
-"en": 365.17
+"en": 364.76
 },
 {
 "tipo": "nota",
-"a": 372.67,
+"a": 372.37,
 "b": 377.27,
 "texto": "El tapón aparece solo en el frasco",
 "tono": "malo",
-"en": 373.17
+"en": 372.97
 },
 {
 "tipo": "clonado",
@@ -676,11 +994,13 @@
 ]
 },
 {
-"tipo": "compara_b",
+"tipo": "compara_b2",
 "a": 393.77,
 "b": 404.95,
-"en": 396.45,
-"producto": 400.71
+"en": 395.68,
+"clavado": 398.12,
+"producto": 400.71,
+"creado": 402.09
 },
 {
 "tipo": "cliente",
@@ -691,21 +1011,17 @@
 "rodaje": 414.29
 },
 {
-"tipo": "prompt_es",
+"tipo": "prompt_card",
 "a": 425.77,
 "b": 432.07,
-"txt": "Cambia solo el fondo: una azotea al atardecer con la ciudad detrás",
-"etiqueta": "PROMPT · EDIT VIDEO"
-},
-{
-"tipo": "pastilla_creditos",
-"a": 432.51,
-"b": 436.27,
-"antes": 75,
-"ahora": 15,
-"en": 432.51,
-"x": 1000,
-"y": 820
+"etiqueta": "PROMPT · EDIT VIDEO",
+"partes": [
+[
+"Cambia solo el fondo: sustituye el estudio oscuro por una azotea soleada a la hora dorada, con el skyline de la ciudad detrás. Mantén exactamente igual al hombre, su ropa, el frasco de perfume, sus movimientos y el movimiento de cámara.",
+425.77
+]
+],
+"fin": 99999.0
 },
 {
 "tipo": "compara_c",
@@ -756,7 +1072,7 @@
 {
 "tipo": "pecho",
 "a": 530.703,
-"b": 534.703,
+"b": 532.803,
 "lineas": [
 {
 "ws": [
@@ -793,56 +1109,25 @@
 ]
 },
 {
-"tipo": "lista",
-"a": 534.803,
-"b": 545.903,
-"x": 110,
-"y": 250,
-"w": 600,
-"paso": 160,
-"titulo": "ESTO ES EL SERVICIO",
-"tituloEn": 534.803,
-"items": [
-[
-"Te pasa su producto",
-"una foto, y ya está",
-535.733
+"tipo": "recap",
+"a": 532.803,
+"b": 546.003,
+"enTitulo": 532.953,
+"en": [
+534.873,
+537.133,
+539.873,
+542.603
 ],
-[
-"Frames",
-"le planificas el anuncio",
-537.133
-],
-[
-"References",
-"metes a su modelo",
-539.873
-],
-[
-"Edit",
-"cambios sin repetir nada",
-543.403
-]
-]
+"editas": 544.803,
+"ejemplos": 535.403
 },
 {
-"tipo": "tarjeta_broll",
-"a": 534.803,
-"b": 545.903,
-"x": 1290,
-"y": 250,
-"w": 520,
-"srcs": [
-"medios/mk/pack_01_ledmask.mp4",
-"medios/mk/pack_10_projector.mp4",
-"medios/mk/pack_07_earbuds.mp4"
-],
-"cambios": [
-534.803,
-538.803,
-542.403
-],
-"etiqueta": "EJEMPLOS DE HIGGSFIELD"
+"tipo": "tres_modos",
+"a": 546.003,
+"b": 549.353,
+"en": 546.613,
+"sitio": 547.843
 },
 {
 "tipo": "pecho",
@@ -884,61 +1169,65 @@
 ]
 },
 {
-"tipo": "pecho",
+"tipo": "abre_kling",
 "a": 549.353,
-"b": 553.103,
-"lineas": [
-{
-"ws": [
-[
-"abre",
-549.413
-]
-],
-"size": 72
+"b": 553.123,
+"enAbre": 549.413,
+"enKling": 549.693,
+"enHiggs": 550.373
 },
 {
-"ws": [
-[
-"KLING 4.0",
-549.693,
-"k"
-]
-],
-"size": 130,
-"golpe": true
-},
-{
-"ws": [
-[
-"en",
-550.233
-],
-[
-"Higgsfield",
-550.373
-]
-],
-"size": 72
-}
-]
-},
-{
-"tipo": "cta",
+"tipo": "cta_bloques",
 "a": 553.203,
-"b": 556.203,
+"b": 556.223,
+"bloques": [
+{
+"a": 553.203,
+"b": 554.163,
 "ws": [
+[
+"tienes",
+553.243
+],
 [
 "el",
 553.653
 ],
 [
-"enlace,",
+"enlace",
 553.783
-],
+]
+]
+},
+{
+"a": 554.163,
+"b": 555.123,
+"ws": [
 [
 "en",
 554.193
+],
+[
+"el",
+554.333
+],
+[
+"primer",
+554.473
+],
+[
+"link",
+554.883
+]
+]
+},
+{
+"a": 555.123,
+"b": 556.223,
+"ws": [
+[
+"de",
+555.153
 ],
 [
 "la",
@@ -950,6 +1239,8 @@
 ]
 ],
 "flecha": 555.653
+}
+]
 },
 {
 "tipo": "comentario",
@@ -961,7 +1252,7 @@
 {
 "tipo": "pecho",
 "a": 557.503,
-"b": 561.103,
+"b": 560.003,
 "top": 660,
 "lineas": [
 {
@@ -995,6 +1286,11 @@
 30.033,
 52.493,
 57.653,
+64.033,
+75.113,
+103.473,
+135.393,
+216.333,
 230.8,
 260.833,
 292.703,
@@ -1006,6 +1302,9 @@
 439.3,
 454.333,
 472.003,
-473.203
+473.203,
+530.423,
+532.803,
+546.003
 ]
 }
