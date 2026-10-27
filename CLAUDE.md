@@ -85,3 +85,12 @@ Antes de subtitular, cruza la transcripción del cliente con el guion y con una 
 ### Plantilla de reels de Álvaro (para que todos se vean iguales)
 
 Todos los reels parten de `plantillas/reel-alvaro/` (código Remotion, sin vídeos): `src/a1/Reel.tsx` (cámara con tracking, B-roll, frases grandes, subtítulos, CTA, efectos), `src/a1/transicion.tsx` (transición calcada del cliente), `src/anim.tsx` / `texto.tsx` / `estilo.ts` (animaciones, tipografía, banco de sonidos) y `audio/master.sh` (voz + música con ducking + efectos → -14 LUFS, pico -1 dB). Para un reel nuevo: copia la plantilla a `trabajo/intro/remotion-intro/src/<reel>/` (o a un proyecto Remotion nuevo con esos archivos), cambia solo los datos (palabras, cortes, B-roll, frases grandes, música) y conserva componentes y estilos. Cuando el cliente corrija algo, aplícalo en la plantilla y en `CLAUDE.md` para los siguientes vídeos.
+
+### Vídeos largos de Álvaro (16:9, p. ej. el del taxi)
+
+- **Textos grandes que se puedan leer**: si la frase va rápida, no cambies de texto cada medio segundo; el cartel se va construyendo al ritmo de la voz y se queda entero hasta el siguiente corte o transición.
+- **Sin whooshes en cadena**: en montajes rápidos (intro, planos del coche, avances) el cliente los nota «que no paran de sonar». Usa golpes graves y la propia música.
+- **Rótulos de personas**: solo el nombre (sin país ni más líneas), con animación estilo Lottie.
+- **Partes de recurso con bandas negras**: entran poco a poco (2,39:1) y se recogen cuando empieza la siguiente parte. Mientras están, los subtítulos van dentro de la banda de abajo y los textos grandes por encima de ella.
+- **Cambio de personaje estilo GTA V** (intro y entre pasajeros): solo cámara y sonido, sin filtro de color ni rueda de selección.
+- **Subtítulos de charlas**: el texto sale de Whisper y los tiempos de Parakeet, alineados palabra a palabra. Ningún tramo se corta a mitad de palabra: el borde va en el silencio de la forma de onda.
