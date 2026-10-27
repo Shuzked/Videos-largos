@@ -32,7 +32,7 @@ type Caja = {x: number; y: number; w: number; h: number};
 type Foco = {a: number; b: number; r?: number[]; pos?: number[][]; c: string};
 type Etq = {en: number; b: number; x: number; y: number; txt: string; arriba: boolean};
 type Grafico = {tipo: string; a: number; b: number; [k: string]: unknown};
-const D = EDL as unknown as {dur: number; pantalla: number[][]; vc: Caja; bc: Caja; web: Caja; ventanas: (Caja & {a: number; b: number})[]; modos: {a: number; b: number; m: string}[];
+const D = EDL as unknown as {dur: number; pantalla: number[][]; vc: Caja; bc: Caja; web: Caja; ventanas: (Caja & {a: number; b: number})[]; difuminar: (Caja & {a: number; b: number})[]; modos: {a: number; b: number; m: string}[];
   camara: {t: number; s: number; x: number; y: number; d: number}[]; acentos: {t: number; a: number}[]; segs: Seg[]; focos: Foco[]; etiquetas: Etq[];
   graficos: Grafico[]; cortes: number[]};
 export const DURACION_KLING = D.dur;
@@ -117,6 +117,32 @@ const Pestanas: React.FC<{t: number}> = ({t}) => (
   </>
 );
 
+// lo que no debe leerse en la web (p. ej. «ChatGPT Plugin» en el menú de Higgsfield): el mismo trozo del corte, muy
+// desenfocado y con los bordes fundidos (sin caja); va dentro de la ventana, así sigue los zooms y los cambios de escena
+const DifuminaWeb: React.FC<{c: number; s: Seg}> = ({c, s}) => (
+  <>
+    {D.difuminar.filter((d) => c >= d.a - 1e-3 && c < d.b - 1e-3).map((d, i) => {
+      // P / PV: margen a los lados / arriba y abajo (arriba no llega al borde blanco); F / FV: fundido de los bordes
+      const P = 8, PV = 4, M = 16, F = 7, FV = 4;
+      const funde = `linear-gradient(to right, transparent, #000 ${F}px, #000 calc(100% - ${F}px), transparent), linear-gradient(to bottom, transparent, #000 ${FV}px, #000 calc(100% - ${FV}px), transparent)`;
+      return (
+        <div key={i} style={{position: 'absolute', left: d.x - P, top: d.y - PV, width: d.w + 2 * P, height: d.h + 2 * PV,
+          WebkitMaskImage: funde, WebkitMaskComposite: 'source-in', maskImage: funde, maskComposite: 'intersect'} as React.CSSProperties}>
+          {/* se desenfoca solo la franja del menú (y 202-230): por encima y por debajo, su mismo color de fondo, para que el
+              desenfoque no arrastre el borde blanco de la ventana ni la línea de debajo */}
+          <div style={{position: 'absolute', left: -M, top: -M, width: d.w + 2 * P + 2 * M, height: d.h + 2 * PV + 2 * M, overflow: 'hidden', filter: 'blur(5px)',
+            background: 'rgb(13,14,17)'}}>
+            <div style={{position: 'absolute', left: 0, right: 0, top: 202 - (d.y - PV - M), height: 28, overflow: 'hidden'}}>
+              <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)}
+                style={{position: 'absolute', left: -(d.x - P - M), top: -202, width: 1920, height: 1080}} />
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </>
+);
+
 // contorno blanco de la ventana y de su burbuja (como en el corte)
 const Contorno: React.FC<{caja: Caja; radio: number; op?: number}> = ({caja, radio, op = 1}) => (
   <div style={{position: 'absolute', left: caja.x, top: caja.y, width: caja.w, height: caja.h, borderRadius: radio, opacity: op,
@@ -175,6 +201,7 @@ const Base: React.FC<{s: Seg; t: number}> = ({s, t}) => {
             </>
           )}
           <Recorte caja={W} corte={vc} radio={14 * k} s={s} style={{boxShadow: '0 26px 80px rgba(0,0,0,0.7)'}}>
+            <DifuminaWeb c={c} s={s} />
             <Pestanas t={t} />
           </Recorte>
           <Contorno caja={W} radio={14 * k} />

@@ -308,7 +308,10 @@ for c in cortes:  # dos cambios casi a la vez (p. ej. el final de una escena y e
 cortes = dedup
 
 ventanas = [dict(a=a, b=b, **VC_ALTA) for a, b in ALTAS]  # en segundos del corte
-edl = dict(dur=DURACION, fps=FPS, pantalla=PANT, vc=VC, bc=BC, web=WEB, ventanas=ventanas, modos=modos, camara=camara, acentos=acentos, segs=segs,
+# «ChatGPT Plugin» en el menú de la web de Higgsfield: difuminado solo cuando se ve (bin/buscar_texto.py + bin/tramos_texto.py,
+# afinado fotograma a fotograma), en segundos y coordenadas del corte
+difuminar = [dict(a=d["a"], b=d["b"], x=d["x"] - 2, y=d["y"] - 1, w=88, h=19) for d in json.load(open(f"{R}/trans/chatgpt_tramos.json"))]
+edl = dict(dur=DURACION, fps=FPS, pantalla=PANT, vc=VC, bc=BC, web=WEB, ventanas=ventanas, difuminar=difuminar, modos=modos, camara=camara, acentos=acentos, segs=segs,
            focos=focos, etiquetas=etiquetas, graficos=G, cortes=cortes)
 json.dump(edl, open(f"{R}/remotion/src/kling/edl.json", "w"), ensure_ascii=False, indent=0)
 

@@ -18,3 +18,7 @@ componentes del showdown (`src/anim.tsx`, `texto.tsx`, `estilo.ts`, `lottie.tsx`
 - Fondo desenfocado (como el del corte): `medios/corte_fondo.mp4` = el corte a 384×216 con `gblur=sigma=5`, ampliado
   ×1,3 detrás de la escena de pantalla y de las escenas a pantalla completa (`PlanoDifuminado` / `FondoDifuminado`).
   Se hace una vez con ffmpeg: el render no tiene que desenfocar un 1080p en cada fotograma.
+- `bin/buscar_texto.py` + `bin/tramos_texto.py` → localizan en todo el corte un texto de la web que no debe leerse
+  (aquí «ChatGPT Plugin» del menú) y cuándo se ve, afinado fotograma a fotograma; `DifuminaWeb` (Kling.tsx) lo difumina
+  dentro de la ventana (sigue zooms y cambios de escena): desenfoque fuerte de esa franja, bordes fundidos y relleno con
+  el color del menú para que no arrastre el borde blanco. Sin cajas ni pixelado.
