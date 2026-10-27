@@ -1,7 +1,7 @@
 #!/bin/bash
 # Render largo de Remotion por trozos: un proceso nuevo por trozo y la caché de vídeo limitada, para que la memoria no se
 # acumule (el contenedor se reinicia si pasa de ~11 GB). Se retoma tras un reinicio: los trozos ya hechos no se repiten.
-# Al final une los trozos sin recomprimir.
+# Al final une los trozos sin recomprimir (con SIN_UNIR=1 solo deja la lista, para ahorrar disco).
 # Uso: scripts/render_trozos.sh <dir_proyecto_remotion> <composición> <salida.mp4> <nº_fotogramas> [opciones de remotion…]
 #   p. ej. scripts/render_trozos.sh trabajo/x/remotion Taxi trabajo/x/entregas/final.mp4 16033 --crf=16
 set -e
@@ -21,5 +21,7 @@ for ((a = 0; a < N; a += TROZO)); do
   rm -rf /tmp/remotion-*-assets* 2>/dev/null || true
 done
 ls "$D"/*.mp4 | grep -v '\.tmp\.mp4$' | sed "s|^|file '|;s|$|'|" > "$D/lista.txt"
+# SIN_UNIR=1: deja los trozos y su lista sin unirlos (con poco disco, el paso siguiente lee la lista con el demuxer concat)
+if [ -n "$SIN_UNIR" ]; then echo "RENDER_OK $D/lista.txt"; exit 0; fi
 ffmpeg -nostdin -v error -y -f concat -safe 0 -i "$D/lista.txt" -c copy "$SAL"
 echo "RENDER_OK $SAL"
