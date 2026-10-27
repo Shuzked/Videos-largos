@@ -5,7 +5,8 @@ import {C, GLOW_AMARILLO, LIMA, glow} from '../estilo';
 import {F, Sube, Ventana, golpe, iv} from '../anim';
 import {H, LogoHiggsfield, amarillo} from '../texto';
 import {Particulas, Pulso, ROJO, VERDE, aparece, flota, muelle} from '../lottie';
-import {DefsIconos, IconoLottie, TipoIcono, cabe} from './iconos';
+import {cabe} from './iconos';
+import {Avatar, Bocadillo, Claqueta, Cronometro, Ico, Insignia} from './iconosFlat';
 import {Aviso, Fondo, Suave} from './piezas';
 import {TransicionUsuario} from './transicion';
 import EDL from './edl.json';
@@ -30,16 +31,6 @@ type Grafico = {tipo: string; a: number; b: number; [k: string]: unknown};
 type Ventana = {x: number; y: number; w: number; h: number; k: number; sx: number; sy: number};
 const D = EDL as unknown as {dur: number; pantalla: number[][]; ventana: Ventana; segs: Seg[]; zooms: number[][]; anillos: Anillo[]; difuminados: Rect[]; graficos: Grafico[]; cortes: number[]};
 export const DURACION_KLING = D.dur;
-
-// Material Icons (24x24)
-const IC = {
-  reloj: 'M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z',
-  clip: 'M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z',
-  persona: 'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
-  check: 'M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z',
-  cruz: 'M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
-  chat: 'M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z',
-};
 
 // ---------------- base: el corte del usuario con zooms suaves a la web ----------------
 const zoom = (t: number) => {
@@ -181,10 +172,10 @@ const Lateral: React.FC<{t: number; a: number; b: number; lado: 'izq' | 'der'; i
   const x = lado === 'der' ? 1330 : 100;
   return (
     <Ventana t={t} a={a} b={b} suave>
-      <div style={{position: 'absolute', left: x, width: 490, top: 330, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, filter: SOMBRA}}>
-        <svg width={170} height={170} viewBox="-85 -85 170 170" style={{overflow: 'visible'}}>
-          <DefsIconos /><IconoLottie t={t} en={a + 2 * F} d={icono === 'reloj' ? IC.reloj : IC.clip} x={0} y={0} r={66} tipo={(icono === 'reloj' ? 'reloj' : 'camara') as TipoIcono} />
-        </svg>
+      <div style={{position: 'absolute', left: x, width: 490, top: 290, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, filter: SOMBRA}}>
+        <Ico tam={230} style={{translate: `0px ${flota(t, x / 400, 5).y}px`}}>
+          {icono === 'reloj' ? <Cronometro t={t} en={a + 2 * F} r={80} /> : <Claqueta t={t} en={a + 2 * F} r={88} id={`claq${Math.round(a)}`} />}
+        </Ico>
         {!abajo && <div style={{fontWeight: 700, fontSize: 40, textShadow: glow('255,255,255', 0.4)}}><Sube t={t} en={supEn}>{sup}</Sube></div>}
         <div style={{...H, fontSize: cabe(txt, 490, 96, 0.72), ...amarillo, ...golpe(t, en, b - 6 * F)}}>{txt}</div>
         {abajo && <div style={{fontWeight: 700, fontSize: 40, textShadow: glow('255,255,255', 0.4)}}><Sube t={t} en={supEn}>{sup}</Sube></div>}
@@ -230,7 +221,7 @@ const LineaTiempo: React.FC<{t: number; a: number; b: number; en: number[]; inic
       })}
       <div style={{position: 'absolute', left: X1 - 270, top: Y - 290, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 26px', borderRadius: 999, background: C.amarillo, color: '#141418',
         fontWeight: 900, fontSize: 44, ...golpe(t, clavado, b - 6 * F), rotate: '-6deg', boxShadow: `0 0 24px rgba(${GLOW_AMARILLO},0.7)`}}>
-        <svg width={40} height={40} viewBox="0 0 24 24"><path d={IC.check} fill="#141418" /></svg>CLAVADO
+        <Ico tam={46}><Insignia t={t} en={clavado + 3 * F} r={21} bien rafaga={false} /></Ico>CLAVADO
       </div>
     </Ventana>
   );
@@ -471,9 +462,7 @@ const Nota: React.FC<{t: number; a: number; b: number; texto: string; tono: stri
     <div style={{position: 'absolute', left: 0, right: 0, top: 952, display: 'flex', justifyContent: 'center', opacity: ap.op * (1 - sale)}}>
       <div style={{display: 'flex', alignItems: 'center', gap: 16, padding: '12px 30px 12px 16px', borderRadius: 999, background: 'rgba(14,14,18,0.9)', border: `2px solid ${bueno ? VERDE : ROJO}`,
         scale: `${ap.sx} ${ap.sy}`, boxShadow: '0 10px 30px rgba(0,0,0,0.6)'}}>
-        <div style={{width: 46, height: 46, borderRadius: 23, background: bueno ? VERDE : ROJO, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-          <svg width={30} height={30} viewBox="0 0 24 24"><path d={bueno ? IC.check : IC.cruz} fill="#141418" /></svg>
-        </div>
+        <Ico tam={50}><Insignia t={t} en={en + 3 * F} r={23} bien={bueno} /></Ico>
         <span style={{fontWeight: 700, fontSize: 34}}>{texto}</span>
       </div>
     </div>
@@ -492,7 +481,7 @@ const Sello: React.FC<{t: number; en: number; x: number; y: number; txt?: string
   t < en ? null : (
     <div style={{position: 'absolute', left: x, top: y, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 26px', borderRadius: 999, background: C.amarillo, color: '#141418',
       fontWeight: 900, fontSize: 46, ...golpe(t, en), rotate: '-6deg', boxShadow: `0 0 24px rgba(${GLOW_AMARILLO},0.7)`}}>
-      <svg width={40} height={40} viewBox="0 0 24 24"><path d={IC.check} fill="#141418" /></svg>{txt}
+      <Ico tam={46}><Insignia t={t} en={en + 3 * F} r={21} bien rafaga={false} /></Ico>{txt}
     </div>
   );
 
@@ -548,7 +537,7 @@ const Clonado: React.FC<{t: number; a: number; b: number; en: number[]; textos: 
         return (
           <div key={k} style={{display: 'flex', alignItems: 'center', gap: 12, padding: '10px 26px 10px 14px', borderRadius: 999, background: 'rgba(14,14,18,0.9)', border: `2px solid ${C.amarillo}`,
             scale: `${ap.sx} ${ap.sy}`, opacity: ap.op, fontWeight: 700, fontSize: 32}}>
-            <svg width={30} height={30} viewBox="0 0 24 24"><path d={IC.check} fill={C.amarillo} /></svg>{tx}
+            <Ico tam={36}><Insignia t={t} en={e + 3 * F} r={16} bien /></Ico>{tx}
           </div>
         );
       })}
@@ -603,9 +592,7 @@ const Cliente: React.FC<{t: number; a: number; b: number; en: number; escribe: n
       <div style={{position: 'absolute', left: 1250, top: 300 + fl.y, width: 570, padding: '28px 30px', borderRadius: 28, background: PANEL, border: '2px solid rgba(255,255,255,0.14)',
         scale: `${ap.sx} ${ap.sy}`, rotate: `${ap.rot}deg`, transformOrigin: '100% 0%', boxShadow: '0 18px 50px rgba(0,0,0,0.6)', opacity: ap.op}}>
         <div style={{display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16}}>
-          <div style={{width: 54, height: 54, borderRadius: 27, background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <svg width={34} height={34} viewBox="0 0 24 24"><path d={IC.persona} fill="#141418" /></svg>
-          </div>
+          <Ico tam={58}><Avatar t={t} en={en + 4 * F} r={27} fondo="#8ab4ff" id="avCliente" /></Ico>
           <div style={{fontWeight: 800, fontSize: 30}}>Cliente</div>
           <div style={{marginLeft: 'auto', fontWeight: 600, fontSize: 24, color: 'rgba(255,255,255,0.55)'}}>{t < escribe + 2.6 ? 'escribiendo…' : 'ahora'}</div>
         </div>
@@ -619,7 +606,7 @@ const Cliente: React.FC<{t: number; a: number; b: number; en: number; escribe: n
         {t >= rodaje && (
           <div style={{display: 'flex', alignItems: 'center', gap: 12, padding: '10px 26px 10px 14px', borderRadius: 999, background: 'rgba(14,14,18,0.9)', border: `2px solid ${ROJO}`,
             fontWeight: 700, fontSize: 32, ...golpe(t, rodaje)}}>
-            <svg width={30} height={30} viewBox="0 0 24 24"><path d={IC.cruz} fill={ROJO} /></svg>antes: repetir todo el rodaje
+            <Ico tam={36}><Insignia t={t} en={rodaje + 3 * F} r={16} bien={false} /></Ico>antes: repetir todo el rodaje
           </div>
         )}
       </div>
@@ -683,9 +670,7 @@ const Fichas: React.FC<{t: number; a: number; b: number; x: number; items: [stri
       return (
         <div key={i} style={{position: 'absolute', left: x, top: 250 + i * 175 + fl.y, width: 480, height: 150, borderRadius: 24, background: PANEL, border: `2px solid ${bueno ? 'rgba(46,229,157,0.6)' : 'rgba(255,77,94,0.6)'}`,
           display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', boxSizing: 'border-box', scale: `${ap.sx} ${ap.sy}`, rotate: `${ap.rot}deg`, opacity: ap.op, boxShadow: '0 14px 40px rgba(0,0,0,0.55)'}}>
-          <div style={{flex: 'none', width: 70, height: 70, borderRadius: 35, background: bueno ? VERDE : ROJO, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <svg width={44} height={44} viewBox="0 0 24 24"><path d={bueno ? IC.check : IC.cruz} fill="#141418" /></svg>
-          </div>
+          <Ico tam={76}><Insignia t={t} en={en + 3 * F} r={34} bien={bueno} /></Ico>
           <div style={{minWidth: 0}}>
             <div style={{fontWeight: 900, fontSize: cabe(txt, 340, 40, 0.6), whiteSpace: 'nowrap'}}>{txt}</div>
             <div style={{fontWeight: 600, fontSize: cabe(sub, 340, 27, 0.52), color: 'rgba(255,255,255,0.8)', marginTop: 4, whiteSpace: 'nowrap'}}>{sub}</div>
@@ -741,11 +726,9 @@ const Comentario: React.FC<{t: number; a: number; b: number; texto: string; escr
       <div style={{position: 'absolute', left: 1300, top: 250 + fl.y, width: 500, padding: '30px 32px', borderRadius: 28, background: PANEL, border: '2px solid rgba(255,255,255,0.14)',
         scale: `${ap.sx} ${ap.sy}`, rotate: `${ap.rot}deg`, transformOrigin: '0% 0%', boxShadow: '0 18px 50px rgba(0,0,0,0.6)'}}>
         <div style={{display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14}}>
-          <div style={{width: 52, height: 52, borderRadius: 26, background: C.amarillo, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-            <svg width={32} height={32} viewBox="0 0 24 24"><path d={IC.persona} fill="#141418" /></svg>
-          </div>
+          <Ico tam={56}><Avatar t={t} en={a + 4 * F} r={26} id="avTu" /></Ico>
           <div style={{fontWeight: 800, fontSize: 28}}>@tú</div>
-          <svg width={30} height={30} viewBox="0 0 24 24" style={{marginLeft: 'auto'}}><path d={IC.chat} fill="rgba(255,255,255,0.5)" /></svg>
+          <Ico tam={44} style={{marginLeft: 'auto'}}><Bocadillo t={t} en={a + 6 * F} r={19} escribe={t < escribe + texto.length * 0.05} /></Ico>
         </div>
         <div style={{fontWeight: 600, fontSize: 46, lineHeight: 1.25, minHeight: 116}}>
           {texto.slice(0, n)}<span style={{opacity: Math.floor(t * 3) % 2 ? 1 : 0, color: C.amarillo}}>|</span>

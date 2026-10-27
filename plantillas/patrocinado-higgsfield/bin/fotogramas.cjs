@@ -7,7 +7,7 @@ const [out, ...ts] = process.argv.slice(2);
 (async () => {
   const serveUrl = await require('./empaquetar.cjs')();
   const browserExecutable = '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell';
-  const composition = await selectComposition({serveUrl, id: 'Kling', browserExecutable});
+  const composition = await selectComposition({serveUrl, id: process.env.COMP || 'Kling', browserExecutable});
   require('fs').mkdirSync(out, {recursive: true});
   for (const t of ts) {
     const frame = Math.min(composition.durationInFrames - 1, Math.round(parseFloat(t) * 30));
