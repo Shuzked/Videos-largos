@@ -96,7 +96,7 @@ del tt, env
 
 # ---------- 5) efectos (banco del cliente; tabla SB de src/anim.tsx: pico en el instante, nivel objetivo de pico) ----------
 SBT = {
-    "whoosh": dict(pk=0.51, dur=1.2, peak=-4, obj=-19), "pop": dict(pk=0.03, dur=0.6, peak=-2.9, obj=-18),
+    "whoosh": dict(pk=0.51, dur=1.2, peak=-4, obj=-19), "pop": dict(pk=0.03, dur=0.32, peak=-2.9, obj=-18),
     "popup": dict(pk=0.16, dur=0.45, peak=-6.1, desde=0.1), "hit": dict(pk=0.6, dur=1.8, peak=0, obj=-13),
     "riser": dict(pk=0.75, dur=0.85, peak=-6.2, obj=-18), "ding": dict(pk=0.03, dur=1.2, peak=-13, obj=-18),
     "swish": dict(pk=4.433, dur=2.07, peak=-1.4, obj=-19, desde=3.933), "reveal": dict(pk=4.264, dur=2.24, peak=-9.3, obj=-19, desde=3.764),
