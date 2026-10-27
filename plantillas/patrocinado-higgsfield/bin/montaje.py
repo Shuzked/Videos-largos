@@ -49,32 +49,37 @@ Z = [(34.0, 1, 960, 540, 0), (37.45, 1.85, 648, 426, 0.45), (41.1, 1.85, 645, 84
      (167.4, 1, 960, 540, 0.4), (172.3, 1.75, 660, 480, 0.5), (176.2, 1, 960, 540, 0.5), (180.5, 1.9, 645, 880, 0.45),
      (186.3, 1, 960, 540, 0.5), (224.43, 1, 960, 540, 0), (386.9, 1.8, 645, 690, 0.5), (395.5, 1.9, 645, 880, 0.45),
      (399.5, 1, 960, 540, 0.4)]
-# el zoom amplía solo el contenido de la ventana del navegador (la burbuja de cámara se queda quieta, ver Kling.tsx):
-# el foco x se elige para que el borde izquierdo del panel (x 538) caiga en x≈548, dentro de la ventana
-panel = lambda s, x: x if s <= 1 or not 600 <= x <= 700 else max(524, (s * 538 - 548) / (s - 1))
-zooms = [[T(c), s, round(panel(s, x)) / 1920, y / 1080, d] for c, s, x, y, d in Z]
+# Corte nuevo (14:34): sin la barra del navegador y la web 40 px más arriba (DY). En los tramos de pantalla va la web sola,
+# sin la burbuja de cámara: la ventana del corte (VENTANA) se amplía a 1840 px de ancho, centrada sobre el fondo del vídeo.
+# Las coordenadas de esta lista son las del corte antiguo (y + 40); el foco se pasa a la pantalla. En los zooms al panel
+# de la izquierda el foco se ancla al borde izquierdo de la ventana, para que el panel no se salga.
+DY = -40
+VENTANA = dict(x=521, y=196, w=1375, h=690)
+K = 1840 / VENTANA["w"]; SX = 40; SY = (1080 - VENTANA["h"] * K) / 2
+pant_x = lambda x: SX + (x - VENTANA["x"]) * K
+pant_y = lambda y: SY + (y + DY - VENTANA["y"]) * K
+def foco(s, x, y):
+    if s <= 1: return 0.5, 0.5
+    fx = SX if 600 <= x <= 700 else pant_x(x)
+    return round(fx / 1920, 4), round(min(1080, max(0, pant_y(y))) / 1080, 4)
+zooms = [[T(c), s, *foco(s, x, y), d] for c, s, x, y, d in Z]
 
 # ---------------- anillos sobre la web (coordenadas del corte; se amplían con el zoom) ----------------
-BOTON = lambda y: [538, y, 216, 32]
+BOTON = lambda y: [538, y + DY, 216, 32]
 anillos = [
-    dict(a=37.72, b=39.05, r=[541, 411, 78, 31]), dict(a=39.11, b=39.85, r=[622, 411, 56, 31]), dict(a=39.87, b=41.1, r=[683, 411, 70, 31]),
+    dict(a=37.72, b=39.05, r=[541, 371, 78, 31]), dict(a=39.11, b=39.85, r=[622, 371, 56, 31]), dict(a=39.87, b=41.1, r=[683, 371, 70, 31]),
     dict(a=41.26, b=45.0, pos=[[41.26] + BOTON(826), [43.8] + BOTON(782), [44.8] + BOTON(864)]),
-    dict(a=117.98, b=121.3, r=[538, 775, 105, 37]), dict(a=118.89, b=121.3, r=[649, 775, 106, 37]), dict(a=121.34, b=124.0, r=[538, 820, 217, 37]),
+    dict(a=117.98, b=121.3, r=[538, 735, 105, 37]), dict(a=118.89, b=121.3, r=[649, 735, 106, 37]), dict(a=121.34, b=124.0, r=[538, 780, 217, 37]),
     dict(a=150.7, b=154.0, r=BOTON(864)), dict(a=180.9, b=186.3, r=BOTON(864)), dict(a=395.74, b=399.5, r=BOTON(864)),
 ]
 for an in anillos:
     an["a"], an["b"] = T(an["a"]), T(an["b"])
     if "pos" in an: an["pos"] = [[T(p[0])] + p[1:] for p in an["pos"]]
 
-# ---------------- difuminado de la barra del navegador (marcadores y extensiones de terceros) ----------------
-# solo mientras se ve la pantalla (trans/pantalla.json: bordes blancos de la burbuja y la ventana, fotograma a fotograma)
+# ---------------- tramos de pantalla del corte (trans/pantalla.json: bordes blancos de la burbuja y la ventana) ----------------
+# el corte nuevo ya no lleva la barra del navegador: no hace falta difuminar nada
 dif = []
 PANT = json.load(open(f"{R}/trans/pantalla.json"))
-for a, b in json.load(open(f"{R}/trans/navegador.json")):
-  for p0, p1 in PANT:
-    for x0, x1, t0 in mapa:
-        aa, bb = max(a - 0.25, x0, p0), min(b + 0.25, x1, p1)
-        if bb > aa: dif.append(dict(a=round(t0 + aa - x0, 3), b=round(t0 + bb - x0, 3), x=522, y=146, w=1378, h=94))
 
 # ---------------- gráficos ----------------
 G = []
@@ -120,7 +125,7 @@ g("aviso", 154.2, 157.3, texto="La primera vez lo lancé en otro modo por error 
 for a, b, txt in [(174.9, 180.4, "El hombre de las fotos coge el frasco, se perfuma, lo huele y sonríe a cámara")]:
     g("prompt_es", a, b, txt=txt, etiqueta="PROMPT · REFERENCES")
 g("pastilla_creditos", 180.9, 186.3, antes=60, ahora=15, en=180.9, x=1000, y=820)
-g("generando", 186.8, 200.7, en=186.8)
+g("generando", 186.8, 199.28, en=186.8)  # a 199,28 aparece el resultado en la web
 g("valioso", 189.2, 200.7, enProd=192.26, enModelo=193.56, enAnuncio=195.36, enValioso=198.48)
 # 3 · reacción a Frames
 g("nota", 225.0, 232.6, texto="La mano: el color no es del todo humano", tono="malo", en=225.6)
@@ -159,7 +164,7 @@ for x in G:
         cortes += [x["a"], x["b"]]
 cortes = sorted(set(round(c, 3) for c in cortes))
 
-edl = dict(dur=DURACION, fps=FPS, segs=segs, zooms=zooms, anillos=anillos, difuminados=dif, graficos=G, cortes=cortes)
+edl = dict(dur=DURACION, fps=FPS, pantalla=PANT, ventana=dict(VENTANA, k=K, sx=SX, sy=SY), segs=segs, zooms=zooms, anillos=anillos, difuminados=dif, graficos=G, cortes=cortes)
 json.dump(edl, open(f"{R}/remotion/src/kling/edl.json", "w"), ensure_ascii=False, indent=0)
 
 # ---------------- audio ----------------

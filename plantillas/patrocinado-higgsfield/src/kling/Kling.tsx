@@ -27,7 +27,8 @@ type Seg = {tipo: 'base' | 'resultado'; ini: number; dur: number; desde?: number
 type Anillo = {a: number; b: number; r?: number[]; pos?: number[][]};
 type Rect = {a: number; b: number; x: number; y: number; w: number; h: number};
 type Grafico = {tipo: string; a: number; b: number; [k: string]: unknown};
-const D = EDL as unknown as {dur: number; segs: Seg[]; zooms: number[][]; anillos: Anillo[]; difuminados: Rect[]; graficos: Grafico[]; cortes: number[]};
+type Ventana = {x: number; y: number; w: number; h: number; k: number; sx: number; sy: number};
+const D = EDL as unknown as {dur: number; pantalla: number[][]; ventana: Ventana; segs: Seg[]; zooms: number[][]; anillos: Anillo[]; difuminados: Rect[]; graficos: Grafico[]; cortes: number[]};
 export const DURACION_KLING = D.dur;
 
 // Material Icons (24x24)
@@ -85,11 +86,28 @@ const Anillos: React.FC<{t: number}> = ({t}) => (
   </svg>
 );
 
-const Base: React.FC<{s: Seg}> = ({s}) => (
-  <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
-    <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
-  </Sequence>
-);
+// tramos de pantalla del corte (con su burbuja de cámara): aquí va la web sola, sin cámara. La ventana del navegador del
+// corte se amplía a casi toda la pantalla, centrada y con esquinas redondeadas, sobre el fondo del vídeo. Misma estructura
+// en los dos casos (solo cambian los estilos) para que el vídeo no se vuelva a montar en cada cambio.
+const V = D.ventana;
+const enPantalla = (c: number) => D.pantalla.some(([a, b]) => c >= a - 1e-3 && c < b - 1e-3);
+const Base: React.FC<{s: Seg; t: number}> = ({s, t}) => {
+  const c = (s.desde ?? 0) + Math.round((t - s.ini) * FPS) / FPS;
+  const p = enPantalla(c);
+  return (
+    <Sequence from={fr(s.ini)} durationInFrames={Math.max(1, fr(s.ini + s.dur) - fr(s.ini))} layout="none">
+      {p && <Fondo t={t} />}
+      <div style={p ? {position: 'absolute', left: V.sx, top: V.sy, width: V.w * V.k, height: V.h * V.k, borderRadius: 18, overflow: 'hidden',
+        boxShadow: '0 0 0 2px rgba(255,255,255,0.14), 0 26px 80px rgba(0,0,0,0.7)'} : {position: 'absolute', inset: 0, overflow: 'hidden'}}>
+        <div style={p ? {position: 'absolute', left: -V.x * V.k, top: -V.y * V.k, width: 1920, height: 1080, transformOrigin: '0 0', scale: V.k}
+          : {position: 'absolute', left: 0, top: 0, width: 1920, height: 1080}}>
+          <OffthreadVideo src={staticFile('medios/corte.mp4')} muted trimBefore={fr(s.desde ?? 0)} style={{position: 'absolute', inset: 0, width: '100%', height: '100%'}} />
+          {p && <Anillos t={t} />}
+        </div>
+      </div>
+    </Sequence>
+  );
+};
 
 // ---------------- un resultado entero, a pantalla completa (su audio va en la mezcla) ----------------
 const reloj = (s: number) => `0:${String(Math.min(59, Math.floor(s))).padStart(2, '0')}`;
@@ -738,7 +756,7 @@ const Comentario: React.FC<{t: number; a: number; b: number; texto: string; escr
 };
 
 
-// espera de la generación: chip «generando…» con un arco que se dibuja y gira (sobre la barra del navegador difuminada)
+// espera de la generación: chip «generando…» con un arco que se dibuja y gira (arriba, encima de la ventana de la web)
 const Generando: React.FC<{t: number; a: number; b: number; en: number}> = ({t, a, b, en}) => {
   if (t < a || t >= b) return null;
   const ap = aparece(t, en, -4);
@@ -747,7 +765,7 @@ const Generando: React.FC<{t: number; a: number; b: number; en: number}> = ({t, 
   const largo = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(u * 3.2));
   const puntos = '...'.slice(0, 1 + (Math.floor(u * 3) % 3));
   return (
-    <div style={{position: 'absolute', left: 860, top: 162, opacity: ap.op * (1 - sale), scale: `${ap.sx} ${ap.sy}`, transformOrigin: '0% 50%'}}>
+    <div style={{position: 'absolute', left: 860, top: 118, opacity: ap.op * (1 - sale), scale: `${ap.sx} ${ap.sy}`, transformOrigin: '0% 50%'}}>
       <div style={{display: 'flex', alignItems: 'center', gap: 14, padding: '10px 26px 10px 14px', borderRadius: 999, background: 'rgba(14,14,18,0.92)',
         border: `2px solid ${LIMA}`, boxShadow: `0 0 20px rgba(209,254,23,0.35), 0 10px 30px rgba(0,0,0,0.6)`}}>
         <svg width={40} height={40} viewBox="-20 -20 40 40">
@@ -800,22 +818,13 @@ export const Kling: React.FC = () => {
   // la transición del usuario está calcada a 25 fps: se indexa por tiempo para que dure lo mismo
   const frame25 = Math.floor(t * 25 + 1e-6);
   const z = zoom(t);
-  const anillo = D.anillos.some((an) => t >= an.a - 0.05 && t < an.b + 0.25);
   const visibles = D.segs.filter((s) => t >= s.ini - 0.5 && t < s.ini + s.dur + 0.5);
   return (
     <AbsoluteFill style={{background: '#000', fontFamily: 'Montserrat', color: '#fff', overflow: 'hidden'}}>
       <TransicionUsuario frame={frame25} cortes={D.cortes}>
-        {visibles.filter((s) => s.tipo === 'base').map((s) => <Base key={s.ini} s={s} />)}
-        <Difuminados t={t} />
-        {(z.s > 1.0005 || anillo) && (
-          <div style={{position: 'absolute', inset: 0, clipPath: 'inset(150px 26px 152px 522px round 12px)'}}>
-            <div style={z.estilo}>
-              {visibles.filter((s) => s.tipo === 'base').map((s) => <Base key={s.ini} s={s} />)}
-              <Difuminados t={t} />
-              <Anillos t={t} />
-            </div>
-          </div>
-        )}
+        <div style={z.estilo}>
+          {visibles.filter((s) => s.tipo === 'base').map((s) => <Base key={s.ini} s={s} t={t} />)}
+        </div>
         {visibles.filter((s) => s.tipo === 'resultado').map((s) => <Resultado key={s.ini} t={t} s={s} />)}
         {D.graficos.filter((g) => PANTALLA.includes(g.tipo)).map((g, i) => <Grafico key={`p${i}`} t={t} g={g} />)}
       </TransicionUsuario>
